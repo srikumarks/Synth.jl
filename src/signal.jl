@@ -1,6 +1,8 @@
 using Random
 import PortAudio
 
+const Time = Float64
+const SampleVal = Float32
 
 """
     abstract type Signal end
@@ -38,7 +40,7 @@ dBscale(v) = 10.0 ^ (v/10.0)
 midi2hz(m) = 440.0 * (2 ^ ((m - 69.0)/12.0))
 
 "Converts a frequency in Hz to its MIDI note number in the equal tempered tuning."
-hz2midi(hz) = 69.0 + 12.0*log(hz/440.0)/log(2.0)
+hz2midi(hz) = 69.0 + 12.0*log2(hz/440.0)
 
 "We define done and value for Nothing type as a signal trivially."
 done(s :: Nothing, t, dt) = true
