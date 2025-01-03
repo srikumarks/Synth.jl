@@ -33,4 +33,6 @@ include("render.jl")
 include("io.jl")
 include("player.jl")
 
+include("models/models.jl")
+
 end # module Synth
