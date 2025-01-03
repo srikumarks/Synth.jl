@@ -26,6 +26,9 @@ include("gen.jl") # Include in signal.jl
 include("feedback.jl")
 include("granular.jl")
 
+include("probe.jl")
+include("control.jl")
+
 include("render.jl")
 include("io.jl")
 include("player.jl")
