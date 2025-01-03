@@ -10,13 +10,12 @@ end
 done(c :: Control, t, dt) = false
 
 function value(c :: Control, t, dt)
-    nextv = c.lastv
     while isready(c.chan)
-        nextv = take!(c.chan)
+        c.lastv = take!(c.chan)
     end
 
     # Dezipper the control signal.
-    v = c.v * c.wv + nextv * c.ws
+    v = c.v * c.wv + c.lastv * c.ws
     c.v = v
     return v
 end
