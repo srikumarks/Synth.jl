@@ -3,7 +3,7 @@ module UI
 using Gtk4
 using Printf
 
-RGBA = Main.RGBA
+RGBA = Main.RGBA{Float32}
 
 abstract type KeyOperated end
 
@@ -40,7 +40,8 @@ struct LED
     colours::Vector{RGBA}  # Using just RGBA instead of Gtk4.RGBA
     fillratio::Float32
     gamma::Float32
-    widget::Union{Nothing,GtkCanvas}
+    canvas::Ref{Union{Nothing,GtkCanvas}}
+    valdisp::Ref{Union{Nothing,GtkLabel}}
     value::Ref{Float32}
 end
 
@@ -135,7 +136,7 @@ function setup!(panel::Panel)
     scroll_controller = Gtk4.GtkEventControllerScroll(Gtk4.EventControllerScrollFlags_VERTICAL, panel.window)
     
     signal_connect(scroll_controller, "scroll") do controller, dx, dy
-        println("dx = ", dx, " dy = ", dy)
+        #println("dx = ", dx, " dy = ", dy)
         for op in panel.active_keyops
             k = panel.keyops[op]
             adjust_control!(panel, k, dx, dy)
@@ -148,13 +149,21 @@ end
 
 function render(led :: LED, panel :: Panel)
     horizontal = led.angle == 0
-    vertical = led.angle = 90
+    vertical = led.angle == 90
     led_width = horizontal ? led.length : led.breadth
     led_height = vertical ? led.length : led.breadth
+    box = GtkBox(vertical ? :v : h)
+    label = GtkLabel(led.label)
+    valdisp = GtkLabel("")
     canvas = GtkCanvas(led_width, led_height)
-    led.widget = canvas
+    push!(box, vertical ? valdisp : label)
+    push!(box, canvas)
+    push!(box, vertical ? label : valdisp)
+    led.canvas[] = canvas
+    led.valdisp[] = valdisp
     
     @guarded draw(canvas) do widget
+        #println("In LED draw")
         ctx = getgc(canvas)
         h = height(canvas)
         w = width(canvas)
@@ -162,6 +171,7 @@ function render(led :: LED, panel :: Panel)
         set_source_rgb(ctx, 0, 0, 0)
         fill(ctx)
         v = led.value[]
+        #println("Draw LED value ", v)
         ledw = w / led.numsteps
         ledh = h / led.numsteps
         ledfillw = led.fillratio * ledw
@@ -182,21 +192,28 @@ function render(led :: LED, panel :: Panel)
         end
     end
 
-    panel.window.child = canvas
-    return canvas
+    panel.widgetof[led] = box
+    return box
 end
 
-function led(label::String, angle::Int, length::Int, breadth::Int, colours::Vector{RGBA}, source::Channel{Float32}; fillratio=0.8, gamma=0.5)
+function led(label::String, angle::Int, length_::Int, breadth::Int, colours::Vector{RGBA}, source::Channel{Float32}; fillratio=0.5, gamma=0.5)
+    @assert angle == 0 || angle == 90
     N = length(colours)
     val = Ref(0.0f0)
-    w = LED(label, angle, length, breadth, length(colours), colours, Float32(fillratio), Float32(gamma), nothing, val)
+    w = LED(label, angle, length_, breadth, N, colours, Float32(fillratio), Float32(gamma), nothing, nothing, val)
     @async begin
         try
             while true
                 v = take!(source)
                 val[] = v
-                if !isnothing(w.widget)
-                    reveal(w.widget)
+                #println("LED[$label] value ", v)
+                if !isnothing(w.valdisp[])
+                    #println("\t setting label")
+                    w.valdisp[].label = @sprintf("%0.2f", v)
+                end
+                if !isnothing(w.canvas[])
+                    #println("\t drawing canvas")
+                    draw(w.canvas[])
                 end
             end
         catch e
@@ -375,10 +392,25 @@ function test3()
                       ])
 end
 
+src = Channel{Float32}(2)
+
+function test4()
+    y = RGBA(1.0f0, 1.0f0, 0.0f0, 1.0f0)
+    o = RGBA(1.0f0, 0.65f0, 0.0f0, 1.0f0)
+    r = RGBA(1.0f0, 0.0f0, 0.0f0, 1.0f0)
+    led("blinker", 90, 200, 40, vcat(repeat([y], 9), repeat([o],3), repeat([r], 2)), src)
+end
+
 function test_main()
     app = GtkApplication("com.example.app", 0)
     signal_connect(app, :activate) do app
-        harnessed(test3, app)
+        harnessed(test4, app)
+    end
+    @async begin
+        for i in 1:1000
+            sleep(0.002)
+            put!(src, 0.5*(1.0+sin((i-1) * 0.001 * 48.0)))
+        end
     end
     run(app)
 end
