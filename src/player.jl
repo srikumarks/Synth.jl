@@ -44,6 +44,13 @@ function startaudio(callback; blocksize=64)
     return () -> put!(wq, Val(:done))
 end
 
+"""
+    synthesizer(commands::Channel{Signal}; blocksize=64)
+
+Wraps `startaudio` such that you can send signals at arbitrary times
+to the given channel and the synthesizer will immediately start playing
+the signal.
+"""
 function synthesizer(commands::Channel{Signal}; blocksize=64)
     function callback(sample_rate, rq, wq)
         #println("In callback $sample_rate, $rq, $wq")
@@ -78,6 +85,14 @@ function synthesizer(commands::Channel{Signal}; blocksize=64)
     startaudio(callback; blocksize)
 end
 
+"""
+    play(signal, duration_secs; blocksize=64)
+
+Plays the given signal on the default audio output in realtime
+for the given duration or till the signal ends, whichever
+happens earlier. Be careful about the signal level since
+in this case the signal can't be globally normalized.
+"""
 function play(signal, duration_secs; blocksize=64)
     function callback(sample_rate, rq, wq)
         #println("In callback $sample_rate, $rq, $wq")

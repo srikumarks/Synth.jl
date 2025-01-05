@@ -33,13 +33,13 @@ signals and numbers.
 """
 abstract type Signal end
 
-"Converts a dB value to a scaling factor"
+"""Converts a dB value to a scaling factor"""
 dBscale(v) = 10.0 ^ (v/10.0)
 
-"Converts a MIDI note number into a frequency using the equal tempered tuning."
+"""Converts a MIDI note number into a frequency using the equal tempered tuning."""
 midi2hz(m) = 440.0 * (2 ^ ((m - 69.0)/12.0))
 
-"Converts a frequency in Hz to its MIDI note number in the equal tempered tuning."
+"""Converts a frequency in Hz to its MIDI note number in the equal tempered tuning."""
 hz2midi(hz) = 69.0 + 12.0*log2(hz/440.0)
 
 "We define done and value for Nothing type as a signal trivially."
@@ -67,6 +67,11 @@ function Base.setindex!(c :: Circular{T,V}, i, val :: T) where {T, V <: Abstract
     c.vec[mod1(i, c.N)] = val
 end
 
+"""
+    circular(v::AbstractArray{T}) :: Circular{T,AbstractArray{T}}
+
+Makes a circular array that handles the modulo calculations.
+"""
 circular(v :: AbstractArray) = Circular(v, length(v))
 
 # Turns a normal function of time into a signal.

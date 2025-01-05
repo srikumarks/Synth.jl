@@ -17,33 +17,41 @@ mutable struct ADSR <: Signal
 end
 
 """
-    adsr(
-        alevel :: Real, asecs :: Real, 
-        dsecs :: Real,
-        suslevel :: Real, sussecs :: Real,
-        relsecs :: Real
-    )
+    adsr(suslevel :: Real, sus_secs :: Real;
+         attackfactor = 2.0, attack_secs = 0.002,
+         decay_secs = 0.01, release_secs = 0.2)
 
 Makes an "attack-decay-sustain-release" envelope.
 The decay and release phases are treated as exponential
-and the others stay linear.
-"""
+and the others stay linear. The arguments are arranged
+such that mostly you specify the `suslevel` and `sus_secs`,
+which control the amplitude and duration of a note
+controlled by the ADSR. The rest are given defaults that you
+can change if needed.
 
-function adsr(
-        alevel :: Real, asecs :: Real, 
-        dsecs :: Real,
-        suslevel :: Real, sussecs :: Real,
-        relsecs :: Real
-    )
-    ADSR(Float32(alevel), Float32(asecs), Float32(dsecs), Float32(suslevel), Float32(sussecs), Float32(relsecs),
+- `suslevel` is the sustain level
+- `sus_secs` is the duration of the sustain portion
+- `attackfactor` determines the peak of the attack and multiplies the sustain level.
+- `attack_secs` is the duration of the linear attack portion
+- `decay_secs` is the duration of the exponential decay portion after the attack.
+- `release_secs` is the "half life" of the release portion of the envelope.
+"""
+function adsr(suslevel :: Real, sus_secs :: Real;
+              attackfactor = 2.0, attack_secs = 0.002,
+              decay_secs = 0.01, release_secs = 0.2)
+    alevel = attackfactor * suslevel
+    asecs = attack_secs
+    dsecs = decay_secs
+    relsecs = releasesecs
+    ADSR(Float32(alevel), Float32(attack_secs), Float32(decay_secs), Float32(suslevel), Float32(sus_secs), Float32(releasesecs),
          0.0f0, Float32(log2(alevel)),
          Float32(alevel/asecs),
          Float32(log2(suslevel/alevel)/dsecs),
          Float32(-1.0/relsecs),
          Float32(asecs),
          Float32(asecs + dsecs),
-         Float32(asecs + dsecs + sussecs),
-         Float32(asecs + dsecs + sussecs + relsecs))
+         Float32(asecs + dsecs + sus_secs),
+         Float32(asecs + dsecs + sus_secs + relsecs))
 end
 
 function done(s :: ADSR, t, dt)

@@ -6,6 +6,12 @@ mutable struct Filter1{S <: Signal, G <: Signal} <: Signal
     xn :: Float32
 end
 
+"""
+    filter1(s :: S, gain :: G) where {S <: Signal, G <: Signal}
+
+A first order filter where the gain factor that controls the
+bandwidth of the filter can be live controlled.
+"""
 function filter1(s :: S, gain :: G) where {S <: Signal, G <: Signal}
     Filter1(s, gain, 0.0f0, 0.0f0)
 end
@@ -41,14 +47,20 @@ mutable struct Filter2{S <: Signal, F <: Signal, G <: Signal} <: Signal
     xn :: Float32   # x[n]
 end
 
+"""
+    filter2(s :: S, f :: F, g :: G) where {S <: Signal, F <: Signal, G <: Signal}
+    filter2(s :: S, f :: F, g :: Real) where {S <: Signal, F <: Signal}
+    filter2(s :: S, f :: Real, g :: Real) where {S <: Signal}
+
+Constructs a second order filter where the frequency and the gamma can be
+controlled live.
+"""
 function filter2(s :: S, f :: F, g :: G) where {S <: Signal, F <: Signal, G <: Signal}
     Filter2(s, f, g, 0.0f0, 0.0f0)
 end
-
 function filter2(s :: S, f :: F, g :: Real) where {S <: Signal, F <: Signal}
     filter2(s, f, konst(g))
 end
-
 function filter2(s :: S, f :: Real, g :: Real) where {S <: Signal}
     filter2(s, konst(f), konst(g))
 end
@@ -79,6 +91,13 @@ mutable struct FIR{S <: Signal, D <: Signal} <: Signal
     offset :: Int
 end
 
+"""
+    fir(filt :: Vector{Float32}, dilation :: D, sig :: S) where {S <: Signal, D <: Signal}
+
+Constructs a "finite impulse response" (FIR) filter with the given `filt` as
+the impulse response. The `dilation` factor can be used to stretch short vectors using
+linear interpolation.
+"""
 function fir(filt :: Vector{Float32}, dilation :: D, sig :: S) where {S <: Signal, D <: Signal}
     N = length(filt)
     FIR(sig, filt, N, dilation, 2N, zeros(Float32, 2N), 1)
@@ -86,8 +105,8 @@ end
 
 done(s :: FIR, t, dt) = done(s.filt, t, dt) || done(s.dilation, t, dt)
 
-function dilatedfilt(s :: FIR, i)
-    di = 1 + (i-1) * s.dilation
+function dilatedfilt(s :: FIR, i, dilation)
+    di = 1 + (i-1) * dilation
     dii = floor(Int, di)
     difrac = di - dii
     if dii < s.N
@@ -100,7 +119,8 @@ end
 function value(s :: FIR{S}, t, dt) where {S <: Signal}
     v = value(s.sig, t, dt)
     s.history[s.offset] = v
-    f = sum(dilatedfilt(s,i) * s.history[1+mod(s.offset-i, s.N2)] for i in 1:N)
+    dilation = value(s.dilation, t, dt)
+    f = sum(dilatedfilt(s,i,dilation) * s.history[1+mod(s.offset-i, s.N2)] for i in 1:N)
     s.offset += 1
     if s.offset > s.N2
         s.offset = 1
@@ -242,18 +262,41 @@ function value(s :: Biquad, t, dt)
     return yn
 end
 
+"""
+    lpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
+
+Standard second order LPF with frequency and Q factor.
+"""
 function lpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
     Biquad(Val(:lpf), sig, freq, q, dt)
 end
 
+"""
+    bpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
+
+Standard second order bandpass filter with given centre frequency
+and Q factor. 
+"""
 function bpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
     Biquad(Val(:bpf), sig, freq, q, dt)
 end
 
+"""
+    bpf0(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
+
+Standard second order bandpass filter with given centre frequency
+and Q factor. This variant of `bpf` gives constant 0dB peak gain
+instead of the peak gain being determined by Q.
+"""
 function bpf0(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
     Biquad(Val(:bpf0), sig, freq, q, dt)
 end
 
+"""
+    hpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
+
+Standard second order high pass filter with given cut off frequency and Q.
+"""
 function hpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
     Biquad(Val(:hpf), sig, freq, q, dt)
 end

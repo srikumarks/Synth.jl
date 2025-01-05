@@ -20,18 +20,33 @@ end
 
 """
     clock(speed :: Real, t_end :: Real = Inf; sampling_rate_Hz = 48000)
-    clock_bpm(tempo_bpm=60.0, t_end :: Real = Inf; sampling_rate_Hz = 48000)
-    clock_bpm(tempo_bpm :: S, t_end :: Real = Inf; sampling_rate_Hz = 48000) where {S <: Signal}
     clock(speed :: S, t_end :: Real = Inf; sampling_rate_Hz = 48000) where {S <: Signal}
 
 Constructs different kinds of clocks. Clocks can be speed controlled.
 Clocks used for audio signals should be made using the `clock` constructor
 and those for scheduling purposes using `clock_bpm`.
 """
-clock(speed :: Real, t_end :: Real = Inf; sampling_rate_Hz = 48000) = Clock(konst(speed), 0.0, t_end, 1.0/sampling_rate_Hz)
-clock_bpm(tempo_bpm=60.0, t_end :: Real = Inf; sampling_rate_Hz = 48000) = Clock(konst(tempo_bpm/60.0), 0.0, t_end, 1.0/sampling_rate_Hz)
-clock_bpm(tempo_bpm :: S, t_end :: Real = Inf; sampling_rate_Hz = 48000) where {S <: Signal} = Clock((1.0/60.0) * tempo_bpm, 0.0, t_end, 1.0/sampling_rate_Hz)
-clock(speed :: S, t_end :: Real = Inf; sampling_rate_Hz = 48000) where {S <: Signal} = Clock(speed, 0.0, t_end, 1.0/sampling_rate_Hz)
+function clock(speed :: Real, t_end :: Real = Inf; sampling_rate_Hz = 48000) 
+    Clock(konst(speed), 0.0, t_end, 1.0/sampling_rate_Hz)
+end
+function clock(speed :: S, t_end :: Real = Inf; sampling_rate_Hz = 48000) where {S <: Signal}
+    Clock(speed, 0.0, t_end, 1.0/sampling_rate_Hz)
+end
+
+"""
+    clock_bpm(tempo_bpm=60.0, t_end :: Real = Inf; sampling_rate_Hz = 48000)
+    clock_bpm(tempo_bpm :: S, t_end :: Real = Inf; sampling_rate_Hz = 48000) where {S <: Signal}
+
+Constructs different kinds of clocks. Clocks can be speed controlled.
+Clocks used for audio signals should be made using the `clock` constructor
+and those for scheduling purposes using `clock_bpm`.
+"""
+function clock_bpm(tempo_bpm=60.0, t_end :: Real = Inf; sampling_rate_Hz = 48000)
+    Clock(konst(tempo_bpm/60.0), 0.0, t_end, 1.0/sampling_rate_Hz)
+end
+function clock_bpm(tempo_bpm :: S, t_end :: Real = Inf; sampling_rate_Hz = 48000) where {S <: Signal}
+    Clock((1.0/60.0) * tempo_bpm, 0.0, t_end, 1.0/sampling_rate_Hz)
+end
 
 done(c :: Clock, t, dt) = t > c.t_end || done(c.speed, t, dt)
 function value(c :: Clock, t, dt)

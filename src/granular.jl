@@ -36,6 +36,12 @@ mutable struct Granulation{Speed <: Signal, GTime <: Signal, GPlay <: Signal} <:
     grains :: Vector{Grain}
 end
 
+"""
+    simplegrains(dur :: Real, overlap :: Real, speedfactor :: Real)
+
+Result is a function(time) which when called will produce a vector
+of a single grain.
+"""
 function simplegrains(dur :: Real, overlap :: Real, speedfactor :: Real)
     function granulator(time)
         [Grain(0.0, 0.0, time, dur, overlap, speedfactor)]
@@ -43,6 +49,13 @@ function simplegrains(dur :: Real, overlap :: Real, speedfactor :: Real)
     return granulator
 end
 
+"""
+    chorusgrains(rng, delayspread=0.0, N=1, spread=5.0f0)
+
+Result is a function(time) which when called will produce a
+vector of N grains spread in time. Since the chorus spread
+has some randomness to it, you need to pass an RNG.
+"""
 function chorusgrains(rng, delayspread=0.0, N=1, spread=5.0f0)
     function grain(rng, time, speedfactor)
         Grain(delayspread * rand(rng), 0.0, time, 0.1, 0.03, speedfactor)
@@ -54,14 +67,22 @@ function chorusgrains(rng, delayspread=0.0, N=1, spread=5.0f0)
     return granulator
 end
 
-function granulate(samples, dur :: Real, overlap :: Real, speed :: Real, graintime,
-        player = phasor(1.0 * speed / (dur * (1.0 - overlap)))
-        ; samplingrate=48000.0f0)
-    Granulation(samples, samplingrate, simplegrains(dur, overlap, 1.0f0), konst(speed), graintime, player, 0.0f0, Vector{Grain}())
-end
 
 """
-Example:
+    granulate(samples, dur :: Real, overlap :: Real, speed :: Real, graintime,
+              player = phasor(1.0 * speed / (dur * (1.0 - overlap)))
+              ; samplingrate=48000.0f0)
+    granulate(samples::Vector{Float32}, granulator, speed::Signal, graintime::Signal, player::Signal; samplingrate=48000.0f0)
+
+Granular synthesis - simple version.
+The `granulator` is a function of time that returns a vector of grains. Two
+built-in granulators are available -- `simplegrains` and `chorusgrains`.
+The `player` is expected to be a `phasor` which will trigger grains
+on the negative edge.
+
+## Example
+
+```julia
     snd = read_rawaudio("/tmp/somefile.raw")
     stop = play(0.5 * granulate(snd, 
                              chorusgrains(rng,0.0,3,4.0),
@@ -69,9 +90,15 @@ Example:
                              line(0.0, 10.0, 3.2),
                              phasor(20.0)),
              10.0)
+```
 """
 function granulate(samples, granulator, speed, graintime, player; samplingrate=48000.0f0)
     return Granulation(samples, samplingrate, granulator, speed, graintime, player, 0.0f0, Vector{Grain}())
+end
+function granulate(samples, dur :: Real, overlap :: Real, speed :: Real, graintime,
+        player = phasor(1.0 * speed / (dur * (1.0 - overlap)))
+        ; samplingrate=48000.0f0)
+    Granulation(samples, samplingrate, simplegrains(dur, overlap, 1.0f0), konst(speed), graintime, player, 0.0f0, Vector{Grain}())
 end
 
 function isgrainplaying(gr :: Grain)

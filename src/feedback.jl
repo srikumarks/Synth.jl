@@ -6,8 +6,25 @@ mutable struct Feedback <: Signal
     last_done :: Bool
 end
 
+"""
+    feedback()
+
+Constructs a feedback node which can be connected to a signal later on
+after construction. This is intended to be used in feedback loops and
+introduces a single sample delay to prevent infinite recursion.
+
+You can later on connect a signal to the feedback point by calling
+`connect(::Signal,::Feedback)`. Just as `aliasable` is used to make
+DAG signal flow graphs possible, `feedback` is used to make graphs
+with loops possible.
+"""
 feedback() = Feedback(nothing, 0.0, 0.0, 0.0f0, false)
 
+"""
+    connect(s :: S, fb :: Feedback) where {S <: Signal}
+
+Connects a signal to a feedback point.
+"""
 function connect(s :: S, fb :: Feedback) where {S <: Signal}
     fb.s = s
 end

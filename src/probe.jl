@@ -33,12 +33,10 @@ signal point. A probe low-pass-filters the signal before sending it out the chan
 so it won't be useful for signals that vary very fast. The default value has it
 sampling the signal every 40ms.
 """
-
 function probe(s :: S, chan :: Channel{Float32}, interval :: Float64 = 0.04; samplingrate = 48000) :: Probe{S} where {S <: Signal}
     wv = 2 ^ (- 1.0 / (interval * samplingrate))
     Probe(s, chan, interval, 0.0, wv, 1.0 - wv, 0.0f0)
 end
-
 function probe(s :: S, interval :: Float64 = 0.04; samplingrate = 48000) :: Probe{S} where {S <: Signal}
     probe(s, Channel{Float32}(2), interval; samplingrate)
 end

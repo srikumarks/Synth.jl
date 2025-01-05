@@ -25,7 +25,7 @@ In between the two times, it produces a linearly varying value between
 """
 line(v1 :: Real, duration_secs :: Real, v2 :: Real) = Line(Float32(v1), Float32(duration_secs), Float32(v2))
 
-mutable struct Expinterp <: Signal
+mutable struct Expon <: Signal
     v1 :: Float32
     duration_secs :: Float32
     v2 :: Float32
@@ -35,21 +35,21 @@ mutable struct Expinterp <: Signal
 end
 
 """
-    expinterp(v1 :: Real, duration_secs :: Real, v2 :: Real)
+    expon(v1 :: Real, duration_secs :: Real, v2 :: Real)
 
 Similar to line, but does exponential interpolation from `v1` to `v2`
 over `duration_secs`. Note that both values must be `> 0.0` for this
 to be valid.
 """
-function expinterp(v1 :: Real, duration_secs :: Real, v2 :: Real)
+function expon(v1 :: Real, duration_secs :: Real, v2 :: Real)
     @assert v1 > 0.0
     @assert v2 > 0.0
     @assert duration_secs > 0.0
-    Expinterp(Float32(v1), Float32(duration_secs), Float32(v2), log(Float32(v1)), log(Float32(v2)), log(Float32(v2/v1)))
+    Expon(Float32(v1), Float32(duration_secs), Float32(v2), log(Float32(v1)), log(Float32(v2)), log(Float32(v2/v1)))
 end
 
-done(s :: Expinterp, t, dt) = false
-function value(s :: Expinterp, t, dt)
+done(s :: Expon, t, dt) = false
+function value(s :: Expon, t, dt)
     if t <= 0.0f0 s.v1
     elseif t <= s.duration_secs exp(s.lv1 + s.dlv * t / duration_secs)
     else s.v2
@@ -57,6 +57,8 @@ function value(s :: Expinterp, t, dt)
 end
 
 """
+    interp4(x, x1, x2, x3, x4)
+
 Four point interpolation.
 
 - `x` is expected to be in the range `[0,1]`.
@@ -78,6 +80,8 @@ end
 
 
 """
+    raisedcos(x, overlap, scale=1.0f0)
+
 A "raised cosine" curve has a rising part that is shaped like cos(x-π/2)+1
 and a symmetrically shaped falling part. If the `overlap` is 0.5, then
 there is no intervening portion between the rising and falling parts

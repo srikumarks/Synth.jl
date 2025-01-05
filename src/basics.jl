@@ -15,8 +15,15 @@ function konst(v::T) where {T <: Real}
     Konst(Float32(v))
 end
 
+mutable struct Aliasable{S <: Signal} <: Signal
+    sig :: S
+    t :: Float64
+    v :: Float32
+end
+
+
 """
-    mutable struct Aliasable{S <: Signal} <: Signal
+    aliasable(s :: S) where {S <: Signal}
 
 A signal, once constructed, can only be used by one "consumer".
 In some situations, we want a signal to be plugged into multiple
@@ -29,12 +36,6 @@ Repeated evaluation of a signal is avoided by `Aliasable` by storing the
 recently computed value for a given time. So it assumes that time progresses
 linearly.
 """
-mutable struct Aliasable{S <: Signal} <: Signal
-    sig :: S
-    t :: Float64
-    v :: Float32
-end
-
 aliasable(sig :: S) where {S <: Signal} = Aliasable(sig, -1.0, 0.0f0)
 done(s :: Aliasable, t, dt) = done(s.sig, t, dt)
 function value(s :: Aliasable, t, dt)

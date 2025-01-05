@@ -3,8 +3,18 @@ mutable struct Noise{RNG <: AbstractRNG, Amp <: Signal} <: Signal
     amp :: Amp
 end
 
-noise(rng :: RNG, amp :: A) where {RNG <: AbstractRNG, A <: Signal} = Noise(rng, amp)
-noise(rng :: RNG, amp :: Real) where {RNG <: AbstractRNG} = Noise(rng, konst(amp))
+"""
+    noise(rng :: RNG, amp :: A) where {RNG <: AbstractRNG, A <: Signal}
+    noise(rng :: RNG, amp :: Real) where {RNG <: AbstractRNG}
+
+Amplitude modulatable white noise generator.
+"""
+function noise(rng :: RNG, amp :: A) where {RNG <: AbstractRNG, A <: Signal}
+    Noise(rng, amp)
+end,
+function noise(rng :: RNG, amp :: Real) where {RNG <: AbstractRNG}
+    Noise(rng, konst(amp))
+end
 
 done(s :: Noise, t, dt) = done(s.amp, t, dt)
 

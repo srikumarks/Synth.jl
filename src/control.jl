@@ -32,7 +32,6 @@ function control(chan :: Channel{Float32}, dezipper_interval = 0.04; initial = 0
     wv = 2 ^ (- 1.0 / (dezipper_interval * samplingrate))
     Control(chan, wv, 1.0 - wv, initial, initial)
 end
-
 function control(dezipper_interval = 0.04; bufferlength = 2, initial = 0.0f0, samplingrate = 48000) :: Control
     control(Channel{Float32}(bufferlength), dezipper_interval; initial, samplingrate)
 end

@@ -9,6 +9,7 @@ end
 
 """
     sample(samples :: Vector{Float32}; looping = false, loopto = 1.0) 
+    sample(filename :: AbstractString; looping = false, loopto = 1.0, samplingrate=48000.0f0)
 
 Produces a sampled signal which samples from the given array as a source.
 It starts from the beginning and goes on until the end of the array,
@@ -21,7 +22,6 @@ but can be asked to loop back to a specified point after that.
 function sample(samples :: Vector{Float32}; looping = false, loopto = 1.0, samplingrate=48000.0f0) 
     Sample(samples, length(samples), 0, looping, 1 + floor(Int, loopto * length(samples)), samplingrate)
 end
-
 function sample(filename :: AbstractString; looping = false, loopto = 1.0, samplingrate=48000.0f0)
     buf = load(filename)
     Sample(Float32.(buf[:,1].data); looping, loopto, samplingrate)

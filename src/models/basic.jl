@@ -20,13 +20,13 @@ function tone(amp, freq, duration; attackfactor = 2.0, attack_secs = 0.005, deca
     sinosc(env, phasor(freq))
 end
 
-heterodyne(sig, fc, bw) = lpf(sinosc(sig, phasor(fc)), bw, 5.0)
+heterodyne(sig, fc, bw; damping=5.0) = lpf(sinosc(sig, phasor(fc)), bw, damping)
 
 """
     basicvocoder(sig, f0, N, fnew; bwfactor = 0.2, bwfloor = 20.0)
 
-A simple vocoder for demo purposes. Takes \\(N\\) evenly spaced frequencies \\(k f_0\\) and moves
-them over to a new set of frequencies \\(k f_{\text{new}}\\) using a heterodyne filter. 
+A simple vocoder for demo purposes. Takes ``N`` evenly spaced frequencies ``k f_0`` and moves
+them over to a new set of frequencies ``k f_{\text{new}}`` using a heterodyne filter. 
 The `bwfactor` setting gives the fraction of the inter-frequency bandwidth to filter in.
 The bandwidth has a floor given by `bwfloor` in Hz.
 """
