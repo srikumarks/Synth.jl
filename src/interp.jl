@@ -21,7 +21,7 @@ end
 
 Makes a signal that produces `v1` for `t < 0.0` and `v2` for `t > duration_secs`.
 In between the two times, it produces a linearly varying value between
-`v1` and `v2`.
+`v1` and `v2`. This signal is infinite in extent.
 """
 line(v1 :: Real, duration_secs :: Real, v2 :: Real) = Line(Float32(v1), Float32(duration_secs), Float32(v2))
 
@@ -50,9 +50,12 @@ end
 
 done(s :: Expon, t, dt) = false
 function value(s :: Expon, t, dt)
-    if t <= 0.0f0 s.v1
-    elseif t <= s.duration_secs exp(s.lv1 + s.dlv * t / duration_secs)
-    else s.v2
+    if t <= 0.0f0
+        s.v1
+    elseif t <= s.duration_secs
+        exp(s.lv1 + s.dlv * t / duration_secs)
+    else
+        s.v2
     end
 end
 

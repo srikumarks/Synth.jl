@@ -14,14 +14,14 @@ function value(s :: SinOsc, t, dt)
 end
 
 """
-    sinosc(m :: Real, f :: Real) = SinOsc(konst(m), clock(f))
-    sinosc(m :: Real, p :: P) where {P <: Signal} = SinOsc(konst(m), p)
-    sinosc(m :: M, p :: P) where {M <: Signal, P <: Signal} = SinOsc(m, p)
+    sinosc(m :: Real, f :: Real)
+    sinosc(m :: Real, p :: P) where {P <: Signal}
+    sinosc(m :: M, p :: P) where {M <: Signal, P <: Signal}
 
 A "sinosc" is a sinusoidal oscillator that can be controlled using a
 phasor or a clock to determine a time varying frequency.
 """
-sinosc(m :: Real, f :: Real) = SinOsc(konst(m), clock(f))
+sinosc(m :: Real, f :: Real) = SinOsc(konst(m), phasor(f))
 sinosc(m :: Real, p :: P) where {P <: Signal} = SinOsc(konst(m), p)
 sinosc(m :: M, p :: P) where {M <: Signal, P <: Signal} = SinOsc(m, p)
 

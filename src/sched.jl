@@ -1,4 +1,4 @@
-struct Sched{Clk <: Signal} <: Signal
+struct Scheduler{Clk <: Signal} <: Signal
     clock :: Clk
     t :: Float64
     chan :: Channel{Tuple{Float64,Signal}}
@@ -7,7 +7,7 @@ struct Sched{Clk <: Signal} <: Signal
 end
 
 """
-    sched(clk :: Clk) :: Sched{Clk} where {Clk <: Signal}
+    scheduler(clk :: Clk) :: Scheduler{Clk} where {Clk <: Signal}
 
 Creates a "scheduler" which is itself a signal that can be composed
 with other signals and processors. The scheduler runs on its own 
@@ -15,18 +15,28 @@ clock and sending `Tuple{Float64,Signal}` values on the `.chan`
 property will trigger those signals at the given times according
 to the clock. The scheduling is sample accurate.
 """
-function sched(clk :: Clk) :: Sched{Clk} where {Clk <: Signal}
-    Sched(clk, 0.0, Channel{Tuple{Float64,Signal}}(), [], [])
+function scheduler(clk :: Clk) :: Scheduler{Clk} where {Clk <: Signal}
+    Scheduler(clk, 0.0, Channel{Tuple{Float64,Signal}}(), [], [])
 end
 
-function done(s :: Sched{Clk}, t, dt) where {Clk <: Signal}
+"""
+    schedule(sch :: Scheduler{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
+
+Schedules a signal to start at time `t` according to the clock of the
+given scheduler.
+"""
+function schedule(sch :: Scheduler{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
+    put!(sch.chan, (t,s))
+end
+
+function done(s :: Scheduler{Clk}, t, dt) where {Clk <: Signal}
     inactive = findall(tv -> done(tv[2],t,dt), s.voices)
     deleteat!(s.voices, inactive)
     deleteat!(s.realtime, inactive)
     done(s.clock, t, dt)
 end
 
-function value(s :: Sched{Clk}, t, dt) where {Clk <: Signal}
+function value(s :: Scheduler{Clk}, t, dt) where {Clk <: Signal}
     while isready(s.chan)
         push!(s.voices, take!(s.chan))
         push!(s.realtime, 0.0)

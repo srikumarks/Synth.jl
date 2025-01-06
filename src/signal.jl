@@ -9,7 +9,10 @@ const SampleVal = Float32
 
 A `Signal` represents a process that can be asked for a value for every tick of
 a clock. We use it here to represent processes that produce audio and control
-signals to participate in a "signal flow graph".
+signals to participate in a "signal flow graph". While mathematically signals
+can be treated as though they were infinite in duration, signals are in practice
+finite in duration for both semantic and efficiency reasons (ex: managing voices
+as a constrained resource).
 
 To construct signals and to wire them up in a graph, use the constructor
 functions provided rather than the structure constructors directly.
@@ -20,6 +23,9 @@ signatures --
 - `done(s :: S, t, dt) where {S <: Signal} :: Bool`
 - `value(s :: S, t, dt) where {S <: Signal} :: Float32`
 
+As long as you implement these two methods, you can define your own subtype of
+Signal and use it with the library.
+
 The renderer will call `done` to check whether a signal has completed and if
 not, will call `value` to retrieve the next value. The contract with each
 signal type is that even if `value` is called for a time after the signal is
@@ -28,18 +34,80 @@ type of signal. This is so that `done` can be called per audio frame rather
 than per sample.
 
 Addition, subtraction and multiplication operations are available to combine
-signals and numbers.
+signals and numbers. Currently signals are single channel only.
 
+## Choice of representation
+
+A number of approaches are used in computer music synth systems -
+
+- **Blocks and wires paradigm**: ... where blocks represent signal processing
+  modules and wires represent connections and signal flow between these modules.
+  Even within this paradigm there are different semantics to how the signal flow
+  is handled, from asynchronous/non-deterministic, to fully deterministic flow,
+  to buffer-wise computation versus sample-wise computation. The WebAudioAPI,
+  for example, takes this approach and performs buffer-wise computation in blocks
+  of 128 samples. It is rare to find a synth library that works sample-wise in
+  this mode.
+
+- **Functional**: ... where signals are mathematical constructs that can be
+  combined using operators to construct new signals. Usually this paradigm
+  manifests as a textual programming language, like SuperCollider and Chuck
+  (which has elements of the above approach too).
+
+The approach taken **in this library** is to combine the notion of a signal
+with the computation that produces the signal - a rough analog of "constructive
+real numbers". In other words, a "signal" -- i.e. a stream of values regularly
+spaced in time -- is identified with a computation that produces the stream.
+
+This permits manipulating signals like mathematical objects that can be combined,
+while modelling "signal flow" via ordinary functions in programming that call other
+functions recursively. Without further thought, this approach will only permit
+"signal flow trees", where the output of a processing step can only be fed into
+a single input due to the nature of function composition being used to construct
+the signal flow pattern. However, with the `aliasable` operator, it becomes possible
+to reuse a signal as input for more than one processing block, extending the
+scope to include "signal flow DAGs". The `feedback` operator further extends this
+possibility through late binding of signal connections to permit loops in the
+graph, truly getting us "signal flow graphs" that can support feedback loops,
+albeit with a single sample delay.
+
+The library exploits Julia's "optimizing just-ahead-of-time compilation" to
+describe each signal computation function in a per-sample fashion so that
+sample frames can be computed efficiently by the renderer. In other languages
+including AoT compiled languages like C, this combination of simplicity of API
+with high performance will be very hard to get. In dynamic languages, the
+function call overhead is even worse and not easily eliminated due to weak type
+systems. You'll notice how the rich type information about how a signal was
+constructed is maintained in the final result so that the renderer can compile
+it down to efficient code, often eliminating intermediate function calls.
+
+Realtime usage necessitates some amount of dynamic dispatch, but it is still
+possible to mark boundaries whether the type knowledge can help create efficient
+code.
+
+The end result of all this is that you can combine signals like ordinary math
+and expect complex signal flow graphs to work efficiently, even in realtime.
 """
 abstract type Signal end
 
-"""Converts a dB value to a scaling factor"""
+"""
+    dBscale(::Real)
+
+Converts a dB value to a scaling factor
+"""
 dBscale(v) = 10.0 ^ (v/10.0)
 
-"""Converts a MIDI note number into a frequency using the equal tempered tuning."""
+"""
+    midi2hz(midi::Real)
+
+Converts a MIDI note number into a frequency using the equal tempered tuning.
+"""
 midi2hz(m) = 440.0 * (2 ^ ((m - 69.0)/12.0))
 
-"""Converts a frequency in Hz to its MIDI note number in the equal tempered tuning."""
+"""
+    hz2midi(hz::Real)
+Converts a frequency in Hz to its MIDI note number in the equal tempered tuning.
+"""
 hz2midi(hz) = 69.0 + 12.0*log2(hz/440.0)
 
 "We define done and value for Nothing type as a signal trivially."
@@ -75,13 +143,19 @@ Makes a circular array that handles the modulo calculations.
 circular(v :: AbstractArray) = Circular(v, length(v))
 
 # Turns a normal function of time into a signal.
-struct Fn <: Signal
+struct SigFun <: Signal
     f :: Function
 end
 
-done(f :: Fn, t, dt) = false
-value(f :: Fn, t, dt) = f.f(t)
-fn(f) = Fn(f)
+done(f :: SigFun, t, dt) = false
+value(f :: SigFun, t, dt) = f.f(t)
+
+"""
+    sigfun(f::Function) :: SigFun
+
+Treats a simple function of time (in seconds) as a signal.
+"""
+sigfun(f) = SigFun(f)
 
 struct Clip{S <: Signal} <: Signal
     dur :: Float64

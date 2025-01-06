@@ -1,13 +1,13 @@
 
 module Synth
 
-export konst, clip, aliasable, feedback, connect, clock, clock_bpm
+export konst, clip, sigfun, aliasable, feedback, connect, clock, clock_bpm
 export sinosc, phasor, noise, sample
 export line, expon, adsr, expdecay, Gen
 export render, write, read_rawaudio
-export startaudio, synthesizer, play, control, probe, sched, seq
+export startaudio, synthesizer, play, control, probe, scheduler, schedule, seq
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf
-export waveshape, linearmap, delay
+export waveshape, linearmap, delay, tap
 export wavetable, maketable
 export granulate, simplegrains, chorusgrains, Grain
 export dBscale, interp4, raisedcos, midi2hz, hz2midi, easeinout, curve, Seg, circular

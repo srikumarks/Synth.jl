@@ -40,7 +40,8 @@ end
     simplegrains(dur :: Real, overlap :: Real, speedfactor :: Real)
 
 Result is a function(time) which when called will produce a vector
-of a single grain.
+of a single grain. This kind of a function is what we call a "granulator"
+(see [`granulate`](@ref)).
 """
 function simplegrains(dur :: Real, overlap :: Real, speedfactor :: Real)
     function granulator(time)
@@ -54,7 +55,8 @@ end
 
 Result is a function(time) which when called will produce a
 vector of N grains spread in time. Since the chorus spread
-has some randomness to it, you need to pass an RNG.
+has some randomness to it, you need to pass an RNG. This kind
+of function is called a "granulator" (see [`granulate`](@ref)).
 """
 function chorusgrains(rng, delayspread=0.0, N=1, spread=5.0f0)
     function grain(rng, time, speedfactor)
@@ -75,6 +77,7 @@ end
     granulate(samples::Vector{Float32}, granulator, speed::Signal, graintime::Signal, player::Signal; samplingrate=48000.0f0)
 
 Granular synthesis - simple version.
+
 The `granulator` is a function of time that returns a vector of grains. Two
 built-in granulators are available -- `simplegrains` and `chorusgrains`.
 The `player` is expected to be a `phasor` which will trigger grains

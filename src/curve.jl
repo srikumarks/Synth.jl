@@ -51,7 +51,7 @@ end
 
 
 """
-    Seg(v1 :: Real, v2 :: Real, dur :: Float64, interp::Symbol)
+    Seg(v1 :: Real, v2 :: Real, dur :: Float64, interp::Symbol = :linear)
 
 Constructs a general segment that takes value from `v1` to `v2`
 over `dur` using the specified interpolator `interp`.

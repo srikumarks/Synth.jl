@@ -18,13 +18,16 @@ but can be asked to loop back to a specified point after that.
 - The `loopto` argument is specified relative (i.e. scaled) to the length
   of the samples vector. So if you want to jump back to the middle, you give
   `0.5` as the `loopto` value.
+
+Currently sample rate conversion is not supported, though that is a feature
+that must be added at some point.
 """
 function sample(samples :: Vector{Float32}; looping = false, loopto = 1.0, samplingrate=48000.0f0) 
     Sample(samples, length(samples), 0, looping, 1 + floor(Int, loopto * length(samples)), samplingrate)
 end
 function sample(filename :: AbstractString; looping = false, loopto = 1.0, samplingrate=48000.0f0)
     buf = load(filename)
-    Sample(Float32.(buf[:,1].data); looping, loopto, samplingrate)
+    sample(Float32.(buf[:,1].data); looping, loopto, samplingrate)
 end
 
 function done(s :: Sample, t, dt)

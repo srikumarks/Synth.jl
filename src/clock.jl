@@ -1,7 +1,7 @@
 """
     mutable struct Clock{S <: Signal} <: Signal
 
-Very similar to Phasor except that phasor does a modulus
+Very similar to [`phasor`](@ref) except that phasor does a modulus
 to the range [0.0,1.0] while Clock doesn't. So you can use
 Clock as a time keeper for a scheduler, for example, so
 scheduling can happen on a different timeline than real time.
@@ -24,7 +24,7 @@ end
 
 Constructs different kinds of clocks. Clocks can be speed controlled.
 Clocks used for audio signals should be made using the `clock` constructor
-and those for scheduling purposes using `clock_bpm`.
+and those for scheduling purposes using [`clock_bpm`](@ref).
 """
 function clock(speed :: Real, t_end :: Real = Inf; sampling_rate_Hz = 48000) 
     Clock(konst(speed), 0.0, t_end, 1.0/sampling_rate_Hz)
@@ -38,7 +38,7 @@ end
     clock_bpm(tempo_bpm :: S, t_end :: Real = Inf; sampling_rate_Hz = 48000) where {S <: Signal}
 
 Constructs different kinds of clocks. Clocks can be speed controlled.
-Clocks used for audio signals should be made using the `clock` constructor
+Clocks used for audio signals should be made using the [`clock`](@ref) constructor
 and those for scheduling purposes using `clock_bpm`.
 """
 function clock_bpm(tempo_bpm=60.0, t_end :: Real = Inf; sampling_rate_Hz = 48000)
@@ -49,6 +49,7 @@ function clock_bpm(tempo_bpm :: S, t_end :: Real = Inf; sampling_rate_Hz = 48000
 end
 
 done(c :: Clock, t, dt) = t > c.t_end || done(c.speed, t, dt)
+
 function value(c :: Clock, t, dt)
     v = c.t
     c.t += value(c.speed, t, dt) * dt

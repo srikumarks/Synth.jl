@@ -18,6 +18,7 @@ like "values" which can be operated on using ordinary arithmetic
 ```@docs
 Synth.konst
 Synth.clip
+Synth.sigfun
 Synth.aliasable
 Synth.feedback
 Synth.connect
@@ -62,7 +63,8 @@ Synth.synthesizer
 Synth.play
 Synth.control
 Synth.probe
-Synth.sched
+Synth.scheduler
+Synth.schedule
 Synth.seq
 ```
 
@@ -84,6 +86,8 @@ Synth.hpf
 Synth.waveshape
 Synth.linearmap
 Synth.delay
+Synth.tap
+Synth.maxdelay
 ```
 
 ## Wavetable synthesis
