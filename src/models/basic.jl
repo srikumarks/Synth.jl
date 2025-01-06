@@ -20,7 +20,7 @@ function tone(amp, freq, duration; attackfactor = 2.0, attack_secs = 0.005, deca
     sinosc(env, phasor(freq))
 end
 
-heterodyne(sig, fc, bw; damping=5.0) = lpf(sinosc(sig, phasor(fc)), bw, damping)
+heterodyne(sig, fc, bw; q=5.0) = lpf(sinosc(sig, phasor(fc)), bw, q)
 
 """
     basicvocoder(sig, f0, N, fnew; bwfactor = 0.2, bwfloor = 20.0)
