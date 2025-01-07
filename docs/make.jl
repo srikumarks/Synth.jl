@@ -10,6 +10,7 @@ makedocs(
                              "index.md"
                             ],
                   "Other" => Any[
+                            "design.md",
                             "faq.md"
                            ]
                  ]
