@@ -2,12 +2,12 @@ using FileIO: load, save
 using LibSndFile
 
 """
-    write(filename :: AbstractString, model::Sig, duration_secs :: AbstractFloat; sr=48000, maxamp=0.5) where {Sig <: Signal}
+    write(filename :: AbstractString, model::Sig, duration_secs :: AbstractFloat; samplingrate=48000, maxamp=0.5) where {Sig <: Signal}
 
 Renders and writes raw `Float32` values to the given file.
 """
-function write(filename :: AbstractString, model::Sig, duration_secs :: AbstractFloat; sr=48000, maxamp=0.5) where {Sig <: Signal}
-    s = render(model, duration_secs; sr, maxamp)
+function write(filename :: AbstractString, model::Sig, duration_secs :: AbstractFloat; samplingrate=48000, maxamp=0.5) where {Sig <: Signal}
+    s = render(model, duration_secs; samplingrate, maxamp)
     s = rescale(maxamp, s)
     save(filename, s)
 end

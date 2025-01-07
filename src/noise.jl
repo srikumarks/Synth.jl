@@ -1,4 +1,4 @@
-mutable struct Noise{RNG <: AbstractRNG, Amp <: Signal} <: Signal
+struct Noise{RNG <: AbstractRNG, Amp <: Signal} <: Signal
     rng :: RNG
     amp :: Amp
 end

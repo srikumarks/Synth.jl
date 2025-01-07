@@ -128,15 +128,13 @@ function value(s :: FIR{S}, t, dt) where {S <: Signal}
     return f
 end
 
-mutable struct Biquad{Ty, S <: Signal, F <: Signal, Q <: Signal} <: Signal
-    ty :: Ty
-    sig :: S
-    freq :: F
-    q :: Q
-    xn_1 :: Float32
-    xn_2 :: Float32
-    yn_1 :: Float32
-    yn_2 :: Float32
+abstract type BiquadType end
+struct LowPassFilter <: BiquadType end
+struct HighPassFilter <: BiquadType end
+struct BandPassFilter <: BiquadType end
+struct BandPassFilter0 <: BiquadType end
+
+mutable struct BiquadCoeffs{Ty <: BiquadType}
     w0 :: Float32
     cw0 :: Float32
     sw0 :: Float32
@@ -149,31 +147,45 @@ mutable struct Biquad{Ty, S <: Signal, F <: Signal, Q <: Signal} <: Signal
     a2 :: Float32
 end
 
-function Biquad(ty::Val, sig :: S, freq :: Konst, q :: Konst, dt) where {S <: Signal}
-    computebiquadcoeffs(ty,
-        Biquad(ty, sig, freq, q, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-        value(freq, 0.0, 0.0),
-        value(q, 0.0, 0.0),
-        dt)
+function BiquadCoeffs()
+    BiquadCoeffs(0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0)
 end
 
-function Biquad(ty::Val, sig :: S, freq :: F, q :: Q) where {S <: Signal, F <: Real, Q <: Real}
-    Biquad(ty, sig, konst(freq), konst(q), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+mutable struct Biquad{Ty, S <: Signal, F <: Signal, Q <: Signal} <: Signal
+    sig :: S
+    freq :: F
+    q :: Q
+    xn_1 :: Float32
+    xn_2 :: Float32
+    yn_1 :: Float32
+    yn_2 :: Float32
+    c :: BiquadCoeffs{Ty}
 end
 
-function Biquad(ty::Val, sig :: S, freq :: F, q :: Q) where {S <: Signal, F <: Signal, Q <: Real}
-    Biquad(ty, sig, freq, konst(q), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+function biquad(::Type{T}, sig :: S, freq :: Konst, q :: Konst, dt) where {T <: BiquadType, S <: Signal}
+    b = Biquad{T,S,Konst,Konst}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
+    computebiquadcoeffs(b.c, value(freq, 0.0, 0.0), value(q, 0.0, 0.0), dt)
+    return b
 end
 
-function Biquad(ty::Val, sig :: S, freq :: F, q :: Q) where {S <: Signal, F <: Real, Q <: Signal}
-    Biquad(ty, sig, konst(freq), q, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+function biquad(::Type{T}, sig :: S, freq :: Konst, q :: Real, dt) where {T <: BiquadType, S <: Signal}
+    biquad{T}(sig, freq, konst(q), dt)
 end
 
-function Biquad(ty::Val, sig :: S, freq :: F, q :: Q) where {S <: Signal, F <: Signal, Q <: Signal}
-    Biquad(ty, sig, freq, q, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+function biquad(::Type{T}, sig :: S, freq :: Real, q :: Konst, dt) where {T <: BiquadType, S <: Signal}
+    biquad{T}(sig, konst(freq), q, dt)
 end
 
-function computebiquadcoeffs(::Val{:lpf}, c :: Biquad, f, q, dt)
+function biquad(::Type{T}, sig :: S, freq :: Real, q :: Real, dt) where {T <: BiquadType, S <: Signal}
+    biquad{T}(sig, konst(freq), konst(q), dt)
+end
+
+function biquad(::Type{T}, sig :: S, freq :: F, q :: Q, dt) where {T <: BiquadType, S <: Signal, F <: Signal, Q <: Signal}
+    Biquad{T,S,F,Q}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
+end
+
+function computebiquadcoeffs(c :: BiquadCoeffs{LowPassFilter}, f, q, dt)
     w0 = 2 * pi * f * dt
     sw0, cw0 = sincos(w0)
     c.w0 = w0
@@ -188,7 +200,7 @@ function computebiquadcoeffs(::Val{:lpf}, c :: Biquad, f, q, dt)
     c
 end
 
-function computebiquadcoeffs(::Val{:hpf}, c :: Biquad, f, q, dt)
+function computebiquadcoeffs(c :: BiquadCoeffs{HighPassFilter}, f, q, dt)
     w0 = 2 * pi * f * dt
     sw0, cw0 = sincos(w0)
     c.w0 = w0
@@ -204,7 +216,7 @@ function computebiquadcoeffs(::Val{:hpf}, c :: Biquad, f, q, dt)
     c
 end
 
-function computebiquadcoeffs(::Val{:bpf}, c :: Biquad, f, q, dt)
+function computebiquadcoeffs(c :: BiquadCoeffs{BandPassFilter}, f, q, dt)
     w0 = 2 * pi * f * dt
     sw0, cw0 = sincos(w0)
     c.w0 = w0
@@ -220,7 +232,7 @@ function computebiquadcoeffs(::Val{:bpf}, c :: Biquad, f, q, dt)
     c
 end
 
-function computebiquadcoeffs(::Val{:bpf0}, c :: Biquad, f, q, dt)
+function computebiquadcoeffs(c :: BiquadCoeffs{BandPassFilter0}, f, q, dt)
     w0 = 2 * pi * f * dt
     sw0, cw0 = sincos(w0)
     c.w0 = w0
@@ -239,21 +251,19 @@ end
 
 done(s :: Biquad, t, dt) = done(s.sig, t, dt) || done(s.freq, t, dt) || done(s.q, t, dt)
 
-function value(s :: Biquad{Ty,S,Konst,Konst}, t, dt) where {Ty, S <: Signal}
-    xn = value(s.sig, t, dt)
-    yn = (s.b0 * xn + s.b1 * s.xn_1 + s.b2 * s.xn_2 - s.a1 * s.yn_1 - s.a2 * s.yn_2) / s.a0
-    s.xn_2 = s.xn_1
-    s.xn_1 = xn
-    s.yn_2 = s.yn_1
-    s.yn_1 = yn
-    return yn
+function value(s :: Biquad{T,S,Konst,Konst}, t, dt) where {T <: BiquadType, S <: Signal}
+    # We can avoid repeated coefficient computation for the case where the frequency
+    # and Q factor are both constant.
+    computenextvalue(s, t, dt)
 end
 
 function value(s :: Biquad, t, dt)
+    computebiquadcoeffs(s.c, value(s.freq, t, dt), value(s.q, t, dt))
+    computenextvalue(s, t, dt)
+end
+
+function computenextvalue(s :: Biquad, t, dt)
     xn = value(s.sig, t, dt)
-    f = value(s.freq, t, dt)
-    q = value(s.q, t, dt)
-    computebiquadcoeffs(s.ty, s, f, q)
     yn = (s.b0 * xn + s.b1 * s.xn_1 + s.b2 * s.xn_2 - s.a1 * s.yn_1 - s.a2 * s.yn_2) / s.a0
     s.xn_2 = s.xn_1
     s.xn_1 = xn
@@ -263,42 +273,42 @@ function value(s :: Biquad, t, dt)
 end
 
 """
-    lpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
+    lpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
 
 Standard second order LPF with frequency and Q factor.
 """
-function lpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
-    Biquad(Val(:lpf), sig, freq, q, dt)
+function lpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+    biquad(LowPassFilter, sig, freq, q, 1/samplingrate)
 end
 
 """
-    bpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
+    bpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
 
 Standard second order bandpass filter with given centre frequency
 and Q factor. 
 """
-function bpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
-    Biquad(Val(:bpf), sig, freq, q, dt)
+function bpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+    biquad(BandPassFilter, sig, freq, q, 1/samplingrate)
 end
 
 """
-    bpf0(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
+    bpf0(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
 
 Standard second order bandpass filter with given centre frequency
 and Q factor. This variant of `bpf` gives constant 0dB peak gain
 instead of the peak gain being determined by Q.
 """
-function bpf0(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
-    Biquad(Val(:bpf0), sig, freq, q, dt)
+function bpf0(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+    biquad(BandPassFilter0, sig, freq, q, 1/samplingrate)
 end
 
 """
-    hpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
+    hpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
 
 Standard second order high pass filter with given cut off frequency and Q.
 """
-function hpf(sig :: S, freq, q, dt = 1/48000) where {S <: Signal}
-    Biquad(Val(:hpf), sig, freq, q, dt)
+function hpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+    biquad(HighPassFilter, sig, freq, q, 1/samplingrate)
 end
 
 

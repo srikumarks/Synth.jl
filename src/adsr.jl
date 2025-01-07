@@ -43,7 +43,7 @@ function adsr(suslevel :: Real, sus_secs :: Real;
     asecs = attack_secs
     dsecs = decay_secs
     relsecs = releasesecs
-    ADSR(Float32(alevel), Float32(attack_secs), Float32(decay_secs), Float32(suslevel), Float32(sus_secs), Float32(releasesecs),
+    ADSR(Float32(alevel), Float32(asecs), Float32(dsecs), Float32(suslevel), Float32(sus_secs), Float32(relsecs),
          0.0f0, Float32(log2(alevel)),
          Float32(alevel/asecs),
          Float32(log2(suslevel/alevel)/dsecs),
