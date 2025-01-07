@@ -1,8 +1,5 @@
 # Synth.jl Documentation
 
-```@contents
-```
-
 ## The Signal type
 
 ```@docs
@@ -122,12 +119,13 @@ Synth.Seg
 Synth.circular
 ```
 
-## Functions and types
+## Models
 
 ```@autodocs
 Modules = [Synth.Models]
 Order   = [:function, :type]
 ```
+
 
 ## Index
 
