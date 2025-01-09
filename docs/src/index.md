@@ -38,7 +38,7 @@ Synth.sample
 Synth.line
 Synth.expon
 Synth.adsr
-Synth.expdecay
+Synth.decay
 Synth.Gen
 ```
 
@@ -63,6 +63,7 @@ Synth.probe
 Synth.scheduler
 Synth.schedule
 Synth.seq
+Synth.later
 ```
 
 ## Filters

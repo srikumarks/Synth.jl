@@ -5,7 +5,7 @@ mutable struct Line <: Signal
     v2 :: Float32
 end
 
-done(s :: Line, t, dt) = false
+done(s :: Line, t, dt) = t > s.duration_secs
 function value(s :: Line, t, dt)
     if t <= 0.0f0 
         s.v1
@@ -21,7 +21,7 @@ end
 
 Makes a signal that produces `v1` for `t < 0.0` and `v2` for `t > duration_secs`.
 In between the two times, it produces a linearly varying value between
-`v1` and `v2`. This signal is infinite in extent.
+`v1` and `v2`. This signal is finite in extent.
 """
 line(v1 :: Real, duration_secs :: Real, v2 :: Real) = Line(Float32(v1), Float32(duration_secs), Float32(v2))
 
@@ -48,7 +48,7 @@ function expon(v1 :: Real, duration_secs :: Real, v2 :: Real)
     Expon(Float32(v1), Float32(duration_secs), Float32(v2), log(Float32(v1)), log(Float32(v2)), log(Float32(v2/v1)))
 end
 
-done(s :: Expon, t, dt) = false
+done(s :: Expon, t, dt) = t > s.duration_secs
 function value(s :: Expon, t, dt)
     if t <= 0.0f0
         s.v1
@@ -58,6 +58,9 @@ function value(s :: Expon, t, dt)
         s.v2
     end
 end
+
+shape(::Val{:line}, startval, dur, endval) = line(startval, dur, endval)
+shape(::Val{:expon}, startval, dur, endval) = expon(startval, dur, endval)
 
 """
     interp4(x, x1, x2, x3, x4)

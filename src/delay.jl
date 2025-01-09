@@ -97,3 +97,30 @@ end
 function tap(d :: Delay, t :: Real)
     Tap(d, konst(t))
 end
+
+struct Later{S <: Signal}
+    sig :: S
+    delay_secs :: Float64
+end
+
+done(s :: S, t, dt) where {S <: Signal} = t > delay_secs && done(s, t - delay_secs, t, dt)
+function value(s :: S, t, dt) where {S <: Signal}
+    if t >= s.delay_secs
+        value(s.sig, t - s.delay_secs, dt)
+    else
+        0.0f0
+    end
+end
+
+"""
+    later(delay_secs :: Float64, s :: S) where {S <: Signal}
+
+Postpones the signal by the given delay_secs. Note that this is not
+the same as a delay line where there is memory allocated to store
+some of the samples. The signal is not touched until `delay_secs` has
+passed, and the time value that the signal ends up seeing also does
+not span the period up to the delay.
+"""
+function later(delay_secs :: Float64, s :: S) where {S <: Signal}
+    Later(s, delay_secs)
+end
