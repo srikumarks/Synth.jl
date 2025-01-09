@@ -39,6 +39,7 @@ Synth.line
 Synth.expon
 Synth.adsr
 Synth.decay
+Synth.follow
 Synth.Gen
 ```
 
