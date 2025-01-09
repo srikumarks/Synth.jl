@@ -3,7 +3,7 @@ module Synth
 
 export konst, clip, sigfun, aliasable, feedback, connect, clock, clock_bpm
 export sinosc, phasor, noise, sample
-export line, expon, adsr, expdecay, Gen
+export line, expon, adsr, decay, Gen
 export render, write, read_rawaudio
 export startaudio, synthesizer, play, control, probe, scheduler, schedule, seq
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf
@@ -19,7 +19,7 @@ include("phasor.jl")
 include("sinosc.jl")
 include("modulator.jl")
 include("mixer.jl")
-include("expdecay.jl")
+include("decay.jl")
 include("interp.jl")
 include("adsr.jl")
 include("sample.jl")
