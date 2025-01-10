@@ -5,7 +5,7 @@ export konst, clip, sigfun, aliasable, feedback, connect, clock, clock_bpm
 export sinosc, phasor, noise, sample
 export line, expon, adsr, decay, Gen
 export render, write, read_rawaudio
-export startaudio, synthesizer, play, control, probe, scheduler, schedule, seq
+export startaudio, synthesizer, synthchan, play!, play, control, probe, scheduler, schedule, seq
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf
 export waveshape, linearmap, delay, tap
 export wavetable, maketable

@@ -1,3 +1,4 @@
+using Synth
 
 """
     tone(amp, freq, duration; attackfactor = 2.0, attack_secs = 0.005, decay_secs = 0.05, release_secs = 0.2)
@@ -86,7 +87,7 @@ over time.
 play(fm(220.0f0, 550.0f0, 100.0f0), 5.0)
 ```
 """
-function fm(carrier, modulator, index, amp = konst(1.0f0))
+function fm(carrier, modulator, index, amp = Synth.konst(1.0f0))
     sinosc(amp, phasor(carrier + sinosc(index, phasor(modulator))))
 end
 

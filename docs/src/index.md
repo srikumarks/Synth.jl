@@ -58,6 +58,8 @@ Synth.read_rawaudio
 ```@docs
 Synth.startaudio
 Synth.synthesizer
+Synth.synthchan
+Synth.play!
 Synth.play
 Synth.control
 Synth.probe

@@ -39,10 +39,10 @@ can change if needed.
 function adsr(suslevel :: Real, sus_secs :: Real;
               attackfactor = 2.0, attack_secs = 0.002,
               decay_secs = 0.01, release_secs = 0.2)
-    alevel = attackfactor * suslevel
-    asecs = attack_secs
-    dsecs = decay_secs
-    relsecs = releasesecs
+    alevel = max(1.0, attackfactor) * suslevel
+    asecs = max(0.0005, attack_secs)
+    dsecs = max(0.01, decay_secs)
+    relsecs = max(0.01, release_secs)
     ADSR(Float32(alevel), Float32(asecs), Float32(dsecs), Float32(suslevel), Float32(sus_secs), Float32(relsecs),
          0.0f0, Float32(log2(alevel)),
          Float32(alevel/asecs),
@@ -67,7 +67,10 @@ function value(s :: ADSR, t, dt)
         v = 2 ^ s.logv
         s.logv += s.dlogv_decay * dt
     elseif t < s.t3
-        v = s.sustain_level
+        # This value should be close to s.sustain_level, but
+        # due to accumulation errors may not end up close enough to
+        # avoid a click?
+        v = 2 ^ s.logv # s.sustain_level
     else
         v = 2 ^ s.logv
         s.logv += s.dlogv_release * dt
