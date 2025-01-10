@@ -73,4 +73,57 @@ function rescale(maxamp, samples)
     end
 end
 
+"""
+    nchannels(sig :: S) :: Int where {S <: Signal}
 
+Returns the number of output channels of the signal. By default,
+all signals are mono-channel only. This protocol exists to help support
+multiple channels as a vector of signals.
+"""
+function nchannels(sig :: S) :: Int where {S <: Signal}
+    1
+end
+
+struct Stereo{L <: Signal, R <: Signal}
+    left :: L
+    right :: R
+end
+
+done(s :: Stereo, t, dt) = done(s.left, t, dt) && done(s.right, t, dt)
+value(s :: Stereo, t, dt) = SA_F32[value(s.left, t, dt), value(s.right, t, dt)]
+
+nchannels(::Stereo) = 2
+    
+"""
+    stereo(left :: L, right :: R) :: Stereo{L,R} where {L <: Signal, R <: Signal}
+    stereo(lr :: Aliasable{S}) :: Stereo{Aliasable{S},Aliasable{S}} where {S <: Signal}
+    stereo(lr :: S) :: Stereo{Aliasable{S}, Aliasable{S}} where {S <: Signal}
+
+Constructs a "stereo signal" from two mono signals. A "stereo signal" has basically
+the same protocol as a mono signal, except that the `value` method returns 
+a 2-element static vector - i.e. `SVector{2,Float32}` type value.
+"""
+function stereo(left :: L, right :: R) where {L <: Signal, R <: Signal}
+    Stereo(left, right)
+end
+
+function stereo(lr :: Aliasable{S}) where {S <: Signal}
+    Stereo(lr,lr)
+end
+
+function stereo(lr :: S) where {S <: Signal}
+    stereo(aliasable(lr))
+end
+
+function pan(sig :: Aliasable{S}, lr :: Real) where {S <: Signal}
+    lr = max(-1, min(1, lr))
+    lvol = 1.0 - 0.5 * (lr + 1)
+    rvol = 1.0 - lvol
+    stereo(lvol * sig, rvol * sig)
+end
+
+function pan(sig :: Aliasable{S}, lr :: P) where {S <: Signal, P <: Signal}
+    lvol = aliasable(1.0 - 0.5 * (lr + 1))
+    rvol = 1.0f0 - lvol
+    stereo(lvol * sig, rvol * sig)
+end

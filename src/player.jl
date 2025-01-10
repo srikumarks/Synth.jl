@@ -1,4 +1,5 @@
 import ThreadPools
+using SampledSignals
 
 """
     startaudio(callback)
@@ -17,7 +18,7 @@ It returns a function that can be called (without any arguments)
 to stop the audio processing thread. Make sure to start julia with
 a sufficient number of threads for this to work.
 """
-function startaudio(callback; blocksize=64)
+function startaudio(callback; numchannels=1, blocksize=64)
     function audiothread(stream, rq, wq)
         #println("In audiothread $stream, $rq, $wq")
         endmarker = Val(:done)
@@ -33,12 +34,12 @@ function startaudio(callback; blocksize=64)
         #println("Audio thread done!")
     end
 
-    stream = PortAudio.PortAudioStream(0, 1)
-    rq = Channel{Union{Val{:done}, Vector{Float32}}}(2)
-    wq = Channel{Union{Val{:done}, Vector{Float32}}}(2)
+    stream = PortAudio.PortAudioStream(0, numchannels)
+    rq = Channel{Union{Val{:done}, SampleBuf{Float32,numchannels}}}(2)
+    wq = Channel{Union{Val{:done}, SampleBuf{Float32,numchannels}}}(2)
     #println("Writing empty buffers...")
-    put!(wq, zeros(Float32, blocksize))
-    put!(wq, zeros(Float32, blocksize))
+    put!(wq, SampleBuf(Float32, stream.sample_rate, blocksize, numchannels))
+    put!(wq, SampleBuf(Float32, stream.sample_rate, blocksize, numchannels))
 
     
     #println("Starting threads...")
@@ -95,7 +96,7 @@ stop the synth.
 
 You can use [`synthchan`](@ref) to make a channel.
 """
-function synthesizer(commands::SynthCommands; blocksize=64)
+function synthesizer(commands::SynthCommands; numchannels = 1, blocksize=64)
     function callback(sample_rate, rq, wq)
         #println("In callback $sample_rate, $rq, $wq")
         dt = 1.0 / sample_rate
@@ -117,25 +118,55 @@ function synthesizer(commands::SynthCommands; blocksize=64)
                 end
                 push!(voices, (t0 + rt - rt0, sig))
             end
-            fill!(buf, 0.0f0)
-            for i in eachindex(buf)
+            buf .= 0.0f0
+            N = size(buf, 1)
+            for i in 1:N
+                tmp = sampleframe(buf)
                 for (vt,v) in voices
                     if t > vt
-                        buf[i] += value(v, t-vt, dt)
+                        addsampleframe!(tmp, value(v, t-vt, dt))
                     end
                 end
+                buf[i,:] .= tmp
                 t += dt
             end
             put!(wq, buf)
             filter!(voices) do (vt,v)
-                t > vt ? !done(v, t-vt, dt) : true
+                t <= vt || !done(v, t-vt, dt)
             end
         end
         put!(wq, endmarker)
         #println("Audio generator done!")
     end
-    startaudio(callback; blocksize)
+    startaudio(callback; numchannels, blocksize)
 end
+
+function sampleframe(s::SampleBuf{Float32,1})
+    MVector{1,Float32}(0.0f0)
+end
+
+function sampleframe(s::SampleBuf{Float32,2})
+    MVector{2,Float32}(0.0f0,0.0f0)
+end
+
+function addsampleframe!(f::MVector{1,Float32}, v::Float32)
+    f[1] += v[1]
+end
+
+function addsampleframe!(f::MVector{1,Float32}, v::SVector{2,Float32})
+    f[1] += v[1] + v[2]
+end
+
+function addsampleframe!(f::MVector{2,Float32}, v::Float32)
+    f[1] += v[1]
+    f[2] += v[1]
+end
+
+function addsampleframe!(f::MVector{2,Float32}, v::SVector{2,Float32})
+    f[1] += v[1]
+    f[2] += v[2]
+end
+
 
 """
     play(signal, duration_secs; blocksize=64)
@@ -145,7 +176,7 @@ for the given duration or till the signal ends, whichever
 happens earlier. Be careful about the signal level since
 in this case the signal can't be globally normalized.
 """
-function play(signal, duration_secs=Inf; blocksize=64)
+function play(signal :: S, duration_secs=Inf; blocksize=64) where {S <: Signal}
     function callback(sample_rate, rq, wq)
         #println("In callback $sample_rate, $rq, $wq")
         dt = 1.0 / sample_rate
@@ -154,9 +185,11 @@ function play(signal, duration_secs=Inf; blocksize=64)
         while t < duration_secs && !done(signal, t, dt)
             buf = take!(rq)
             if buf != endmarker
-                fill!(buf, 0.0f0)
-                for i in eachindex(buf)
-                    buf[i] = value(signal, t, dt)
+                buf .= 0.0f0
+                N = size(buf, 1)
+                for i in 1:N
+                    val = value(signal, t, dt)
+                    buf[i,:] .= val
                     t += dt
                 end
                 put!(wq, buf)
