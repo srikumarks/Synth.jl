@@ -874,7 +874,7 @@ uuid = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 version = "0.2.8"
 
 [[deps.Synth]]
-deps = ["FileIO", "Gtk4", "LibSndFile", "PortAudio", "Random", "SampledSignals"]
+deps = ["FileIO", "Gtk4", "LibSndFile", "PortAudio", "Random", "SampledSignals", "ThreadPools"]
 path = ".."
 uuid = "17321cac-a4bc-4530-aa11-a8f457f422f2"
 version = "1.0.0-DEV"
@@ -893,6 +893,12 @@ version = "1.10.0"
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 version = "1.11.0"
+
+[[deps.ThreadPools]]
+deps = ["Printf", "RecipesBase", "Statistics"]
+git-tree-sha1 = "50cb5f85d5646bc1422aa0238aa5bfca99ca9ae7"
+uuid = "b189fb0b-2eb5-4ed4-bc0c-d34c51242431"
+version = "2.1.1"
 
 [[deps.TranscodingStreams]]
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"

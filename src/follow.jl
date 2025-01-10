@@ -1,11 +1,11 @@
 
-mutable struct Follow{S :< Signal, R <: Signal}
+mutable struct Follow{S <: Signal, R <: Signal}
     sig :: S
     rate :: R
     v :: Float32
 end
 
-done(s :: S, t, dt) where {S <: Signal} = done(s.sig, t, dt)
+done(s :: Follow, t, dt) = done(s.sig, t, dt) || done(s.rate, t, dt)
 
 function value(s :: Follow{S,R}, t, dt) where {S <: Signal, R <: Signal}
     v = value(s.sig, t, dt)
@@ -23,6 +23,7 @@ end
 
 """
     follow(s :: S, rate :: R) where {S <: Signal, R <: Signal}
+    follow(s :: S, rate :: Real) where {S <: Signal}
 
 Follows a signal on the rise and decays on the fall.
 This means if the input signal is an impulse, then 
@@ -31,5 +32,9 @@ the impulses.
 """
 function follow(s :: S, rate :: R) where {S <: Signal, R <: Signal}
     Follow(s, rate, 0.0f0)
+end
+
+function follow(s :: S, rate :: Real) where {S <: Signal}
+    follow(s, konst(rate))
 end
 

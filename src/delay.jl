@@ -103,8 +103,8 @@ struct Later{S <: Signal}
     delay_secs :: Float64
 end
 
-done(s :: S, t, dt) where {S <: Signal} = t > delay_secs && done(s, t - delay_secs, t, dt)
-function value(s :: S, t, dt) where {S <: Signal}
+done(s :: Later{S}, t, dt) where {S <: Signal} = t > delay_secs && done(s, t - delay_secs, t, dt)
+function value(s :: Later{S}, t, dt) where {S <: Signal}
     if t >= s.delay_secs
         value(s.sig, t - s.delay_secs, dt)
     else
