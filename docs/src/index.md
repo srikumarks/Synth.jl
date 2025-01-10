@@ -21,6 +21,7 @@ Synth.feedback
 Synth.connect
 Synth.clock
 Synth.clock_bpm
+Synth.clamp
 ```
 
 ## Generators

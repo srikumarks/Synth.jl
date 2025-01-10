@@ -74,3 +74,21 @@ function rescale(maxamp, samples)
 end
 
 
+struct Clamp{S <: Signal}
+    sig :: S
+    minval :: Float32
+    maxval :: Float32
+end
+
+done(s :: Clamp{S}, t, dt) where {S <: Signal} = done(s.sig, t, dt)
+value(s :: Clamp{S}, t, dt) where {S <: Signal} = max(s.minval, min(s.maxval, value(s.sig, t, dt)))
+
+"""
+    clamp(minval::Real, maxval::Real, sig::S) where {S <: Signal}
+
+Clamps the given signal to the give minimum and maximum values. 
+"""
+function clamp(minval::Real, maxval::Real, sig::S) where {S <: Signal}
+    Clamp(sig, Float32(minval), Float32(maxval))
+end
+
