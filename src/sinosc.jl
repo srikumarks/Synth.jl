@@ -1,34 +1,45 @@
-mutable struct SinOsc{Mod <: Signal, Ph <: Signal} <: Signal
+mutable struct SinOsc{Mod <: Signal, Freq <: Signal} <: Signal
     modulator :: Mod
-    phasor :: Ph
+    freq :: Freq
+    s :: Float32 # The sine component of the phase vector
+    c :: Float32 # The cosine component of the phase vector
 end
 
 function done(s :: SinOsc, t, dt)
-    done(s.modulator, t, dt) || done(s.phasor, t, dt)
+    done(s.modulator, t, dt) || done(s.freq, t, dt)
 end
 
-function value(s :: SinOsc, t, dt)
-    m = value(s.modulator, t, dt)
-    p = value(s.phasor, t, dt)
-    m * sin(Float32(2.0f0 * π * p))
+function value(osc :: SinOsc, t, dt)
+    m = value(osc.modulator, t, dt)
+    f = value(osc.freq, t, dt)
+
+    # The next step of the phase vector is computed using the
+    # Taylor expansion of sin and cos and therefore uses only
+    # multiplication and addition/subtraction operators at the
+    # level of precision required for audio synthesis. This
+    # expansion should be adequate to frequencies of about 2KHz.
+    dϕ = 2 * π * f * dt
+    s, c = osc.s, osc.c
+    s1 = s + dϕ * (c - (1/2) * dϕ * (s + (1/3) * dϕ * (c - (1/4) * dϕ * s)))
+    c1 = c - dϕ * (s + (1/2) * dϕ * (c - (1/3) * dϕ * (s + (1/4) * dϕ * c)))
+    osc.s, osc.c = s1, c1
+
+    m * s1
 end
 
 """
-    sinosc(m :: Real, f :: Real)
-    sinosc(m :: Real, p :: P) where {P <: Signal}
-    sinosc(m :: M, p :: P) where {M <: Signal, P <: Signal}
+    sinosc(m :: Real, f :: Real; phase = 0.0)
+    sinosc(m :: Real, f :: Signal; phase = 0.0)
+    sinosc(m :: Signal, f :: Real; phase = 0.0)
+    sinosc(m :: Signal, f :: Signal; phase = 0.0)
 
 A "sinosc" is a sinusoidal oscillator that can be controlled using a phasor or
-a clock to determine a time varying frequency. The `p` argument is expected to
-be like a [`phasor`](@ref) - a signal that gives the normalized (0-1 range)
-phase of the sine wave. The first variant `sinosc(::Real,::Real)` takes the
-second argument to be the frequency and wraps it up in a `phasor(f)` to get the
-phase. Using such a phasor is what permits the time variability of the sine's
-frequency. This is useful for frequency modulation, in addition to the
-amplitude also being modulatable.
+a clock to determine a time varying frequency. The `f` argument is expected to
+be a frequency in Hz units. Both the frequency and the amplitude are modulatable.
 """
-sinosc(m :: Real, f :: Real) = SinOsc(konst(m), phasor(f))
-sinosc(m :: Real, p :: P) where {P <: Signal} = SinOsc(konst(m), p)
-sinosc(m :: M, p :: P) where {M <: Signal, P <: Signal} = SinOsc(m, p)
+sinosc(m :: Real, f :: Real; phase = 0.0) = SinOsc(konst(m), konst(f), Float32(sin(phase)), Float32(cos(phase)))
+sinosc(m :: Real, f :: Signal; phase = 0.0) = SinOsc(konst(m), f, Float32(sin(phase)), Float32(cos(phase)))
+sinosc(m :: Signal, f :: Real; phase = 0.0) = SinOsc(m, konst(f), Float32(sin(phase)), Float32(cos(phase)))
+sinosc(m :: Signal, f :: Signal; phase = 0.0) = SinOsc(m, f, Float32(sin(phase)), Float32(cos(phase)))
 
 

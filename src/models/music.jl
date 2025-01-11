@@ -17,9 +17,9 @@ function Synth.genbeat(
     if trigger
         p = mod(count, 8)
         if p == 0 || p == 4 || p == 6
-            sinosc(adsr(tala.a0, 0.0; release_secs = 0.4 * dt / dphase), phasor(tala.f0))
+            sinosc(adsr(tala.a0, 0.0; release_secs = 0.4 * dt / dphase), tala.f0)
         else
-            sinosc(adsr(tala.a1, 0.0; release_secs = 0.4 * dt / dphase), phasor(tala.f1))
+            sinosc(adsr(tala.a1, 0.0; release_secs = 0.4 * dt / dphase), tala.f1)
         end
     else
         nothing

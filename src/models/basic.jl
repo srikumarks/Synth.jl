@@ -18,10 +18,10 @@ is the duration in seconds of the sustain portion.
 """
 function tone(amp, freq, duration; attackfactor = 2.0, attack_secs = 0.005, decay_secs = 0.05, release_secs = 0.2)
     env = adsr(amp * attackfactor, attack_secs, decay_secs, amp, duration, release_secs) 
-    sinosc(env, phasor(freq))
+    sinosc(env, freq)
 end
 
-heterodyne(sig, fc, bw; q=5.0) = lpf(sinosc(sig, phasor(fc)), bw, q)
+heterodyne(sig, fc, bw; q=5.0) = lpf(sinosc(sig, fc), bw, q)
 
 """
     basicvocoder(sig, f0, N, fnew; bwfactor = 0.2, bwfloor = 20.0)
@@ -34,7 +34,7 @@ The bandwidth has a floor given by `bwfloor` in Hz.
 function basicvocoder(sig, f0, N, fnew; bwfactor = 0.2, bwfloor = 20.0)
     asig = aliasable(sig)
     bw = max(bwfloor, f0 * bwfactor)
-    reduce(+, sinosc(heterodyne(asig, f0 * k, bw * k), phasor(fnew * k)) for k in 1:N)
+    reduce(+, sinosc(heterodyne(asig, f0 * k, bw * k), fnew * k) for k in 1:N)
 end
 
 """
@@ -48,7 +48,7 @@ The function constructs a signal with harmonic series based on `f0` as the
 fundamental frequency and amplitudes determined by the array `amps`.
 """
 function additive(f0, amps :: AbstractVector, detune_factor = konst(1.0f0))
-    sum(sinosc(amps[k], phasor(k * detune_factor * f0)) for k in eachindex(amps))
+    sum(sinosc(amps[k], k * detune_factor * f0) for k in eachindex(amps))
 end
 
 """
@@ -60,7 +60,7 @@ a final value over a period of time. The shape of the change can be
 controlled using the `shapename` keyword argument.
 """
 function chirp(amp, startfreq, dur, endfreq; shapename::Union{Val{:line},Val{:expon}} = Val(:line))
-    sinosc(amp, phasor(clip(dur, shape(shapename, startfreq, dur, endfreq))))
+    sinosc(amp, clip(dur, shape(shapename, startfreq, dur, endfreq)))
 end
 
 """
@@ -90,7 +90,7 @@ play(fm(220.0f0, 550.0f0, 100.0f0), 5.0)
 ```
 """
 function fm(carrier, modulator, index, amp = Synth.konst(1.0f0))
-    sinosc(amp, phasor(carrier + sinosc(index, phasor(modulator))))
+    sinosc(amp, carrier + sinosc(index, modulator))
 end
 
 
