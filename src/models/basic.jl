@@ -38,15 +38,17 @@ function basicvocoder(sig, f0, N, fnew; bwfactor = 0.2, bwfloor = 20.0)
 end
 
 """
-    additive(f0, amps :: Vector)
+    additive(f0,
+             amps :: AbstractVector{Union{Real,Signal}},
+             detune_factor :: Signal = konst(1.0f0))
 
 Simple additive synthesis. `amps` is a vector of Float32 or a vector of signals.
 `f0` is a frequency value or a signal that evaluates to the frequency.
 The function constructs a signal with harmonic series based on `f0` as the
-fundamental frequency and ampltiudes determined by the array `amps`.
+fundamental frequency and amplitudes determined by the array `amps`.
 """
-function additive(f0, amps :: Vector)
-    sum(sinosc(amps[k], phasor(k * f0)) for k in eachindex(amps))
+function additive(f0, amps :: AbstractVector, detune_factor = konst(1.0f0))
+    sum(sinosc(amps[k], phasor(k * detune_factor * f0)) for k in eachindex(amps))
 end
 
 """
