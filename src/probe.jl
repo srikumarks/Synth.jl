@@ -16,6 +16,9 @@ function value(p :: Probe{S}, t, dt) where {S <: Signal}
     p.v = p.wv * p.v + p.ws * sv
     p.t -= dt
     if p.t < 0.0 
+        # TODO: There is perhaps room for some improvement here
+        # to keep the probe value fresh in case it is taking
+        # time to draw out already probed values.
         if c.n_avail_items < c.sz_max
             put!(p.chan, p.v)
         end

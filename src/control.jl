@@ -20,6 +20,11 @@ function value(c :: Control, t, dt)
     return v
 end
 
+function Base.setindex!(c::Control, val::Real)
+    put!(c.chan, Float32(val))
+    val
+end
+
 """
     control(chan :: Channel{Float32}, dezipper_interval = 0.04; initial = 0.0f0, samplingrate=48000) :: Control
     control(dezipper_interval = 0.04; initial = 0.0f0, samplingrate = 48000) :: Control
@@ -28,6 +33,9 @@ A "control" is a signal that is driven by values received on a given or
 created channel. The control will dezipper the value using a first order LPF
 and send it out as its value. The intention is to be able to bind a UI element
 that produces a numerical value as a signal that can be patched into the graph.
+
+If `c` is a `Control` struct, you can set the value of the control using
+``c[] = 0.5f0`.
 """
 function control(chan :: Channel{Float32}, dezipper_interval = 0.04; initial = 0.0f0, samplingrate=48000) :: Control
     wv = 2 ^ (- 1.0 / (dezipper_interval * samplingrate))
