@@ -5,7 +5,7 @@ mutable struct Line <: Signal
     v2 :: Float32
 end
 
-done(s :: Line, t, dt) = t > s.duration_secs
+done(s :: Line, t, dt) = false
 function value(s :: Line, t, dt)
     if t <= 0.0f0 
         s.v1
@@ -19,9 +19,10 @@ end
 """
     line(v1 :: Real, duration_secs :: Real, v2 :: Real)
 
-Makes a signal that produces `v1` for `t < 0.0` and `v2` for `t > duration_secs`.
-In between the two times, it produces a linearly varying value between
-`v1` and `v2`. This signal is finite in extent.
+Makes a signal that produces `v1` for `t < 0.0` and `v2` for `t >
+duration_secs`. In between the two times, it produces a linearly varying value
+between `v1` and `v2`. This signal is infinite in extent. Use [`clip`](@ref) to
+limit its extent.
 """
 line(v1 :: Real, duration_secs :: Real, v2 :: Real) = Line(Float32(v1), Float32(duration_secs), Float32(v2))
 
@@ -37,9 +38,10 @@ end
 """
     expon(v1 :: Real, duration_secs :: Real, v2 :: Real)
 
-Similar to line, but does exponential interpolation from `v1` to `v2`
-over `duration_secs`. Note that both values must be `> 0.0` for this
-to be valid.
+Similar to line, but does exponential interpolation from `v1` to `v2` over
+`duration_secs`. Note that both values must be `> 0.0` for this to be valid.
+The resultant signal is infinite in extent. Use [`clip`](@ref) to limit its
+extent.
 """
 function expon(v1 :: Real, duration_secs :: Real, v2 :: Real)
     @assert v1 > 0.0
@@ -48,12 +50,12 @@ function expon(v1 :: Real, duration_secs :: Real, v2 :: Real)
     Expon(Float32(v1), Float32(duration_secs), Float32(v2), log(Float32(v1)), log(Float32(v2)), log(Float32(v2/v1)))
 end
 
-done(s :: Expon, t, dt) = t > s.duration_secs
+done(s :: Expon, t, dt) = false
 function value(s :: Expon, t, dt)
     if t <= 0.0f0
         s.v1
     elseif t <= s.duration_secs
-        exp(s.lv1 + s.dlv * t / duration_secs)
+        exp(s.lv1 + s.dlv * t / s.duration_secs)
     else
         s.v2
     end
