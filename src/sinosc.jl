@@ -18,10 +18,18 @@ function value(osc :: SinOsc, t, dt)
     # multiplication and addition/subtraction operators at the
     # level of precision required for audio synthesis. This
     # expansion should be adequate to frequencies of about 2KHz.
+    # The way the code below is structured is based on -
+    # sin(θ+dϕ) = sin(θ)cos(dϕ) + cos(θ)sin(dϕ)
+    # cos(θ+dϕ) = cos(θ)cos(dϕ) - sin(θ)sin(dϕ)
+    # and then expanding cos(dϕ) and sin(dϕ) using Taylor series.
     dϕ = 2 * π * f * dt
     s, c = osc.s, osc.c
-    s1 = s + dϕ * (c - (1/2) * dϕ * (s + (1/3) * dϕ * (c - (1/4) * dϕ * s)))
-    c1 = c - dϕ * (s + (1/2) * dϕ * (c - (1/3) * dϕ * (s + (1/4) * dϕ * c)))
+    dϕ² = dϕ * dϕ
+    dϕ⁴ = dϕ² * dϕ²
+    cosdϕ = 1 - (1/2)dϕ² + (1/24)dϕ⁴
+    sindϕ = dϕ * (1 - (1/6)dϕ² + (1/120)dϕ⁴)
+    s1 = cosdϕ * s + sindϕ * c
+    c1 = cosdϕ * c - sindϕ * s
     osc.s, osc.c = s1, c1
 
     m * s1
