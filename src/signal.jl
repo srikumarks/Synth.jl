@@ -92,23 +92,30 @@ abstract type Signal end
 
 """
     dBscale(::Real)
+    dBscale(::Signal)
 
 Converts a dB value to a scaling factor
 """
-dBscale(v) = 10.0 ^ (v/10.0)
+dBscale(v::Real) = 10.0 ^ (v/10.0)
+dBscale(s::Signal) = map(dBscale, s)
 
 """
     midi2hz(midi::Real)
+    midi2hz(::Signal)
 
 Converts a MIDI note number into a frequency using the equal tempered tuning.
 """
-midi2hz(m) = 440.0 * (2 ^ ((m - 69.0)/12.0))
+midi2hz(m::Real) = 440.0 * (2 ^ ((m - 69.0)/12.0))
+midi2hz(s::Signal) = map(midi2hz, s)
 
 """
     hz2midi(hz::Real)
+    hz2midi(::Signal)
+
 Converts a frequency in Hz to its MIDI note number in the equal tempered tuning.
 """
-hz2midi(hz) = 69.0 + 12.0*log2(hz/440.0)
+hz2midi(hz::Real) = 69.0 + 12.0*log2(hz/440.0)
+hz2midi(sig::Signal) = map(hz2midi, sig)
 
 "We define done and value for Nothing type as a signal trivially."
 done(s :: Nothing, t, dt) = true
