@@ -44,7 +44,13 @@ Synth.follow
 Synth.Gen
 ```
 
-Synth.Aliasable
+## For music
+
+```@docs
+Synth.beats
+Synth.BeatGen
+Synth.genbeat
+```
 
 ## Rendering
 

@@ -10,6 +10,7 @@ export filter1, filter2, fir, lpf, bpf, bpf0, hpf
 export waveshape, linearmap, delay, tap
 export wavetable, maketable
 export granulate, simplegrains, chorusgrains, Grain
+export beats
 export dBscale, interp4, raisedcos, midi2hz, hz2midi, easeinout, curve, Seg, circular
 
 include("signal.jl")
@@ -37,6 +38,8 @@ include("noise.jl")
 include("gen.jl") # Include in signal.jl
 include("feedback.jl")
 include("granular.jl")
+
+include("beats.jl")
 
 include("probe.jl")
 include("control.jl")
