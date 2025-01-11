@@ -2,7 +2,7 @@
 """
     abstract type BeatGen end
 
-Make an subtype of this type and define the [`genbeat`](@ref) method on it to
+Make a subtype of this type and define the [`genbeat`](@ref) method on it to
 use your own custom beat generation algorithm via [`beats`](@ref).
 """
 abstract type BeatGen end
@@ -13,7 +13,7 @@ abstract type BeatGen end
             count :: Integer,
             trigger :: Bool,
             dphase :: AbstractFloat,
-            dt :: AbstractFloat) :: Tuple{Bool,Union{Nothing,Signal}}
+            dt :: AbstractFloat) :: Union{Val{:end},Nothing,Signal}
 
 Abstract method to be implemented for `BeatGen` types for use
 with [`beats`](@ref).
@@ -28,11 +28,9 @@ with [`beats`](@ref).
 
 This method is called for every sample, letting you add signals
 during any point within a beat cycle. The return value is expected
-to be tuple whose first argument gives whether the generation
-has ended or not. Giving `true` for this will stop all future
-`genbeat` calls for this generator instance. The second part
-of the tuple can be `nothing` if there is nothing to do, or a
-`Signal` if a new voice is to be started.
+`nothing` to indicate nothing to do but continue, `Val(:end)` to
+indicate the end of the sequence after which no `genbeat` call will
+be made, or a `Signal` to start playing at the time.
 """
 function genbeat(
         bg :: BeatGen,
@@ -78,8 +76,8 @@ function value(s :: Beats{P}, t, dt) where {P <: Signal}
         # If the generation has ended, don't do any
         # further generation calculations and only
         # continue the pending voices till they finish.
-       (ended, voice) = genbeat(s.gen, pm, s.count, s.count > count, dp, dt)
-        if ended
+        voice = genbeat(s.gen, pm, s.count, s.count > count, dp, dt)
+        if voice == Val(:end)
             s.ended = true
         elseif !isnothing(voice)
             # At this point, `voice` is guaranteed to be a Signal
@@ -105,4 +103,7 @@ corresponding value of phase that's < 1.0.
 """
 function beats(tempo :: T, gen :: BG; phase=1.0, count=-1) :: Beats{T, BG} where {T <: Signal, BG <: BeatGen}
     Beats(tempo, gen, phase, count, Vector{Tuple{Float64,Signal}}(), false)
+end
+function beats(tempo :: Real, gen :: BG; phase=1.0, count=-1) :: Beats{Konst, BG} where {BG <: BeatGen}
+    beats(konst(tempo), gen; phase, count)
 end
