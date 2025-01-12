@@ -11,9 +11,8 @@ end
 function value(osc :: SinOsc, t, dt)
     m = value(osc.modulator, t, dt)
     f = value(osc.freq, t, dt)
-    dϕ = 2 * π * f * dt
-    v = sin(osc.phase)
-    osc.phase += dϕ
+    @fastmath v = sin(2π * osc.phase)
+    @fastmath osc.phase = mod(osc.phase + f * dt, 1.0f0)
 
     m * v
 end
