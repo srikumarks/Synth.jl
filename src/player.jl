@@ -1,4 +1,21 @@
 import ThreadPools
+using SampledSignals: SampleBuf
+
+function audiothread(stream, rq, wq)
+    #println("In audiothread $stream, $rq, $wq")
+    endmarker = Val(:done)
+    buf = take!(rq)
+    while buf != endmarker
+        Base.write(stream, buf)
+        put!(wq, buf)
+        buf = take!(rq)
+    end
+    close(stream)
+    close(wq)
+    close(rq)
+    #println("Audio thread done!")
+end
+
 
 """
     startaudio(callback)
@@ -17,28 +34,17 @@ It returns a function that can be called (without any arguments)
 to stop the audio processing thread. Make sure to start julia with
 a sufficient number of threads for this to work.
 """
-function startaudio(callback; blocksize=64)
-    function audiothread(stream, rq, wq)
-        #println("In audiothread $stream, $rq, $wq")
-        endmarker = Val(:done)
-        buf = take!(rq)
-        while buf != endmarker
-            Base.write(stream, buf)
-            put!(wq, buf)
-            buf = take!(rq)
-        end
-        close(stream)
-        close(wq)
-        close(rq)
-        #println("Audio thread done!")
-    end
-
-    stream = PortAudio.PortAudioStream(0, 1)
-    rq = Channel{Union{Val{:done}, Vector{Float32}}}(2)
-    wq = Channel{Union{Val{:done}, Vector{Float32}}}(2)
+function startaudio(callback; chans::Int=1, blocksize::Int=64)
+    stream = PortAudio.PortAudioStream(0, chans)
+    rq = Channel{Union{Val{:done}, SampleBuf{Float32,2}}}(2)
+    wq = Channel{Union{Val{:done}, SampleBuf{Float32,2}}}(2)
     #println("Writing empty buffers...")
-    put!(wq, zeros(Float32, blocksize))
-    put!(wq, zeros(Float32, blocksize))
+    b1 = SampleBuf(Float32, stream.sample_rate, blocksize, chans)
+    b2 = SampleBuf(Float32, stream.sample_rate, blocksize, chans)
+    b1 .= 0.0f0
+    b2 .= 0.0f0
+    put!(wq, b1)
+    put!(wq, b2)
 
     
     #println("Starting threads...")
@@ -80,6 +86,23 @@ function play!(commands :: SynthCommands, sig :: Signal, t :: Float64)
     put!(commands, (t, sig))
 end
 
+function mixin!(buf::SampleBuf{Float32,2}, i::Integer, sig::Signal, t, dt)
+    v = value(sig, t, dt)
+    buf[i,:] .= v
+end
+
+function mixin!(buf::SampleBuf{Float32,2}, i::Integer, sig::Stereo{L,R}, t, dt) where {L <: Signal, R <: Signal}
+    chans = size(buf, 2)
+    if chans == 1
+        buf[i,1] = value(sig, 0, t, dt)
+    elseif chans == 2
+        buf[i,1] = value(sig, -1, t, dt)
+        buf[i,2] = value(sig, 1, t, dt)
+    else
+        buf[i,:] .= 0.0f0
+    end
+end
+
 """
     synthesizer(commands::Channel{Tuple{Float64,Signal}}; blocksize=64)
 
@@ -95,7 +118,7 @@ stop the synth.
 
 You can use [`synthchan`](@ref) to make a channel.
 """
-function synthesizer(commands::SynthCommands; blocksize=64)
+function synthesizer(commands::SynthCommands; chans=1, blocksize=64)
     function callback(sample_rate, rq, wq)
         #println("In callback $sample_rate, $rq, $wq")
         dt = 1.0 / sample_rate
@@ -118,10 +141,10 @@ function synthesizer(commands::SynthCommands; blocksize=64)
                 push!(voices, (t0 + rt - rt0, sig))
             end
             fill!(buf, 0.0f0)
-            for i in eachindex(buf)
+            for i in 1:size(buf,1)
                 for (vt,v) in voices
                     if t > vt
-                        buf[i] += value(v, t-vt, dt)
+                        mixin!(buf, i, v, t-vt, dt)
                     end
                 end
                 t += dt
@@ -134,7 +157,7 @@ function synthesizer(commands::SynthCommands; blocksize=64)
         put!(wq, endmarker)
         #println("Audio generator done!")
     end
-    startaudio(callback; blocksize)
+    startaudio(callback; chans, blocksize)
 end
 
 """
@@ -145,7 +168,7 @@ for the given duration or till the signal ends, whichever
 happens earlier. Be careful about the signal level since
 in this case the signal can't be globally normalized.
 """
-function play(signal, duration_secs=Inf; blocksize=64)
+function play(signal::Signal, duration_secs=Inf; chans=1, blocksize=64)
     function callback(sample_rate, rq, wq)
         #println("In callback $sample_rate, $rq, $wq")
         dt = 1.0 / sample_rate
@@ -155,8 +178,8 @@ function play(signal, duration_secs=Inf; blocksize=64)
             buf = take!(rq)
             if buf != endmarker
                 fill!(buf, 0.0f0)
-                for i in eachindex(buf)
-                    buf[i] = value(signal, t, dt)
+                for i in 1:size(buf,1)
+                    mixin!(buf, i, signal, t, dt)
                     t += dt
                 end
                 put!(wq, buf)
@@ -164,9 +187,9 @@ function play(signal, duration_secs=Inf; blocksize=64)
                 break
             end
         end
-        put!(wq, Val(:done))
+        put!(wq, endmarker)
         #println("Audio generator done!")
     end
-    startaudio(callback; blocksize)
+    startaudio(callback; chans, blocksize)
 end
 

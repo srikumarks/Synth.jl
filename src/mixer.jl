@@ -24,4 +24,10 @@ end
 (Base.:-)(s1 :: S1, s2 :: Real) where {S1 <: Signal} = Mix(1.0f0, s1, -1.0f0, konst(s2))
 (Base.:-)(s1 :: S1, s2 :: S2) where {S1 <: Signal, S2 <: Signal} = Mix(1.0f0, s1, -1.0f0, s2)
 
+(Base.:+)(s1 :: Stereo{L1,R1}, s2 :: Stereo{L2,R2}) where {L1,R1,L2,R2} = stereo(s1.left + s2.left, s1.right + s2.right)
+(Base.:+)(s1 :: Stereo{L,R}, s2 :: S) where {L,R,S <: Signal} = stereo(s1.left + s2, s1.right + s2)
+(Base.:+)(s1 :: S, s2 :: Stereo{L,R}) where {L,R,S <: Signal} = stereo(s1 + s2.left, s1 + s2.right)
+(Base.:-)(s1 :: Stereo{L1,R1}, s2 :: Stereo{L2,R2}) where {L1,R1,L2,R2} = stereo(s1.left - s2.left, s1.right - s2.right)
+(Base.:-)(s1 :: Stereo{L,R}, s2 :: S) where {L,R,S <: Signal} = stereo(s1.left - s2, s1.right - s2)
+(Base.:-)(s1 :: S, s2 :: Stereo{L,R}) where {L,R,S <: Signal} = stereo(s1 - s2.left, s1 - s2.right)
 

@@ -23,4 +23,23 @@ function render(s :: S, dur_secs; samplingrate=48000, normalize=false, maxamp=0.
     return SampleBuf(if normalize rescale(maxamp, result) else result end, samplingrate)
 end
 
+function render(s :: Stereo{L,R}, dur_secs; samplingrate=48000) where {L <: Signal, R <: Signal}
+    dt = 1.0 / samplingrate
+    N = floor(Int, dur_secs * samplingrate)
+    tspan = dt .* (0:(N-1))
+    result = SampleBuf(Float32, samplingrate, N, 2)
+    actualN = N
+    for i in 1:N
+        t = (i-1) * dt
+        if !done(s, t, dt)
+            result[i,1] = value(s, -1, t, dt)
+            result[i,2] = value(s, 1, t, dt)
+        else
+            actualN = i-1
+            break
+        end
+    end
+    return result[1:actualN,:]
+end
+
 

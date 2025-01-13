@@ -15,4 +15,7 @@ end
 (Base.:*)(m :: M, s :: Real) where {M <: Signal} = Mod(m,konst(s))
 (Base.:*)(m :: M, s :: S) where {M <: Signal, S <: Signal} = Mod(m,s)
 
+(Base.:*)(m :: M, s :: Stereo{L,R}) where {M <: Signal, L,R} = stereo(m * s.left, m * s.right)
+(Base.:*)(m :: Stereo{LM,RM}, s :: Stereo{L,R}) where {LM,RM, L,R} = stereo(m.left * s.left, m.right * s.right)
+
 

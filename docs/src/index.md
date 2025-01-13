@@ -24,6 +24,15 @@ Synth.clock_bpm
 Synth.clamp
 ```
 
+## Stereo signals
+
+```@docs
+Synth.stereo
+Synth.left
+Synth.right
+Synth.chan
+```
+
 ## Generators
 
 ```@docs

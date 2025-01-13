@@ -164,6 +164,149 @@ Treats a simple function of time (in seconds) as a signal.
 """
 sigfun(f) = SigFun(f)
 
+mutable struct Aliasable{S <: Signal} <: Signal
+    sig :: S
+    t :: Float64
+    v :: Float32
+end
+
+
+"""
+    aliasable(s :: S) where {S <: Signal}
+
+A signal, once constructed, can only be used by one "consumer" via function
+composition. In some situations, we want a signal to be plugged into multiple
+consumers (to make a signal flow DAG). For these occasions, make the signal
+aliasable by calling `aliasable` on it and use the aliasble signal everywhere
+you need it instead. Note that `aliasable` is an idempotent operator (i.e.
+`aliasable(aliasable(sig)) == sig`).
+
+!!! note "Constraint"
+    It only makes sense to make a single aliasable version of a signal.
+    Repeated evaluation of a signal is avoided by `Aliasable` by storing the
+    recently computed value for a given time. So it assumes that time
+    progresses linearly.
+
+!!! note "Terminology"
+    The word "alias" has two meanings - one in the context of signals where
+    frequency shifting it can cause wrap around effects in the spectrum due
+    to sampling, and in the context of a programming language where a value
+    referenced in multiple data structures is said to be "aliased". It is in
+    the latter sense that we use the word `aliasable` in this case. 
+"""
+aliasable(sig :: Aliasable{S}) where {S <: Signal} = sig
+aliasable(sig :: S) where {S <: Signal} = Aliasable(sig, -1.0, 0.0f0)
+done(s :: Aliasable, t, dt) = done(s.sig, t, dt)
+function value(s :: Aliasable, t, dt)
+    if t > s.t
+        s.t = t
+        s.v = Float32(value(s.sig, t, dt))
+    end
+    return s.v
+end
+
+
+struct Stereo{L <: Signal, R <: Signal} <: Signal
+    left :: Aliasable{L}
+    right :: Aliasable{R}
+    t :: Float64
+    leftchan :: Float32
+    rightchan :: Float32
+    mixed :: Float32
+end
+
+function done(s :: Stereo{L,R}, t, dt) where {L <: Signal, R <: Signal}
+    done(s.left, t, dt) && done(s.right, t, dt)
+end
+
+value(s :: Stereo{L,R}, t, dt) where {L <: Signal, R <: Signal} = value(s, 0, t, dt)
+
+function value(s :: Stereo{L,R}, chan :: Int, t, dt) where {L <: Signal, R <: Signal}
+    if t > s.t
+        s.t = t
+        s.leftchan = value(s.left, t, dt)
+        s.rightchan = value(s.right, t, dt)
+        s.mixed = sqrt(0.5f0) * (s.leftchan + s.rightchan)
+    end
+    if c == 0
+        s.mixed
+    elseif c == -1
+        s.leftchan
+    elseif c == 1
+        s.rightchan
+    else
+        0.0f0
+    end
+end
+
+"""
+    stereo(left :: Aliasable{L}, right :: Aliasable{R}) where {L <: Signal, R <: Signal}
+    stereo(left :: L, right :: R) where {L <: Signal, R <: Signal}
+
+Makes a "stereo signal" with the given left and right channel signals.
+The stereo signal is itself considered a signal which produces the
+mixed output of the left and right channels. However, you can pick out
+the left and right channels separately using [`left`](@ref) and [`right`](@ref)
+which produce aliasable versions of the two components.
+
+!!! note "Aliasability"
+    Stereo signals are aliasable without calling [`aliasable`](@ref) on
+    them. The first method assumes that you're passing in aliasable signals
+    (recommended). The second will make them aliasable, before storing a
+    reference, so you should subsequently access the individual channels
+    **only** via the [`left`](@ref) and [`right`](@ref) methods.
+
+There is a new `value` method that works on stereo signals --
+
+``value(s::Stereo{L,R}, chan::Int, t, dt)``
+
+where `chan` can be -1 for left, 0 for mixed middle and 1 for right channels.
+
+The mixer and modulator operators (+/-/*) treat stereo signals as stereo and
+work accordingly. The other operators all (unless noted) are not cognizant of
+stereo signals and so you must be explicit with them if you're applying them on
+stereo signals.
+"""
+function stereo(left :: Aliasable{L}, right :: Aliasable{R}) where {L <: Signal, R <: Signal}
+    Stereo(left, right, 0.0, 0.0f0, 0.0f0, 0.0f0)
+end
+function stereo(left :: L, right :: R) where {L <: Signal, R <: Signal}
+    Stereo(aliasable(left), aliasable(right), 0.0, 0.0f0, 0.0f0, 0.0f0)
+end
+
+"""
+    left(s :: Stereo{L,R}) where {L <: Signal, R <: Signal}
+
+Picks the left channel of a stereo signal.
+"""
+left(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = s.left
+
+"""
+    right(s :: Stereo{L,R}) where {L <: Signal, R <: Signal}
+
+Picks the right channel of a stereo signal.
+"""
+right(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = s.right
+
+"""
+    chan(s :: Stereo{L,R}, c :: Int) where {L <: Signal, R <: Signal}
+
+Picks a component of a stereo signal. If `c == 0` it gives the mixed signal.
+If `c == -1`, that's the left component and if `c == 1` that's the right
+component. Produces a null signal for any other values of `c`.
+"""
+function chan(s :: Stereo{L,R}, c :: Int) where {L <: Signal, R <: Signal}
+    if c == 0
+        konst(sqrt(0.5f0)) * (s.left + s.right)
+    elseif c == -1
+        s.left
+    elseif c == 1
+        s.right
+    else
+        konst(0.0f0)
+    end
+end
+
 struct Clip{S <: Signal} <: Signal
     dur :: Float64
     s :: S
@@ -172,13 +315,18 @@ end
 """
     clip(dur :: Float64, s :: S) where {S <: Signal}
 
-Clips the give signal to the given duration. Usually you'd use a "soft" version
-of this like a raised cosine or ADSR, but clip could be useful 
+Clips the given signal to the given duration. Usually you'd use a "soft"
+version of this like a raised cosine or ADSR, but clip could be useful on
+its own.
 """
 function clip(dur :: Float64, s :: S) where {S <: Signal}
     Clip(s, dur)
 end
+function clip(dur :: Float64, s :: Stereo{L,R}) where {L <: Signal, R <: Signal}
+    stereo(clip(dur, s.left), clip(dur, s.right))
+end
 
 done(c :: Clip{S}, t, dt) where {S <: Signal} = t > c.dur || done(c.s, t, dt)
 value(c :: Clip{S}, t, dt) where {S <: Signal} = if t > c.dur 0.0f0 else value(c.s, t, dt) end
+
 
