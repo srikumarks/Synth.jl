@@ -104,6 +104,7 @@ Synth.hpf
 ```@docs
 Synth.waveshape
 Synth.linearmap
+Synth.expmap
 Synth.delay
 Synth.tap
 Synth.maxdelay

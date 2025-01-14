@@ -4,12 +4,12 @@ struct Noise{RNG <: AbstractRNG, Amp <: Signal} <: Signal
 end
 
 """
-    noise(rng :: RNG, amp :: A) where {RNG <: AbstractRNG, A <: Signal}
+    noise(rng :: RNG, amp :: Signal) where {RNG <: AbstractRNG}
     noise(rng :: RNG, amp :: Real) where {RNG <: AbstractRNG}
 
 Amplitude modulatable white noise generator.
 """
-function noise(rng :: RNG, amp :: A) where {RNG <: AbstractRNG, A <: Signal}
+function noise(rng :: RNG, amp :: Signal) where {RNG <: AbstractRNG}
     Noise(rng, amp)
 end,
 function noise(rng :: RNG, amp :: Real) where {RNG <: AbstractRNG}

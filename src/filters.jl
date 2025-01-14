@@ -12,11 +12,11 @@ end
 A first order filter where the gain factor that controls the
 bandwidth of the filter can be live controlled.
 """
-function filter1(s :: S, gain :: G) where {S <: Signal, G <: Signal}
+function filter1(s :: Signal, gain :: Signal)
     Filter1(s, gain, 0.0f0, 0.0f0)
 end
 
-function filter1(s :: S, gain :: Real) where {S <: Signal}
+function filter1(s :: Signal, gain :: Real)
     Filter1(s, konst(gain), 0.0f0, 0.0f0)
 end
 done(s :: Filter1, t, dt) = done(s.sig, t, dt)
@@ -48,20 +48,20 @@ mutable struct Filter2{S <: Signal, F <: Signal, G <: Signal} <: Signal
 end
 
 """
-    filter2(s :: S, f :: F, g :: G) where {S <: Signal, F <: Signal, G <: Signal}
-    filter2(s :: S, f :: F, g :: Real) where {S <: Signal, F <: Signal}
-    filter2(s :: S, f :: Real, g :: Real) where {S <: Signal}
+    filter2(s :: Signal, f :: Signal, g :: Signal)
+    filter2(s :: Signal, f :: Signal, g :: Real)
+    filter2(s :: Signal, f :: Real, g :: Real)
 
 Constructs a second order filter where the frequency and the gamma can be
 controlled live.
 """
-function filter2(s :: S, f :: F, g :: G) where {S <: Signal, F <: Signal, G <: Signal}
+function filter2(s :: Signal, f :: Signal, g :: Signal)
     Filter2(s, f, g, 0.0f0, 0.0f0)
 end
-function filter2(s :: S, f :: F, g :: Real) where {S <: Signal, F <: Signal}
+function filter2(s :: Signal, f :: Signal, g :: Real)
     filter2(s, f, konst(g))
 end
-function filter2(s :: S, f :: Real, g :: Real) where {S <: Signal}
+function filter2(s :: Signal, f :: Real, g :: Real)
     filter2(s, konst(f), konst(g))
 end
 
@@ -92,13 +92,13 @@ mutable struct FIR{S <: Signal, D <: Signal} <: Signal
 end
 
 """
-    fir(filt :: Vector{Float32}, dilation :: D, sig :: S) where {S <: Signal, D <: Signal}
+    fir(filt :: Vector{Float32}, dilation :: Signal, sig :: Signal)
 
 Constructs a "finite impulse response" (FIR) filter with the given `filt` as
 the impulse response. The `dilation` factor can be used to stretch short vectors using
 linear interpolation.
 """
-function fir(filt :: Vector{Float32}, dilation :: D, sig :: S) where {S <: Signal, D <: Signal}
+function fir(filt :: Vector{Float32}, dilation :: Signal, sig :: Signal)
     N = length(filt)
     FIR(sig, filt, N, dilation, 2N, zeros(Float32, 2N), 1)
 end
@@ -163,25 +163,25 @@ mutable struct Biquad{Ty, S <: Signal, F <: Signal, Q <: Signal} <: Signal
 end
 
 
-function biquad(::Type{T}, sig :: S, freq :: Konst, q :: Konst, dt) where {T <: BiquadType, S <: Signal}
+function biquad(::Type{T}, sig :: Signal, freq :: Konst, q :: Konst, dt) where {T <: BiquadType}
     b = Biquad{T,S,Konst,Konst}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
     computebiquadcoeffs(b.c, value(freq, 0.0, 0.0), value(q, 0.0, 0.0), dt)
     return b
 end
 
-function biquad(::Type{T}, sig :: S, freq :: Konst, q :: Real, dt) where {T <: BiquadType, S <: Signal}
+function biquad(::Type{T}, sig :: Signal, freq :: Konst, q :: Real, dt) where {T <: BiquadType}
     biquad{T}(sig, freq, konst(q), dt)
 end
 
-function biquad(::Type{T}, sig :: S, freq :: Real, q :: Konst, dt) where {T <: BiquadType, S <: Signal}
+function biquad(::Type{T}, sig :: Signal, freq :: Real, q :: Konst, dt) where {T <: BiquadType}
     biquad{T}(sig, konst(freq), q, dt)
 end
 
-function biquad(::Type{T}, sig :: S, freq :: Real, q :: Real, dt) where {T <: BiquadType, S <: Signal}
+function biquad(::Type{T}, sig :: Signal, freq :: Real, q :: Real, dt) where {T <: BiquadType}
     biquad{T}(sig, konst(freq), konst(q), dt)
 end
 
-function biquad(::Type{T}, sig :: S, freq :: F, q :: Q, dt) where {T <: BiquadType, S <: Signal, F <: Signal, Q <: Signal}
+function biquad(::Type{T}, sig :: Signal, freq :: Signal, q :: Signal, dt) where {T <: BiquadType}
     Biquad{T,S,F,Q}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
 end
 
@@ -273,41 +273,41 @@ function computenextvalue(s :: Biquad, t, dt)
 end
 
 """
-    lpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+    lpf(sig :: Signal, freq, q; samplingrate=48000)
 
 Standard second order LPF with frequency and Q factor.
 """
-function lpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+function lpf(sig :: Signal, freq, q; samplingrate=48000)
     biquad(LowPassFilter, sig, freq, q, 1/samplingrate)
 end
 
 """
-    bpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+    bpf(sig :: Signal, freq, q; samplingrate=48000)
 
 Standard second order bandpass filter with given centre frequency
 and Q factor. 
 """
-function bpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+function bpf(sig :: Signal, freq, q; samplingrate=48000)
     biquad(BandPassFilter, sig, freq, q, 1/samplingrate)
 end
 
 """
-    bpf0(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+    bpf0(sig :: Signal, freq, q; samplingrate=48000)
 
 Standard second order bandpass filter with given centre frequency
 and Q factor. This variant of `bpf` gives constant 0dB peak gain
 instead of the peak gain being determined by Q.
 """
-function bpf0(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+function bpf0(sig :: Signal, freq, q; samplingrate=48000)
     biquad(BandPassFilter0, sig, freq, q, 1/samplingrate)
 end
 
 """
-    hpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+    hpf(sig :: Signal, freq, q; samplingrate=48000)
 
 Standard second order high pass filter with given cut off frequency and Q.
 """
-function hpf(sig :: S, freq, q; samplingrate=48000) where {S <: Signal}
+function hpf(sig :: Signal, freq, q; samplingrate=48000)
     biquad(HighPassFilter, sig, freq, q, 1/samplingrate)
 end
 

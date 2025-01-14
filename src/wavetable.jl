@@ -20,7 +20,7 @@ function value(s :: Wavetable, t, dt)
 end
 
 """
-    wavetable(table :: Vector{Float32}, amp :: Amp, phase :: Ph) where {Amp <: Signal, Ph <: Signal}
+    wavetable(table :: Vector{Float32}, amp :: Signal, phase :: Signal)
 
 A simple wavetable synth that samples the given table using the given phasor
 and scales the table by the given amplitude modulator.
@@ -43,7 +43,7 @@ The amplitude modulation is just as with [`sinosc`](@ref).
 The samples wave table is deemed to be completed when the phasor signal or the
 amplitude modulator signal are completed.
 """
-function wavetable(table :: Vector{Float32}, amp :: Amp, phase :: Ph) where {Amp <: Signal, Ph <: Signal}
+function wavetable(table :: Vector{Float32}, amp :: Signal, phase :: Signal)
     @assert length(table) >= 4
     Wavetable(table, length(table), amp, phase)
 end

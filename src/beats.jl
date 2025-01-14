@@ -94,16 +94,17 @@ function value(s :: Beats{P}, t, dt) where {P <: Signal}
 end
     
 """
-    beats(tempo :: T, gen :: BG; phase = 1.0f0, count = -1) :: Beats{T, BG} where {T <: Signal, BG <: BeatGen}
+    beats(tempo :: Signal, gen :: BeatGen; phase = 1.0f0, count = -1) :: Beats
+    beats(tempo :: Real, gen :: BeatGen; phase=1.0, count=-1) :: Beats
 
 Generates beats using [`genbeat`](@ref) starting with the given phase.
 The default values are such that the very first sample produced is considered
 to be the start of a beat. If you need to start it a little later, supply a
 corresponding value of phase that's < 1.0.
 """
-function beats(tempo :: T, gen :: BG; phase=1.0, count=-1) :: Beats{T, BG} where {T <: Signal, BG <: BeatGen}
+function beats(tempo :: Signal, gen :: BeatGen; phase=1.0, count=-1)
     Beats(tempo, gen, phase, count, Vector{Tuple{Float64,Signal}}(), false)
 end
-function beats(tempo :: Real, gen :: BG; phase=1.0, count=-1) :: Beats{Konst, BG} where {BG <: BeatGen}
+function beats(tempo :: Real, gen :: BeatGen; phase=1.0, count=-1)
     beats(konst(tempo), gen; phase, count)
 end

@@ -8,7 +8,7 @@ Renders the given signal to a flat `Vector{Float32}`,
 over the given `dur_secs`. If the signal terminates before
 the duration is up, the result is truncated accordingly.
 """
-function render(s :: S, dur_secs; samplingrate=48000, normalize=false, maxamp=0.5) where {S <: Signal}
+function render(s :: Signal, dur_secs; samplingrate=48000, normalize=false, maxamp=0.5)
     dt = 1.0 / samplingrate
     N = floor(Int, dur_secs * samplingrate)
     tspan = dt .* (0:(N-1))

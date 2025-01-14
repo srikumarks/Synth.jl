@@ -22,19 +22,19 @@ function value(s :: Follow{S,R}, t, dt) where {S <: Signal, R <: Signal}
 end
 
 """
-    follow(s :: S, rate :: R) where {S <: Signal, R <: Signal}
-    follow(s :: S, rate :: Real) where {S <: Signal}
+    follow(s :: Signal, rate :: Signal)
+    follow(s :: Signal, rate :: Real)
 
 Follows a signal on the rise and decays on the fall.
 This means if the input signal is an impulse, then 
 you'll get a series of exponential decays on each of
 the impulses.
 """
-function follow(s :: S, rate :: R) where {S <: Signal, R <: Signal}
+function follow(s :: Signal, rate :: Signal)
     Follow(s, rate, 0.0f0)
 end
 
-function follow(s :: S, rate :: Real) where {S <: Signal}
+function follow(s :: Signal, rate :: Real)
     follow(s, konst(rate))
 end
 

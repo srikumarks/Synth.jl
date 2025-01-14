@@ -8,12 +8,12 @@ mutable struct Seq{Sch <: Signal, T <: Tuple{Float64, Signal}} <: Signal
 end
 
 """
-    seq(clock :: Sch, triggers :: Vector{Tuple{Float64,Signal}}) where {Sch <: Signal}
+    seq(clock :: Signal, triggers :: Vector{Tuple{Float64,Signal}})
 
 Sequences the given signals in a virtual timeline determined by the given
 clock. Use `clock_bpm` to make such a clock.
 """
-function seq(clock :: Sch, triggers :: Vector{T}) where {Sch <: Signal, T <: Tuple{Float64,Signal}}
+function seq(clock :: Signal, triggers :: Vector{T}) where {T <: Tuple{Float64,Signal}}
     Seq(clock,
         triggers,
         accumulate(+, first.(triggers)),

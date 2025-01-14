@@ -21,11 +21,11 @@ with loops possible.
 feedback() = Feedback(nothing, 0.0, 0.0, 0.0f0, false)
 
 """
-    connect(s :: S, fb :: Feedback) where {S <: Signal}
+    connect(s :: Signal, fb :: Feedback)
 
 Connects a signal to a feedback point.
 """
-function connect(s :: S, fb :: Feedback) where {S <: Signal}
+function connect(s :: Signal, fb :: Feedback)
     fb.s = s
 end
 

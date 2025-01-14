@@ -45,13 +45,13 @@ done(s :: Clamp{S}, t, dt) where {S <: Signal} = done(s.sig, t, dt)
 value(s :: Clamp{S}, t, dt) where {S <: Signal} = max(s.minval, min(s.maxval, value(s.sig, t, dt)))
 
 """
-    clamp(minval::Real, maxval::Real, sig::S) where {S <: Signal}
+    clamp(minval::Real, maxval::Real, sig::Signal)
     clamp(minval::Real, maxval::Real, sig::Stereo{L,R}) where {L <: Signal, R <: Signal}
 
 Clamps the given signal to the give minimum and maximum values. 
 Supports stereo signals and clamps the individual channels.
 """
-function clamp(minval::Real, maxval::Real, sig::S) where {S <: Signal}
+function clamp(minval::Real, maxval::Real, sig::Signal)
     Clamp(sig, Float32(minval), Float32(maxval))
 end
 

@@ -7,7 +7,7 @@ struct Scheduler{Clk <: Signal} <: Signal
 end
 
 """
-    scheduler(clk :: Clk) :: Scheduler{Clk} where {Clk <: Signal}
+    scheduler(clk :: Signal) :: Scheduler
 
 Creates a "scheduler" which is itself a signal that can be composed
 with other signals and processors. The scheduler runs on its own 
@@ -15,7 +15,7 @@ clock and sending `Tuple{Float64,Signal}` values on the `.chan`
 property will trigger those signals at the given times according
 to the clock. The scheduling is sample accurate.
 """
-function scheduler(clk :: Clk) :: Scheduler{Clk} where {Clk <: Signal}
+function scheduler(clk :: Signal)
     Scheduler(clk, 0.0, Channel{Tuple{Float64,Signal}}(), [], [])
 end
 

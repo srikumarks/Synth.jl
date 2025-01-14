@@ -9,7 +9,7 @@ mutable struct Delay{S <: Signal} <: Signal
 end
 
 """
-    delay(sig :: S, maxdelay :: Real; samplingrate=48000) where {S <: Signal, Tap <: Signal}
+    delay(sig :: Signal, maxdelay :: Real; samplingrate=48000)
 
 Sets up a delay ring buffer through which the given signal is passed. 
 A delay is pretty much a pass through and is useful only in conjunction
@@ -21,7 +21,7 @@ locations.
 - `maxdelay` is the maximum amount of delay possible.
 - `samplingrate` is the sampling rate in Hz. (This is needed to compute buffer size.)
 """
-function delay(sig :: S, maxdelay :: Real; samplingrate=48000) where {S <: Signal}
+function delay(sig :: Signal, maxdelay :: Real; samplingrate=48000)
     N = round(Int, maxdelay * samplingrate)
     @assert N > 0
     Delay(
@@ -113,7 +113,7 @@ function value(s :: Later{S}, t, dt) where {S <: Signal}
 end
 
 """
-    later(delay_secs :: Float64, s :: S) where {S <: Signal}
+    later(delay_secs :: Float64, s :: Signal)
 
 Postpones the signal by the given delay_secs. Note that this is not
 the same as a delay line where there is memory allocated to store
@@ -121,6 +121,6 @@ some of the samples. The signal is not touched until `delay_secs` has
 passed, and the time value that the signal ends up seeing also does
 not span the period up to the delay.
 """
-function later(delay_secs :: Float64, s :: S) where {S <: Signal}
+function later(delay_secs :: Float64, s :: Signal)
     Later(s, delay_secs)
 end

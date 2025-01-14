@@ -20,8 +20,8 @@ functions provided rather than the structure constructors directly.
 The protocol for a signal is given by two functions with the following
 signatures --
 
-- `done(s :: S, t, dt) where {S <: Signal} :: Bool`
-- `value(s :: S, t, dt) where {S <: Signal} :: Float32`
+- `done(s :: Signal, t, dt) :: Bool`
+- `value(s :: Signal, t, dt) :: Float32`
 
 As long as you implement these two methods, you can define your own subtype of
 Signal and use it with the library.
@@ -172,7 +172,7 @@ end
 
 
 """
-    aliasable(s :: S) where {S <: Signal}
+    aliasable(s :: Signal)
 
 A signal, once constructed, can only be used by one "consumer" via function
 composition. In some situations, we want a signal to be plugged into multiple
@@ -195,7 +195,7 @@ you need it instead. Note that `aliasable` is an idempotent operator (i.e.
     the latter sense that we use the word `aliasable` in this case. 
 """
 aliasable(sig :: Aliasable{S}) where {S <: Signal} = sig
-aliasable(sig :: S) where {S <: Signal} = Aliasable(sig, -1.0, 0.0f0)
+aliasable(sig :: Signal) = Aliasable(sig, -1.0, 0.0f0)
 done(s :: Aliasable, t, dt) = done(s.sig, t, dt)
 function value(s :: Aliasable, t, dt)
     if t > s.t
@@ -242,7 +242,7 @@ end
 
 """
     stereo(left :: Aliasable{L}, right :: Aliasable{R}) where {L <: Signal, R <: Signal}
-    stereo(left :: L, right :: R) where {L <: Signal, R <: Signal}
+    stereo(left :: Signal, right :: Signal)
 
 Makes a "stereo signal" with the given left and right channel signals.
 The stereo signal is itself considered a signal which produces the
@@ -277,7 +277,7 @@ $(see_also("left,right,mono"))
 function stereo(left :: Aliasable{L}, right :: Aliasable{R}) where {L <: Signal, R <: Signal}
     Stereo(left, right, 0.0, 0.0f0, 0.0f0, 0.0f0)
 end
-function stereo(left :: L, right :: R) where {L <: Signal, R <: Signal}
+function stereo(left :: Signal, right :: Signal)
     Stereo(aliasable(left), aliasable(right), 0.0, 0.0f0, 0.0f0, 0.0f0)
 end
 
@@ -319,19 +319,19 @@ mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = konst(sqrt(0.5f0)) * (
 mono(s :: Signal) = s
 
 """
-    pan(s :: S, lr :: Real) where {S <: Signal}
-    pan(s :: S, lr :: P) where {S <: Signal, P <: Signal}
+    pan(s :: Signal, lr :: Real)
+    pan(s :: Signal, lr :: Signal)
 
 Pans a mono signal left or right to produce a stereo signal. `lr` is a signal
 that takes values in the range [-1.0,1.0] where negative values indicate left
 and positive values indicate right. So giving 0.0 will centre pan the signal
 with left and right components receiving equal contributions of the signal.
 """
-function pan(s :: S, lr :: P) where {S <: Signal, P <: Signal}
+function pan(s :: Signal, lr :: Signal)
     stereo(0.5f0 * (1.0f0 - lr) * s, 0.5f0 * (1.0f0 + lr) * s)
 end
 
-function pan(s :: S, lr :: Real) where {S <: Signal}
+function pan(s :: Signal, lr :: Real)
     pan(s, konst(lr))
 end
 
@@ -341,13 +341,13 @@ struct Clip{S <: Signal} <: Signal
 end
 
 """
-    clip(dur :: Float64, s :: S) where {S <: Signal}
+    clip(dur :: Float64, s :: Signal)
 
 Clips the given signal to the given duration. Usually you'd use a "soft"
 version of this like a raised cosine or ADSR, but clip could be useful on
 its own.
 """
-function clip(dur :: Float64, s :: S) where {S <: Signal}
+function clip(dur :: Float64, s :: Signal)
     Clip(s, dur)
 end
 function clip(dur :: Float64, s :: Stereo{L,R}) where {L <: Signal, R <: Signal}

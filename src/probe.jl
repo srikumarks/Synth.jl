@@ -28,8 +28,8 @@ function value(p :: Probe{S}, t, dt) where {S <: Signal}
 end
 
 """
-    probe(s :: S, chan :: Channel{Float32}, interval :: Float64 = 0.1; samplingrate = 48000) :: Probe{S} where {S <: Signal}
-    probe(s :: S, interval :: Float64 = 0.1; samplingrate = 48000) :: Probe{S} where {S <: Signal}
+    probe(s :: Signal, chan :: Channel{Float32}, interval :: Float64 = 0.1; samplingrate = 48000) :: Probe
+    probe(s :: Signal, interval :: Float64 = 0.1; samplingrate = 48000) :: Probe
 
 A probe is a "pass through" signal transformer which periodically reports a
 reading of the signal to a channel. The channel may either be given or a new
@@ -41,11 +41,11 @@ fast. The default value has it sampling the signal every 40ms.
 The channel can then be connected to a UI display widget that shows values
 as they come in on the channel.
 """
-function probe(s :: S, chan :: Channel{Float32}, interval :: Float64 = 0.04; samplingrate = 48000) :: Probe{S} where {S <: Signal}
+function probe(s :: Signal, chan :: Channel{Float32}, interval :: Float64 = 0.04; samplingrate = 48000)
     wv = 2 ^ (- 1.0 / (interval * samplingrate))
     Probe(s, chan, interval, 0.0, wv, 1.0 - wv, 0.0f0)
 end
-function probe(s :: S, interval :: Float64 = 0.04; samplingrate = 48000) :: Probe{S} where {S <: Signal}
+function probe(s :: Signal, interval :: Float64 = 0.04; samplingrate = 48000)
     probe(s, Channel{Float32}(2), interval; samplingrate)
 end
 
