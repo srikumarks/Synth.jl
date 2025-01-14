@@ -318,6 +318,23 @@ $(see_also("left,right,stereo"))
 mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = konst(sqrt(0.5f0)) * (s.left + s.right)
 mono(s :: Signal) = s
 
+"""
+    pan(s :: S, lr :: Real) where {S <: Signal}
+    pan(s :: S, lr :: P) where {S <: Signal, P <: Signal}
+
+Pans a mono signal left or right to produce a stereo signal. `lr` is a signal
+that takes values in the range [-1.0,1.0] where negative values indicate left
+and positive values indicate right. So giving 0.0 will centre pan the signal
+with left and right components receiving equal contributions of the signal.
+"""
+function pan(s :: S, lr :: P) where {S <: Signal, P <: Signal}
+    stereo(0.5f0 * (1.0f0 - lr) * s, 0.5f0 * (1.0f0 + lr) * s)
+end
+
+function pan(s :: S, lr :: Real) where {S <: Signal}
+    pan(s, konst(lr))
+end
+
 struct Clip{S <: Signal} <: Signal
     dur :: Float64
     s :: S

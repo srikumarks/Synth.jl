@@ -31,6 +31,7 @@ Synth.stereo
 Synth.left
 Synth.right
 Synth.mono
+Synth.pan
 ```
 
 ## Generators
