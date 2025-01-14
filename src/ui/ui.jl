@@ -1,9 +1,10 @@
 module UI
 
+import Synth
 using Gtk4
 using Printf
 
-RGBA = Main.RGBA{Float32}
+UIRGBA = Gtk4.RGBA{Float32}
 
 abstract type KeyOperated end
 
@@ -15,6 +16,13 @@ struct Slider <: KeyOperated
     minval::Float32
     maxval::Float32
     step::Float32
+end
+
+function Slider(ctrl::Synth.Control, label, angle, length, minval, maxval, step)
+    onchanged(s::Slider, v) = begin
+        ctrl[] = v
+    end
+    Slider(onchanged, label, angle, length, minval, maxval, step)
 end
 
 struct KeyOp{W <: KeyOperated, S <: AbstractSet{Int}}
@@ -37,7 +45,7 @@ struct LED
     length::Int
     breadth::Int
     numsteps::Int
-    colours::Vector{RGBA}  # Using just RGBA instead of Gtk4.RGBA
+    colours::Vector{UIRGBA}  # Using just UIRGBA instead of Gtk4.UIRGBA
     fillratio::Float32
     gamma::Float32
     canvas::Ref{Union{Nothing,GtkCanvas}}
@@ -53,7 +61,7 @@ struct Level
     minval::Float32
     maxval::Float32
     breakpts::Vector{Tuple{Float32,Float32}}
-    colours::Vector{Tuple{RGBA,RGBA}}
+    colours::Vector{Tuple{UIRGBA,UIRGBA}}
 end
 
 struct HGroup
@@ -196,7 +204,7 @@ function render(led :: LED, panel :: Panel)
     return box
 end
 
-function led(label::String, angle::Int, length_::Int, breadth::Int, colours::Vector{RGBA}, source::Channel{Float32}; fillratio=0.5, gamma=0.5)
+function led(label::String, angle::Int, length_::Int, breadth::Int, colours::Vector{UIRGBA}, source::Channel{Float32}; fillratio=0.5, gamma=0.5)
     @assert angle == 0 || angle == 90
     N = length(colours)
     val = Ref(0.0f0)
@@ -294,6 +302,10 @@ function render(s::Slider, panel::Panel)
     
     panel.widgetof[s] = scale
     return box
+end
+
+function sink(::Type{Slider}, c :: Synth.Control)
+    (s::Slider,v) -> c[] = v
 end
 
 function sink(::Type{Slider}, chan::Channel{Float32})
@@ -395,9 +407,9 @@ end
 src = Channel{Float32}(2)
 
 function test4()
-    y = RGBA(1.0f0, 1.0f0, 0.0f0, 1.0f0)
-    o = RGBA(1.0f0, 0.65f0, 0.0f0, 1.0f0)
-    r = RGBA(1.0f0, 0.0f0, 0.0f0, 1.0f0)
+    y = UIRGBA(1.0f0, 1.0f0, 0.0f0, 1.0f0)
+    o = UIRGBA(1.0f0, 0.65f0, 0.0f0, 1.0f0)
+    r = UIRGBA(1.0f0, 0.0f0, 0.0f0, 1.0f0)
     led("blinker", 90, 200, 40, vcat(repeat([y], 9), repeat([o],3), repeat([r], 2)), src)
 end
 

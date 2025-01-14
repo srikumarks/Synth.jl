@@ -52,5 +52,6 @@ include("io.jl")
 include("player.jl")
 
 include("models/models.jl")
+include("ui/ui.jl")
 
 end # module Synth

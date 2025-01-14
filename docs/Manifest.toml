@@ -874,7 +874,7 @@ uuid = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 version = "0.2.8"
 
 [[deps.Synth]]
-deps = ["FileIO", "Gtk4", "LibSndFile", "PortAudio", "Random", "SampledSignals", "ThreadPools"]
+deps = ["FileIO", "Gtk4", "LibSndFile", "PortAudio", "Printf", "Random", "SampledSignals", "ThreadPools"]
 path = ".."
 uuid = "17321cac-a4bc-4530-aa11-a8f457f422f2"
 version = "1.0.0-DEV"
