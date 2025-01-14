@@ -7,11 +7,15 @@ mutable struct Control <: Signal
     lastv :: Float32
 end
 
-done(c :: Control, t, dt) = false
+done(c :: Control, t, dt) = isnan(c.lastv)
 
 function value(c :: Control, t, dt)
+    if isnan(c.lastv) return c.v end
     while isready(c.chan)
         c.lastv = take!(c.chan)
+        if isnan(c.lastv)
+            return c.v
+        end
     end
 
     # Dezipper the control signal.
@@ -34,8 +38,9 @@ created channel. The control will dezipper the value using a first order LPF
 and send it out as its value. The intention is to be able to bind a UI element
 that produces a numerical value as a signal that can be patched into the graph.
 
-If `c` is a `Control` struct, you can set the value of the control using
-``c[] = 0.5f0`.
+If `c` is a `Control` struct, you can set the value of the control using `c[] = 0.5f0`.
+
+Send a `NaN32` on the channel to mark the control signal as "done".
 """
 function control(chan :: Channel{Float32}, dezipper_interval = 0.04; initial = 0.0f0, samplingrate=48000) :: Control
     wv = 2 ^ (- 1.0 / (dezipper_interval * samplingrate))
