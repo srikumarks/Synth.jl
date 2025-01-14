@@ -13,6 +13,8 @@ export granulate, simplegrains, chorusgrains, Grain
 export beats
 export dBscale, interp4, raisedcos, midi2hz, hz2midi, easeinout, curve, Seg, circular
 
+see_also(meths) = "**See also**: " * join(["[`$m`](@ref)" for m in split(meths,",")], ", ", " and ")
+
 include("signal.jl")
 include("basics.jl")
 

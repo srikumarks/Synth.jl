@@ -14,8 +14,8 @@ function done(s :: Phasor{F}, t, dt) where {F <: Signal}
 end
 
 """
-    phasor(f :: Real, phi0 = 0.0) = Phasor(konst(f), Float64(phi0))
-    phasor(f :: F, phi0 = 0.0) where {F <: Signal} = Phasor(f, Float64(phi0))
+    phasor(f :: Real, phi0 = 0.0)
+    phasor(f :: F, phi0 = 0.0) where {F <: Signal}
 
 A "phasor" is a signal that goes from 0.0 to 1.0 linearly and then
 loops back to 0.0. This is useful in a number of contexts including

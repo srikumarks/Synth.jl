@@ -239,6 +239,7 @@ function value(s :: Stereo{L,R}, chan :: Int, t, dt) where {L <: Signal, R <: Si
     end
 end
 
+
 """
     stereo(left :: Aliasable{L}, right :: Aliasable{R}) where {L <: Signal, R <: Signal}
     stereo(left :: L, right :: R) where {L <: Signal, R <: Signal}
@@ -263,11 +264,15 @@ value(s::Stereo{L,R}, chan::Int, t, dt)
 ```
 
 where `chan` can be -1 for left, 0 for mixed middle and 1 for right channels.
+Note that calling `value` for different channels at the same time won't
+compute multiple times because `Stereo` is aliasable directly.
 
 The mixer and modulator operators (+/-/*) treat stereo signals as stereo and
 work accordingly. The other operators all (unless noted) are not cognizant of
 stereo signals and so you must be explicit with them if you're applying them on
 stereo signals.
+
+$(see_also("left,right,mono"))
 """
 function stereo(left :: Aliasable{L}, right :: Aliasable{R}) where {L <: Signal, R <: Signal}
     Stereo(left, right, 0.0, 0.0f0, 0.0f0, 0.0f0)
@@ -278,25 +283,40 @@ end
 
 """
     left(s :: Stereo{L,R}) where {L <: Signal, R <: Signal}
+    left(s :: Signal)
 
-Picks the left channel of a stereo signal.
+Picks the left channel of a stereo signal. Evaluates to the signal
+itself if passed a non-stereo signal (which is considered mono).
+
+$(see_also("right,mono,stereo"))
 """
 left(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = s.left
+left(s :: Signal) = s
 
 """
     right(s :: Stereo{L,R}) where {L <: Signal, R <: Signal}
+    right(s :: Signal)
 
-Picks the right channel of a stereo signal.
+Picks the right channel of a stereo signal. Evaluates to the signal
+itself if passed a non-stereo signal (which is considered mono).
+
+$(see_also("left,mono,stereo"))
 """
 right(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = s.right
+right(s :: Signal) = s
 
 """
     mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} 
+    mono(s :: Signal)
 
-Converts a stereo signal into a mono signal by mixing the left
-and right channels.
+Converts a stereo signal into a mono signal by mixing the left and right
+channels. Evaluates to the signal itself if passed a non-stereo signal (which
+is considered mono).
+
+$(see_also("left,right,stereo"))
 """
 mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = konst(sqrt(0.5f0)) * (s.left + s.right)
+mono(s :: Signal) = s
 
 struct Clip{S <: Signal} <: Signal
     dur :: Float64

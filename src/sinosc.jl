@@ -23,9 +23,9 @@ end
     sinosc(m :: Signal, f :: Real; phase = 0.0)
     sinosc(m :: Signal, f :: Signal; phase = 0.0)
 
-A "sinosc" is a sinusoidal oscillator that can be controlled using a phasor or
-a clock to determine a time varying frequency. The `f` argument is expected to
-be a frequency in Hz units. Both the frequency and the amplitude are modulatable.
+A "sinosc" is a sinusoidal oscillator whose frequency and amplitude can be
+varied ("modulated") over time. The `f` argument is expected to be a frequency
+in Hz units. `m` determines the amplitude and `f` the frequency in Hz.
 """
 sinosc(m :: Real, f :: Real; phase = 0.0) = SinOsc(konst(m), konst(f), Float32(2π*phase))
 sinosc(m :: Real, f :: Signal; phase = 0.0) = SinOsc(konst(m), f, Float32(2π*phase))
