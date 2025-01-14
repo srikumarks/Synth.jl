@@ -66,7 +66,7 @@ function adsr(suslevel :: Signal, sus_secs :: Real;
 end
 
 function done(s :: ADSR, t, dt)
-    (s.stage >= 3 && s.logv < -15.0) || t > s.t3
+    (s.stage >= 3 && s.logv < -15.0)
 end
 
 function value(s :: ADSR, t, dt)
