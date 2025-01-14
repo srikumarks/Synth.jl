@@ -45,6 +45,7 @@ include("beats.jl")
 
 include("probe.jl")
 include("control.jl")
+include("level.jl")
 
 include("render.jl")
 include("io.jl")

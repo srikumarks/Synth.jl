@@ -80,6 +80,7 @@ Synth.play!
 Synth.play
 Synth.control
 Synth.probe
+Synth.level
 Synth.scheduler
 Synth.schedule
 Synth.seq
