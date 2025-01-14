@@ -258,7 +258,9 @@ which produce aliasable versions of the two components.
 
 There is a new `value` method that works on stereo signals --
 
-``value(s::Stereo{L,R}, chan::Int, t, dt)``
+```
+value(s::Stereo{L,R}, chan::Int, t, dt)
+```
 
 where `chan` can be -1 for left, 0 for mixed middle and 1 for right channels.
 
@@ -289,23 +291,12 @@ Picks the right channel of a stereo signal.
 right(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = s.right
 
 """
-    chan(s :: Stereo{L,R}, c :: Int) where {L <: Signal, R <: Signal}
+    mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} 
 
-Picks a component of a stereo signal. If `c == 0` it gives the mixed signal.
-If `c == -1`, that's the left component and if `c == 1` that's the right
-component. Produces a null signal for any other values of `c`.
+Converts a stereo signal into a mono signal by mixing the left
+and right channels.
 """
-function chan(s :: Stereo{L,R}, c :: Int) where {L <: Signal, R <: Signal}
-    if c == 0
-        konst(sqrt(0.5f0)) * (s.left + s.right)
-    elseif c == -1
-        s.left
-    elseif c == 1
-        s.right
-    else
-        konst(0.0f0)
-    end
-end
+mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = konst(sqrt(0.5f0)) * (s.left + s.right)
 
 struct Clip{S <: Signal} <: Signal
     dur :: Float64

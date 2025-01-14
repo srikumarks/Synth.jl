@@ -30,7 +30,7 @@ Synth.clamp
 Synth.stereo
 Synth.left
 Synth.right
-Synth.chan
+Synth.mono
 ```
 
 ## Generators
