@@ -79,6 +79,7 @@ Synth.synthchan
 Synth.play!
 Synth.play
 Synth.control
+Synth.stop
 Synth.probe
 Synth.level
 Synth.scheduler
