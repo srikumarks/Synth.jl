@@ -54,20 +54,20 @@ can change if needed.
 """
 function adsr(suslevel :: Real, sus_secs :: Real;
               attack_factor = 2.0, attack_secs = 0.002,
-              decay_secs = 0.01, release_secs = 0.2, release_factor = 4.0)
-    adsr(konst(suslevel), sus_secs; attack_factor, attack_secs, decay_secs, release_secs, release_factor)
+              decay_secs = 0.01, release_secs = 0.2, release_factor = 4.0, samplingrate=48000)
+    adsr(konst(suslevel), sus_secs; attack_factor, attack_secs, decay_secs, release_secs, release_factor, samplingrate)
 end
 
 function adsr(suslevel :: Signal, sus_secs :: Real;
               attack_factor = 2.0, attack_secs = 0.002,
               decay_secs = 0.01,
-              release_secs = 0.2, release_factor = 4.0)
+              release_secs = 0.2, release_factor = 4.0, samplingrate=48000)
     @assert attack_factor >= 1.0
     @assert attack_secs > 0.0
     @assert release_factor > 0.0
     @assert release_secs > 0.0
 
-    susval = value(suslevel, 0.0, 1/48000)
+    susval = value(suslevel, 0.0, 1/samplingrate)
     alevel = max(1.0, attack_factor) * susval
     asecs = max(0.0005, attack_secs)
     dsecs = max(0.01, decay_secs)
