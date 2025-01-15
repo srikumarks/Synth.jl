@@ -1,14 +1,14 @@
 using Synth
 
 """
-    tone(amp, freq, duration; attackfactor = 2.0, attack_secs = 0.005, decay_secs = 0.05, release_secs = 0.2)
+    tone(amp, freq, duration; attack_factor = 2.0, attack_secs = 0.005, decay_secs = 0.05, release_secs = 0.2)
 
 A simple sine tone modulator by an ADSR envelope. `amp` is the amplitude of the
 sustain portion, `freq` is the Hz value of the frequency of the tone and `duration`
 is the duration in seconds of the sustain portion.
 
 # Envelope characteristics
-- `attackfactor` - the factor (usually > 1.0) that multiplies the amplitude value to 
+- `attack_factor` - the factor (usually > 1.0) that multiplies the amplitude value to 
   determine the peak of the attack portion of the envelope.
 - `attack_secs` - the duration of the attack portion. This should be kept short in general.
 - `decay_secs` - the duration of the portion of the envelope where it decays from the
@@ -16,8 +16,8 @@ is the duration in seconds of the sustain portion.
 - `release_secs` - the "half life" of the release portion of the envelope. Over this time,
   the amplitude of the signal will decay by a factor of 2.
 """
-function tone(amp, freq, duration; attackfactor = 2.0, attack_secs = 0.005, decay_secs = 0.05, release_secs = 0.2)
-    env = adsr(amp * attackfactor, attack_secs, decay_secs, amp, duration, release_secs) 
+function tone(amp, freq, duration; attack_factor = 2.0, attack_secs = 0.005, decay_secs = 0.05, release_secs = 0.2)
+    env = adsr(amp * attack_factor, attack_secs, decay_secs, amp, duration, release_secs) 
     sinosc(env, freq)
 end
 

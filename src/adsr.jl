@@ -22,7 +22,7 @@ end
 
 """
     adsr(suslevel :: Real, sus_secs :: Real;
-         attackfactor = 2.0, attack_secs = 0.002,
+         attack_factor = 2.0, attack_secs = 0.002,
          decay_secs = 0.01, release_secs = 0.2)
 
 Makes an "attack-decay-sustain-release" envelope.
@@ -35,7 +35,7 @@ can change if needed.
 
 - `suslevel` is the sustain level
 - `sus_secs` is the duration of the sustain portion
-- `attackfactor` determines the peak of the attack and multiplies the sustain level.
+- `attack_factor` determines the peak of the attack and multiplies the sustain level.
 - `attack_secs` is the duration of the linear attack portion
 - `decay_secs` is the duration of the exponential decay portion after the attack.
 - `release_secs` is the "half life" of the release portion of the envelope.
@@ -53,17 +53,22 @@ can change if needed.
   at a slower rate than indicated by `release_secs`.
 """
 function adsr(suslevel :: Real, sus_secs :: Real;
-              attackfactor = 2.0, attack_secs = 0.002,
+              attack_factor = 2.0, attack_secs = 0.002,
               decay_secs = 0.01, release_secs = 0.2, release_factor = 4.0)
-    adsr(konst(suslevel), sus_secs; attackfactor, attack_secs, decay_secs, release_secs, release_factor)
+    adsr(konst(suslevel), sus_secs; attack_factor, attack_secs, decay_secs, release_secs, release_factor)
 end
 
 function adsr(suslevel :: Signal, sus_secs :: Real;
-              attackfactor = 2.0, attack_secs = 0.002,
+              attack_factor = 2.0, attack_secs = 0.002,
               decay_secs = 0.01,
               release_secs = 0.2, release_factor = 4.0)
+    @assert attack_factor >= 1.0
+    @assert attack_secs > 0.0
+    @assert release_factor > 0.0
+    @assert release_secs > 0.0
+
     susval = value(suslevel, 0.0, 1/48000)
-    alevel = max(1.0, attackfactor) * susval
+    alevel = max(1.0, attack_factor) * susval
     asecs = max(0.0005, attack_secs)
     dsecs = max(0.01, decay_secs)
     relsecs = max(0.01, release_secs)
@@ -110,6 +115,10 @@ function value(s :: ADSR, t, dt)
         #v = 2 ^ s.logv
         if done(s.sustain_level, t, dt)
             s.stage = 3
+            # Correct for the release phase once we know the
+            # actual sustain level instead of assuming it 
+            # to be 1.0
+            s.ddlogv_release = (-15 + release_factor - log2(v)) / (0.5f0 * (release_factor * relsecs)^2)
         end
     else
         s.stage = 3
