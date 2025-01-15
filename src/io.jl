@@ -2,7 +2,7 @@ using FileIO: load, save
 using LibSndFile
 
 """
-    write(filename :: AbstractString, model::Sig, duration_secs :: AbstractFloat; samplingrate=48000, maxamp=0.5) where {Sig <: Signal}
+    write(filename :: AbstractString, model::Signal, duration_secs :: AbstractFloat; samplingrate=48000, maxamp=0.5)
 
 Renders and writes raw `Float32` values to the given file.
 """
