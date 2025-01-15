@@ -7,7 +7,18 @@ makedocs(
          modules=[Synth, Synth.Models],
          pages = [
                   "Home" => Any[
-                             "index.md"
+                             "index.md",
+                             "basic.md",
+                             "stereo.md",
+                             "gen.md",
+                             "music.md",
+                             "render.md",
+                             "rt.md",
+                             "filters.md",
+                             "tx.md",
+                             "wt.md",
+                             "gran.md",
+                             "utils.md"
                             ],
                   "Other" => Any[
                             "design.md",
