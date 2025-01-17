@@ -1,0 +1,5 @@
+# Effects
+
+```@docs
+Synth.compress
+```

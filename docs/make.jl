@@ -15,6 +15,7 @@ makedocs(
                              "render.md",
                              "rt.md",
                              "filters.md",
+                             "fx.md",
                              "tx.md",
                              "wt.md",
                              "gran.md",

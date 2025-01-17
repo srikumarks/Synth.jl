@@ -12,6 +12,7 @@ export wavetable, maketable
 export granulate, simplegrains, chorusgrains, Grain
 export beats
 export dBscale, interp4, raisedcos, midi2hz, hz2midi, easeinout, curve, Seg, circular
+export compress
 
 see_also(meths) = "**See also**: " * join(["[`$m`](@ref)" for m in split(meths,",")], ", ", " and ")
 
@@ -51,7 +52,9 @@ include("render.jl")
 include("io.jl")
 include("player.jl")
 
+include("fx.jl")
+
 include("models/models.jl")
-include("ui/ui.jl")
+#include("ui/ui.jl")
 
 end # module Synth
