@@ -147,7 +147,10 @@ end
 
 Makes a circular array that handles the modulo calculations.
 """
-circular(v :: AbstractArray) = Circular(v, length(v))
+circular(v :: AbstractArray) = begin
+    @assert length(v) > 0
+    Circular(v, length(v))
+end
 
 # Turns a normal function of time into a signal.
 struct SigFun <: Signal
@@ -321,11 +324,16 @@ mono(s :: Signal) = s
 """
     pan(s :: Signal, lr :: Real)
     pan(s :: Signal, lr :: Signal)
+    pan(s :: Stereo{L,R}, lr :: Real) where {L,R}
 
 Pans a mono signal left or right to produce a stereo signal. `lr` is a signal
 that takes values in the range [-1.0,1.0] where negative values indicate left
 and positive values indicate right. So giving 0.0 will centre pan the signal
 with left and right components receiving equal contributions of the signal.
+
+When applied to a stereo signal, a "left pan" (`lr` in range `[-1,0]`) will
+result in the right signal being moved left  and a "right pan" (`lr` in range
+`[0,1]`) will result in the left signal being moved right.
 """
 function pan(s :: Signal, lr :: Signal)
     stereo(0.5f0 * (1.0f0 - lr) * s, 0.5f0 * (1.0f0 + lr) * s)
@@ -333,6 +341,18 @@ end
 
 function pan(s :: Signal, lr :: Real)
     pan(s, konst(lr))
+end
+
+function pan(s :: Stereo{L,R}, lr :: Real) where {L,R}
+    pan(s, konst(lr))
+end
+
+function pan(s :: Stereo{L,R}, lr :: Signal) where {L,R}
+    if lr < 0.0
+        stereo(s.left - lr * s.right, (1.0f0 + lr) * s.right)
+    else
+        stereo(s.left * (1.0f0 - lr), s.right + lr * s.left)
+    end
 end
 
 struct Clip{S <: Signal} <: Signal
