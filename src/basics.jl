@@ -17,13 +17,13 @@ function konst(v::T) where {T <: Real}
 end
 
 """
-    rescale(maxamp :: Float32, samples :: Vector{Float32}) :: Vector{Float32}
+    rescale(maxamp :: Real, samples :: AbstractArray) :: Vector{Float32}
 
 Rescales the samples so that the maximum extent fits within the given `maxamp`
 (which must be positive). The renderer automatically rescales to avoid
 clamping.
 """
-function rescale(maxamp, samples)
+function rescale(maxamp :: Real, samples :: AbstractArray)
     @assert maxamp > 0.0 "The maximum allowed amplitude must be a positive number."
     sadj = samples .- (sum(samples) / length(samples))
     amp = maximum(abs.(samples))
@@ -52,6 +52,7 @@ Clamps the given signal to the give minimum and maximum values.
 Supports stereo signals and clamps the individual channels.
 """
 function clamp(minval::Real, maxval::Real, sig::Signal)
+    @assert minval <= maxval
     Clamp(sig, Float32(minval), Float32(maxval))
 end
 
