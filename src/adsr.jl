@@ -67,7 +67,8 @@ function adsr(suslevel :: Signal, sus_secs :: Real;
     @assert release_factor > 0.0
     @assert release_secs > 0.0
 
-    susval = value(suslevel, 0.0, 1/samplingrate)
+    vfloor = Float32(1/32767)
+    susval = max(vfloor, value(suslevel, 0.0, 1/samplingrate))
     alevel = max(1.0, attack_factor) * susval
     asecs = max(0.0005, attack_secs)
     dsecs = max(0.01, decay_secs)
@@ -80,7 +81,7 @@ function adsr(suslevel :: Signal, sus_secs :: Real;
          Float32(log2(susval/alevel)/dsecs),
          Float32(relvel),
          Float32(relaccel),
-         Float32(1/32767),
+         vfloor,
          Float32(asecs),
          Float32(asecs + dsecs),
          Float32(asecs + dsecs + sus_secs),
@@ -110,7 +111,7 @@ function value(s :: ADSR, t, dt)
             # and are just entering the sustain period.
             s.stage = 2
         end
-        v = value(s.sustain_level, t, dt)
+        v = max(s.vfloor, value(s.sustain_level, t, dt))
         #s.logv = 0.8f0 * s.logv + 0.2f0 * log2(v)
         #v = 2 ^ s.logv
         if done(s.sustain_level, t, dt)
