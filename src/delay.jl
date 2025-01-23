@@ -82,7 +82,7 @@ function value(s :: Tap{S,T}, t, dt) where {S <: Signal, T <: Signal}
 end
 
 """
-    tap(d :: Delay, t :: T) where {T <: Signal}
+    tap(d :: Delay, t :: Signal)
     tap(d :: Delay, t :: Real)
 
 You can setup multiple time varying tap points on a delay line
@@ -90,7 +90,7 @@ by calling `tap` multiple times and using it elsewhere. Since
 a delay is intrinsically aliasable, this is possible without
 further ado.
 """
-function tap(d :: Delay, t :: T) where {T <: Signal}
+function tap(d :: Delay, t :: Signal)
     Tap(d, t)
 end
 

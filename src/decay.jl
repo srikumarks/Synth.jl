@@ -5,13 +5,13 @@ mutable struct Decay{R <: Signal} <: Signal
 end
 
 """
-    decay(rate :: R) where {R <: Signal}
+    decay(rate :: Signal)
 
 Produces a decaying exponential signal with a "half life" determined
 by 1/rate. It starts with 1.0. The signal includes a short attack
 at the start to prevent glitchy sounds.
 """
-decay(rate :: R; attack_secs = 0.005) where {R <: Signal} = Decay(rate, attack_secs, 0.0f0)
+decay(rate :: Signal; attack_secs = 0.005) = Decay(rate, attack_secs, 0.0f0)
 
 done(s :: Decay, t, dt) = s.logval < -15.0f0 || done(s.rate, t, dt)
 

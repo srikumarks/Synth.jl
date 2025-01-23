@@ -7,7 +7,7 @@ mutable struct Filter1{S <: Signal, G <: Signal} <: Signal
 end
 
 """
-    filter1(s :: S, gain :: G) where {S <: Signal, G <: Signal}
+    filter1(s :: Signal, gain :: Signal)
 
 A first order filter where the gain factor that controls the
 bandwidth of the filter can be live controlled.

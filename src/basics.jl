@@ -12,7 +12,7 @@ done(s :: Konst, t, dt) = false
 Makes a constant valued signal. Useful with functions that accept
 signals but we only want to use a constant value for it.
 """
-function konst(v::T) where {T <: Real}
+function konst(v::Real)
     Konst(Float32(v))
 end
 

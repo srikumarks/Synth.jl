@@ -6,7 +6,7 @@ using LibSndFile
 
 Renders and writes raw `Float32` values to the given file.
 """
-function write(filename :: AbstractString, model::Sig, duration_secs :: AbstractFloat; samplingrate=48000, maxamp=0.5) where {Sig <: Signal}
+function write(filename :: AbstractString, model::Signal, duration_secs :: AbstractFloat; samplingrate=48000, maxamp=0.5)
     s = render(model, duration_secs; samplingrate, maxamp)
     s = rescale(maxamp, s)
     save(filename, s)
