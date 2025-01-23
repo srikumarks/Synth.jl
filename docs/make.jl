@@ -28,3 +28,6 @@ makedocs(
                  ]
         )
 
+deploydocs(
+    repo = "github.com/srikumarks/Synth.jl.git",
+)
