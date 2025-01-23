@@ -1,7 +1,9 @@
 # Filters
 
 Linear time invariant first and second filters, with controllable filter
-parameters.
+parameters. Main ones are [`lpf`](@ref), [`hpf`](@ref) and [`bpf`](@ref)
+second order filters. Also, [`delay`](@ref) and [`tap`](@ref) make a
+delay line that can be tapped at multiple points.
 
 ```@docs
 Synth.filter1

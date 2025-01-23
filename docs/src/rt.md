@@ -3,7 +3,7 @@
 Methods that provide support for realtime playback as opposed to static file
 based rendering. The commonly used methods are [`play`](@ref) and
 [`play!`](@ref) (when using a [`synthesizer`](@ref)). For interactivity,
-see [`control`](@ref) and [`probe`](@ref).
+see [`control`](@ref) (for UI to signal) and [`probe`](@ref) (for signal to UI).
 
 ```@docs
 Synth.startaudio
