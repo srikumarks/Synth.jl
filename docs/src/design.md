@@ -37,14 +37,34 @@ not need to be called per sample by any render. It only needs to be called per
 "frame" - which is like 64 samples or 128 samples depending on the buffer
 length.
 
+Additionally, `value` is expected to be called with a monotonic `t` argument in
+time steps of `dt` -- i.e. `t` can either be the same as that of the previous
+call, or can advance by the given `dt`. Most signals do not need to account for
+repeated calls with same `t` since that can be handled by wrapping a concrete
+type as an [`aliasable`](@ref). 
+
 The `value` method on a signal computes a single sample value. Having a
 function call to compute a single sample sounds like a significant overhead,
 but the way the types are organized and how Julia does a deep type specializing
 optimizing compilation pass on the entire call graph of a function implies that
 most of these calls get optimized away. When you compose signals and look at
 their type signature, you'll see how all the composition information is
-reflected in the signal type and this is the information that's needed to
-optimize the `value` call on the composite signal.
+reflected in the resultant signal type and this is the information that's
+needed to optimize the `value` call on the composite signal. The `value` method
+implementation on a type also provides a boundary at which to perform such
+optimizations. Mostly, you as a user don't need to think about these
+optimizations.
+
+!!! note "Dynamic signals"
+    Some signals such as [`Synth.scheduler`](@ref) compose signals that are
+    specified dynamically and therefore cannot completely produce inlined
+    `value` implementations. Therefore there will be one step of dynamic
+    dispatch happening within a scheduler's `value` implementation. However,
+    since the dispatch is to another `value` method invocation (or `done`), and
+    the type of the signal being dispatched for becomes known at that dynamic
+    point, a compiled version of that entire call sub-tree will be used. A
+    small number of such dynamic dispatched per `value` call therefore pose no
+    threat to performance.
 
 !!! note "Compilation cost"
     What this package relies on is Julia's type specializing just-ahead-of-time
@@ -55,5 +75,4 @@ optimize the `value` call on the composite signal.
     function that gets called once before you do any realtime performance. This
     compilation delay will not make a difference if you're just rendering to a
     file though.
-
 
