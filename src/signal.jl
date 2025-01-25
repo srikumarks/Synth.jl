@@ -177,12 +177,12 @@ end
 """
     aliasable(s :: Signal)
 
-A signal, once constructed, can only be used by one "consumer" via function
+A signal, once constructed, can only be used by one "consumer" via structure
 composition. In some situations, we want a signal to be plugged into multiple
 consumers (to make a signal flow DAG). For these occasions, make the signal
 aliasable by calling `aliasable` on it and use the aliasble signal everywhere
 you need it instead. Note that `aliasable` is an idempotent operator (i.e.
-`aliasable(aliasable(sig)) == sig`).
+if `s = aliasable(sig)`, then `aliasable(s) = s`).
 
 !!! note "Constraint"
     It only makes sense to make a single aliasable version of a signal.

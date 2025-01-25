@@ -23,7 +23,6 @@ include("basics.jl")
 
 include("phasor.jl")
 include("sinosc.jl")
-include("modulator.jl")
 include("mixer.jl")
 include("decay.jl")
 include("interp.jl")
