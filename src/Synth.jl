@@ -3,6 +3,7 @@ module Synth
 
 export konst, clip, sigfun, aliasable, feedback, connect, clock, clock_bpm, clamp
 export sinosc, phasor, noise, sample
+export mix, modulate
 export line, expon, adsr, decay, Gen, follow
 export render, write, read_rawaudio
 export startaudio, synthesizer, synthchan, play!, play, control, probe, scheduler, schedule, seq

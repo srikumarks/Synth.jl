@@ -1,10 +1,3 @@
-# Rest of type definitions unchanged...
-struct Key <: ControlUI
-    onclicked::Function
-    label::String
-    key::String
-end
-
 """
     Key(onclicked::Function, label::String, k::String) :: ControlUI
 
@@ -13,8 +6,10 @@ given key press denoted by `k`. When the button is clicked or its
 corresponding key is pressed, the `onclicked` callback is called with
 one argument like this -- `onclicked(::ControlUI)`.
 """
-function Key(onclicked::Function, label::String, k::String)
-    Key(onclicked, label, k)
+struct Key <: ControlUI
+    onclicked::Function
+    label::String
+    key::String
 end
 
 function render(k::Key, panel::Panel)
