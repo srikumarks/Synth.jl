@@ -310,16 +310,26 @@ right(s :: Signal) = s
 
 """
     mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} 
+    mono(s :: Stereo{L,R}, panval :: Union{Realm,Signal}) where {L <: Signal, R <: Signal}
     mono(s :: Signal)
 
 Converts a stereo signal into a mono signal by mixing the left and right
 channels. Evaluates to the signal itself if passed a non-stereo signal (which
 is considered mono).
 
+In the version that takes a pan value, passing `1.0f0` will result in only
+the right channel being selected. Passing `-1.0f0` will result in only the
+left channel being selected and intermediate values will linearly mix the
+two channels. You can think of the `panval` argument as where your ear is 
+being directed. If you direct it to the right, you hear the right channel,
+and if you direct it to the left, you hear the left channel sound.
+
 $(see_also("left,right,stereo"))
 """
 mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = konst(sqrt(0.5f0)) * (s.left + s.right)
 mono(s :: Signal) = s
+mono(s :: Stereo{L,R}, panval :: Real) = mono(s, konst(panval))
+mono(s :: Stereo{L,R}, panval :: Signal) = 0.5f0 * ((panval + 1.0f0) * right(s) + (1.0f0 - panval) * left(s))
 
 """
     pan(s :: Signal, lr :: Real)
