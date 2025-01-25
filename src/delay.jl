@@ -17,7 +17,6 @@ with [`tap`](@ref). A delay is aliasable on its own, which means you can
 make multiple tap points on the same delay based on time varying tap
 locations.
 - `sig` is the signal that is delayed.
-- `tap` is the signal that determines how much delay is applied.
 - `maxdelay` is the maximum amount of delay possible.
 - `samplingrate` is the sampling rate in Hz. (This is needed to compute buffer size.)
 """

@@ -40,6 +40,16 @@ function mix(w1 :: Real, s1 :: Signal, w2 :: Real, s2 :: Mod{Konst, S2}) where {
     mix(w1, s1, w2 * s2.mod.k, s2.signal)
 end
 
+function mix(w1 :: Real, s1 :: Stereo{L,R}, w2 :: Real, s2 :: Signal) where {L,R}
+    stereo(mix(w1, left(s1), w2, s2),
+           mix(w1, right(s1), w2, s2))
+end
+
+function mix(w1 :: Real, s1 :: Signal, w2 :: Real, s2 :: Stereo{L,R}) where {L,R}
+    stereo(mix(w1, s1, w2, left(s2)),
+           mix(w1, s1, w2, right(s2)))
+end
+
 function mix(w1 :: Real, s1 :: Mod{Konst,S1}, w2 :: Real, s2 :: Mod{Konst, S2}) where {S1,S2}
     # Supports a common case of mixing two signals using constant
     # factors, but expressed using * and so ended up inserting an additional
@@ -88,6 +98,14 @@ end
 
 function modulate(m :: Konst, s :: Mod{Konst, S}) where {S}
     modulate(m.k * s.mod.k, s.signal)
+end
+
+function modulate(m :: Stereo{L,R}, s :: Signal) where {L,R}
+    stereo(modulate(left(m), s), modulate(right(m), s))
+end
+
+function modulate(m :: Signal, s :: Stereo{L,R}) where {L,R}
+    stereo(modulate(m, left(s)), modulate(m, right(s)))
 end
 
 (Base.:*)(m :: Real, s :: S) where {S <: Signal} = modulate(konst(m),s)

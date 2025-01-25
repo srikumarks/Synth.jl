@@ -161,12 +161,14 @@ function synthesizer(commands::SynthCommands; chans=1, blocksize=64)
 end
 
 """
-    play(signal, duration_secs; blocksize=64)
+    play(signal, duration_secs=Inf; blocksize=64)
 
-Plays the given signal on the default audio output in realtime
-for the given duration or till the signal ends, whichever
-happens earlier. Be careful about the signal level since
-in this case the signal can't be globally normalized.
+Plays the given signal on the default audio output in realtime for the given
+duration or till the signal ends, whichever happens earlier. Be careful about
+the signal level since in this case the signal can't be globally normalized.
+
+Returns a stop function (like with [`startaudio`](@ref) and
+[`synthesizer`](@ref)) which when called with no arguments will stop playback.
 """
 function play(signal::Signal, duration_secs=Inf; chans=1, blocksize=64)
     function callback(sample_rate, rq, wq)
