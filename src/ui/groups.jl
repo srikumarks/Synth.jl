@@ -1,11 +1,23 @@
-struct HGroup
+"""
+    HGroup(label :: String, children :: Vector{ControlUI})
+
+Makes a UI element that's a horizontal group of other UI elements.
+The group can itself be given a text label.
+"""
+struct HGroup <: ControlUI
     label::String
-    children::Vector{Any}
+    children::Vector{ControlUI}
 end
 
-struct VGroup
+"""
+    VGroup(label :: String, children :: Vector{ControlUI})
+
+Makes a UI element that's a vertical group of other UI elements.
+The group can itself be given a text label.
+"""
+struct VGroup <: ControlUI
     label::String
-    children::Vector{Any}
+    children::Vector{ControlUI}
 end
 
 function render(g::HGroup, panel::Panel)

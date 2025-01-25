@@ -56,6 +56,6 @@ include("player.jl")
 include("fx.jl")
 
 include("models/models.jl")
-#include("ui/ui.jl")
+include("ui/ui.jl")
 
 end # module Synth

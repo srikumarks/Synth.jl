@@ -1,7 +1,7 @@
 struct Panel
     app::GtkApplication
     window::GtkWindow
-    widgetof::Dict{Any,GtkWidget}
+    widgetof::Dict{ControlUI,GtkWidget}
     keyops::Vector{KeyOp}
     active_keyops::Set{Int}
 end
@@ -44,6 +44,22 @@ function setup!(panel::Panel)
     return panel
 end
 
+"""
+    makepanel(app::GtkApplication) :: Panel
+
+Makes a "panel" structure used by the GUI to keep relevant objects and
+state for its operation. Constructs the panel and sets it up at one shot.
+
+To show a panel, you need to do the following.
+
+- Call `makepanel` to make a `Panel` structure for the application.
+- Create `ControlUI` you want to place into the panel.
+- Call `widget = render(ui, panel)` to render the `ControlUI` to a widget.
+- Make the widget the only child of the panel's window using `panel.window.child = widget`
+- Show the panel using `show(panel.window)`
+
+The above steps are encapsulated in [`Synth.UI.show!`](@ref).
+"""
 function makepanel(app::GtkApplication)
     window = GtkApplicationWindow(app)
     window.title = "Control Panel"
@@ -52,12 +68,20 @@ function makepanel(app::GtkApplication)
     return p
 end
 
-function harnessed(testfn, app::GtkApplication)
-    panel = makepanel(app)
-    spec = testfn()
+"""
+    show!(panel :: Panel, spec :: ControlUI)
+
+Use to display the given `ControlUI` spec on the given panel.
+"""
+function show!(panel :: Panel, spec :: ControlUI)
     widget = render(spec, panel)
     panel.window.child = widget
     show(panel.window)
+end
+
+function harnessed(testfn, app::GtkApplication)
+    panel = makepanel(app)
+    show!(panel, testfn())
 end
 
 

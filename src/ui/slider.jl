@@ -8,6 +8,26 @@ struct Slider <: KeyOperated
     step::Float32
 end
 
+"""
+    Slider(onchanged::Function, label, angle, length, minval, maxval, step) :: ControlUI
+    Slider(ctrl::Synth.Control, label, angle, length, minval, maxval, step) :: ControlUI
+
+Sets up a slider that can be controlled either via the mouse or via 
+the keyboard. When the slider control's value is changed, the `onchanged`
+callback function is called to inform any clients of the updated value.
+`onchanged` is a function that's called as `onchanged(::Slider, ::Float32)`.
+
+If a [`Synth.control`](@ref) is passed instead of the callback function,
+then the control is updated with changes to the slider value.
+
+- `label` is a `String` giving the slider's visible name. Keep it short.
+- `angle` is either 0 or 90 for horizontal or vertical slider.
+- `length` is the number of pixels along the slider's orientation direction.
+- `minval` is the lower bound of the slider's value.
+- `maxval` is the upper bound of the slider's value.
+- `step` is the step size and the slider will move in discrete steps
+  between `minval` and `maxval`.
+"""
 function Slider(ctrl::Synth.Control, label, angle, length, minval, maxval, step)
     onchanged(s::Slider, v) = begin
         ctrl[] = v

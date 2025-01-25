@@ -6,21 +6,24 @@ using Printf
 
 RGBA = Gtk4.RGBA{Float32}
 
-abstract type KeyOperated end
+abstract type ControlUI end
+abstract type KeyOperated <: ControlUI end
 
 struct KeyOp{W <: KeyOperated, S <: AbstractSet{Int}}
     keycode:: Int
     modifiers::S
     speed::Float32
-    slider::W
+    Slider::W
 end
 
 
+include("panel.jl")
+include("key.jl")
 include("utils.jl")
 include("slider.jl")
 include("led.jl")
 include("level.jl")
-include("panel.jl")
+include("groups.jl")
 
 # Test functions remain largely the same
 function test1()
