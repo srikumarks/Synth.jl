@@ -95,8 +95,9 @@ end
     fir(filt :: Vector{Float32}, dilation :: Signal, sig :: Signal)
 
 Constructs a "finite impulse response" (FIR) filter with the given `filt` as
-the impulse response. The `dilation` factor can be used to stretch short vectors using
-linear interpolation.
+the impulse response. The `dilation` factor can be used to stretch short
+vectors using linear interpolation. If the `dilation` argument is, say, 2.0,
+then the filter is used as though it was stretched out by a factor of 2.
 """
 function fir(filt :: Vector{Float32}, dilation :: Signal, sig :: Signal)
     N = length(filt)
@@ -105,8 +106,8 @@ end
 
 done(s :: FIR, t, dt) = done(s.filt, t, dt) || done(s.dilation, t, dt)
 
-function dilatedfilt(s :: FIR, i, dilation)
-    di = 1 + (i-1) * dilation
+function dilatedfilt(s :: FIR, i0, dilation)
+    di = 1 + i / dilation
     dii = floor(Int, di)
     difrac = di - dii
     if dii < s.N
@@ -120,7 +121,7 @@ function value(s :: FIR{S}, t, dt) where {S <: Signal}
     v = value(s.sig, t, dt)
     s.history[s.offset] = v
     dilation = value(s.dilation, t, dt)
-    f = sum(dilatedfilt(s,i,dilation) * s.history[1+mod(s.offset-i, s.N2)] for i in 1:N)
+    f = sum(dilatedfilt(s,i0,dilation) * s.history[max(1, s.offset-i0)] for i0 in 0:N-1)
     s.offset += 1
     if s.offset > s.N2
         s.offset = 1
