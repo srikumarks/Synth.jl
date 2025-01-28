@@ -81,50 +81,41 @@ function value(s :: Filter2, t, dt)
     return s.xn_1
 end
 
-mutable struct FIR{S <: Signal, D <: Signal} <: Signal
+mutable struct FIR{S <: Signal} <: Signal
     sig :: S
     filt :: Vector{Float32}
     N :: Int
-    dilation :: D
     N2 :: Int
     history :: Vector{Float32}
     offset :: Int
 end
 
 """
-    fir(filt :: Vector{Float32}, dilation :: Signal, sig :: Signal)
+    fir(filt :: Vector{Float32}, sig :: Signal)
 
 Constructs a "finite impulse response" (FIR) filter with the given `filt` as
-the impulse response. The `dilation` factor can be used to stretch short
-vectors using linear interpolation. If the `dilation` argument is, say, 2.0,
-then the filter is used as though it was stretched out by a factor of 2.
+the impulse response. Keep the `filt` argument short (to within about 1000
+samples) in order for fir to be able to perform in realtime. The algorithm
+used is not suitable for very large FIR filter lengths ... which we'll perhaps
+add in the future.
 """
-function fir(filt :: Vector{Float32}, dilation :: Signal, sig :: Signal)
+function fir(filt :: Vector{Float32}, sig :: Signal)
     N = length(filt)
-    FIR(sig, filt, N, dilation, 2N, zeros(Float32, 2N), 1)
+    FIR(sig, filt, N, 2N, zeros(Float32, 2N), 1)
 end
 
-done(s :: FIR, t, dt) = done(s.filt, t, dt) || done(s.dilation, t, dt)
-
-function dilatedfilt(s :: FIR, i0, dilation)
-    di = 1 + i / dilation
-    dii = floor(Int, di)
-    difrac = di - dii
-    if dii < s.N
-        s.filt[dii] + difrac * (s.filt[dii+1] - s.filt[dii])
-    else
-        s.filt[dii]
-    end
-end
+done(s :: FIR, t, dt) = done(s.sig, t, dt)
 
 function value(s :: FIR{S}, t, dt) where {S <: Signal}
     v = value(s.sig, t, dt)
     s.history[s.offset] = v
-    dilation = value(s.dilation, t, dt)
-    f = sum(dilatedfilt(s,i0,dilation) * s.history[max(1, s.offset-i0)] for i0 in 0:N-1)
+    v1 = view(s.history, max(1,s.offset-s.N+1):s.offset)
+    v2 = view(s.filt, 1:length(v1))
+    f = v1'*v2
     s.offset += 1
     if s.offset > s.N2
-        s.offset = 1
+        s.history[1:s.N] = s.history[s.N+1:s.N2]
+        s.offset = s.N+1
     end
     return f
 end
