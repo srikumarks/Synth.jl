@@ -1,4 +1,6 @@
 
+import DSP
+
 mutable struct Konst <: Signal
     k :: Float32
 end
@@ -60,3 +62,13 @@ function clamp(minval::Real, maxval::Real, sig::Stereo{L,R}) where {L <: Signal,
     stereo(clamp(minval, maxval, sig.left), clamp(minval, maxval, sig.right))
 end
 
+"""
+    convolve(s1::AbstractVector{Float32}, s2::AbstractVector{Float32})
+
+Convolves two sample arrays to produce another of length N1+N2+1.
+Note that convolving large arrays will be more expensive. Generally
+expected it to be ``O(N \log(N))``.
+"""
+function convolve(s1::AbstractVector{Float32}, s2::AbstractVector{Float32})
+    DSP.conv(s1, s2)
+end
