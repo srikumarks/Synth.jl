@@ -4,6 +4,7 @@ authors = ["Srikumar K. S. <srikumar.subramanian@krea.edu.in>"]
 version = "1.0.0-DEV"
 
 [deps]
+DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 Gtk4 = "9db2cae5-386f-4011-9d63-a5602296539b"
 LibSndFile = "b13ce0c6-77b0-50c6-a2db-140568b8d1a5"
@@ -14,6 +15,7 @@ SampledSignals = "bd7594eb-a658-542f-9e75-4c4d8908c167"
 ThreadPools = "b189fb0b-2eb5-4ed4-bc0c-d34c51242431"
 
 [compat]
+DSP = "0.7.10"
 FileIO = "1.16.6"
 Gtk4 = "0.7.3"
 LibSndFile = "2.4.0"
