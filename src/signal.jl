@@ -328,8 +328,8 @@ $(see_also("left,right,stereo"))
 """
 mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = konst(sqrt(0.5f0)) * (s.left + s.right)
 mono(s :: Signal) = s
-mono(s :: Stereo{L,R}, panval :: Real) = mono(s, konst(panval))
-mono(s :: Stereo{L,R}, panval :: Signal) = 0.5f0 * ((panval + 1.0f0) * right(s) + (1.0f0 - panval) * left(s))
+mono(s :: Stereo{L,R}, panval :: Real) where {L <: Signal, R <: Signal} = mono(s, konst(panval))
+mono(s :: Stereo{L,R}, panval :: Signal) where {L <: Signal, R <: Signal} = 0.5f0 * ((panval + 1.0f0) * right(s) + (1.0f0 - panval) * left(s))
 
 """
     pan(s :: Signal, lr :: Real)
