@@ -1,6 +1,6 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.2"
+julia_version = "1.11.5"
 manifest_format = "2.0"
 project_hash = "73d40ff341c9f898f7ba70efc9ddee0caa4af7b1"
 
@@ -635,7 +635,7 @@ version = "0.3.27+1"
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
-version = "0.8.1+2"
+version = "0.8.5+0"
 
 [[deps.OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -874,7 +874,7 @@ uuid = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 version = "0.2.8"
 
 [[deps.Synth]]
-deps = ["FileIO", "Gtk4", "LibSndFile", "PortAudio", "Printf", "Random", "SampledSignals", "ThreadPools"]
+deps = ["DSP", "FileIO", "Gtk4", "LibSndFile", "PortAudio", "Printf", "Random", "SampledSignals", "ThreadPools"]
 path = ".."
 uuid = "17321cac-a4bc-4530-aa11-a8f457f422f2"
 version = "1.0.0-DEV"
