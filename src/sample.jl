@@ -1,3 +1,5 @@
+using SampledSignals: SampleBuf
+
 mutable struct Sample <: Signal
     samples :: Vector{Float32}
     N :: Int
@@ -23,7 +25,10 @@ Currently sample rate conversion is not supported, though that is a feature
 that must be added at some point.
 """
 function sample(samples :: Vector{Float32}; looping = false, loopto = 1.0, samplingrate=48000.0f0) 
-    Sample(samples, length(samples), 0, looping, 1 + floor(Int, loopto * length(samples)), samplingrate)
+    Sample(samples, length(samples), 1, looping, floor(Int, loopto * length(samples)), samplingrate)
+end
+function sample(samples :: SampleBuf; looping = false, loopto = 1.0, samplingrate=samples.samplerate)
+    sample(Float32.(samples[:,1].data); looping, loopto, samplingrate)
 end
 function sample(filename :: AbstractString; looping = false, loopto = 1.0, samplingrate=48000.0f0)
     buf = load(filename)
@@ -34,7 +39,7 @@ function done(s :: Sample, t, dt)
     if s.looping
         false
     else
-        i > s.N
+        s.i > s.N
     end
 end
 
@@ -50,4 +55,7 @@ function value(s :: Sample, t, dt)
     return v
 end
 
+function convolve(s1 :: Sample, s2 :: Sample) :: Sample
+    sample(rescale(0.5f0, convolve(s1.samples, s2.samples)))
+end
 

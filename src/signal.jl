@@ -378,7 +378,7 @@ version of this like a raised cosine or ADSR, but clip could be useful on
 its own.
 """
 function clip(dur :: Float64, s :: Signal)
-    Clip(s, dur)
+    Clip(dur, s)
 end
 function clip(dur :: Float64, s :: Stereo{L,R}) where {L <: Signal, R <: Signal}
     stereo(clip(dur, s.left), clip(dur, s.right))

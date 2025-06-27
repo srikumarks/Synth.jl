@@ -16,7 +16,7 @@ property will trigger those signals at the given times according
 to the clock. The scheduling is sample accurate.
 """
 function scheduler(clk :: Signal)
-    Scheduler(clk, 0.0, Channel{Tuple{Float64,Signal}}(), [], [])
+    Scheduler(clk, 0.0, Channel{Tuple{Float64,Signal}}(), Vector{Tuple{Float64,Signal}}(), Vector{Float64}())
 end
 
 """

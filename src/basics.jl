@@ -67,7 +67,7 @@ end
 
 Convolves two sample arrays to produce another of length N1+N2+1.
 Note that convolving large arrays will be more expensive. Generally
-expected it to be ``O(N \log(N))``.
+expected it to be ``O(N \\log(N))``.
 """
 function convolve(s1::AbstractVector{Float32}, s2::AbstractVector{Float32})
     DSP.conv(s1, s2)
