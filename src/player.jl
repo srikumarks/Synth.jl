@@ -88,16 +88,16 @@ end
 
 function mixin!(buf::SampleBuf{Float32,2}, i::Integer, sig::Signal, t, dt)
     v = value(sig, t, dt)
-    buf[i,:] .= v
+    buf[i,:] .+= v
 end
 
 function mixin!(buf::SampleBuf{Float32,2}, i::Integer, sig::Stereo{L,R}, t, dt) where {L <: Signal, R <: Signal}
     chans = size(buf, 2)
     if chans == 1
-        buf[i,1] = value(sig, 0, t, dt)
+        buf[i,1] += value(sig, 0, t, dt)
     elseif chans == 2
-        buf[i,1] = value(sig, -1, t, dt)
-        buf[i,2] = value(sig, 1, t, dt)
+        buf[i,1] += value(sig, -1, t, dt)
+        buf[i,2] += value(sig, 1, t, dt)
     else
         buf[i,:] .= 0.0f0
     end
@@ -151,7 +151,7 @@ function synthesizer(commands::SynthCommands; chans=1, blocksize=64)
             end
             put!(wq, buf)
             filter!(voices) do (vt,v)
-                t > vt ? !done(v, t-vt, dt) : true
+                !done(v, t-vt, dt)
             end
         end
         put!(wq, endmarker)

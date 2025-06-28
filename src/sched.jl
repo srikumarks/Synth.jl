@@ -1,9 +1,13 @@
 struct Scheduler{Clk <: Signal} <: Signal
     clock :: Clk
-    t :: Float64
+    t :: Ref{Float64}
     chan :: Channel{Tuple{Float64,Signal}}
     voices :: Vector{Tuple{Float64, Signal}}
     realtime :: Vector{Float64}
+end
+
+function now(s :: Scheduler{Clk}) :: Float64 where {Clk <: Signal}
+    return s.t[]
 end
 
 """
@@ -16,16 +20,16 @@ property will trigger those signals at the given times according
 to the clock. The scheduling is sample accurate.
 """
 function scheduler(clk :: Signal)
-    Scheduler(clk, 0.0, Channel{Tuple{Float64,Signal}}(), Vector{Tuple{Float64,Signal}}(), Vector{Float64}())
+    Scheduler(clk, Ref(0.0), Channel{Tuple{Float64,Signal}}(), Vector{Tuple{Float64,Signal}}(), Vector{Float64}())
 end
 
 """
-    schedule(sch :: Scheduler{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
+    sched(sch :: Scheduler{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
 
 Schedules a signal to start at time `t` according to the clock of the
 given scheduler.
 """
-function schedule(sch :: Scheduler{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
+function sched(sch :: Scheduler{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
     put!(sch.chan, (t,s))
 end
 
@@ -41,11 +45,12 @@ function value(s :: Scheduler{Clk}, t, dt) where {Clk <: Signal}
         push!(s.voices, take!(s.chan))
         push!(s.realtime, 0.0)
     end
-    s = 0.0f0
+    sv = 0.0f0
 
-    ct = s.t = value(s.clock, t, dt)
+    ct = value(s.clock, t, dt)
+    s.t[] = ct
 
-    for (i,(tv,v)) in enumerate(voices)
+    for (i,(tv,v)) in enumerate(s.voices)
         if ct < tv
             continue
         end
@@ -56,10 +61,10 @@ function value(s :: Scheduler{Clk}, t, dt) where {Clk <: Signal}
         # we don't know at this point what type of signal
         # was received on the channel. Not sure of perf
         # consequences at the moment.
-        s += value(v, t - s.realtime[i], dt)
+        sv += value(v, t - s.realtime[i], dt)
     end
 
-    return s
+    return sv
 end
 
 
