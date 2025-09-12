@@ -14,7 +14,7 @@ after construction. This is intended to be used in feedback loops and
 introduces a single sample delay to prevent infinite recursion.
 
 You can later on connect a signal to the feedback point by calling
-`connect(::Signal,::Feedback)`. Just as `aliasable` is used to make
+`connect(::Signal,::Feedback)`. Just as `fanout` is used to make
 DAG signal flow graphs possible, `feedback` is used to make graphs
 with loops possible.
 """

@@ -17,7 +17,7 @@ computed outputs so it can be composed with other parts of the signal flow
 graph.
 
 When using this approach, it is important that the main (multi-output) signal
-processing module is aliasable - so that a `value` call will do the computation
+processing module supports fanout - so that a `value` call will do the computation
 only once for a given time `t`. 
 
 For an example of this approach, see the implementation of the [`delay`](@ref)

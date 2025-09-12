@@ -64,7 +64,7 @@ while modelling "signal flow" via ordinary functions in programming that call ot
 functions recursively. Without further thought, this approach will only permit
 "signal flow trees", where the output of a processing step can only be fed into
 a single input due to the nature of function composition being used to construct
-the signal flow pattern. However, with the `aliasable` operator, it becomes possible
+the signal flow pattern. However, with the `fanout` operator, it becomes possible
 to reuse a signal as input for more than one processing block, extending the
 scope to include "signal flow DAGs". The `feedback` operator further extends this
 possibility through late binding of signal connections to permit loops in the
@@ -167,7 +167,7 @@ Treats a simple function of time (in seconds) as a signal.
 """
 sigfun(f) = SigFun(f)
 
-mutable struct Aliasable{S <: Signal} <: Signal
+mutable struct Fanout{S <: Signal} <: Signal
     sig :: S
     t :: Float64
     v :: Float32
@@ -175,18 +175,18 @@ end
 
 
 """
-    aliasable(s :: Signal)
+    fanout(s :: Signal)
 
 A signal, once constructed, can only be used by one "consumer" via structure
 composition. In some situations, we want a signal to be plugged into multiple
 consumers (to make a signal flow DAG). For these occasions, make the signal
-aliasable by calling `aliasable` on it and use the aliasble signal everywhere
-you need it instead. Note that `aliasable` is an idempotent operator (i.e.
-if `s = aliasable(sig)`, then `aliasable(s) = s`).
+fanout by calling `fanout` on it and use the aliasble signal everywhere
+you need it instead. Note that `fanout` is an idempotent operator (i.e.
+if `s = fanout(sig)`, then `fanout(s) = s`).
 
 !!! note "Constraint"
-    It only makes sense to make a single aliasable version of a signal.
-    Repeated evaluation of a signal is avoided by `Aliasable` by storing the
+    It only makes sense to make a single fanout version of a signal.
+    Repeated evaluation of a signal is avoided by `fanout` by storing the
     recently computed value for a given time. So it assumes that time
     progresses linearly.
 
@@ -195,12 +195,12 @@ if `s = aliasable(sig)`, then `aliasable(s) = s`).
     frequency shifting it can cause wrap around effects in the spectrum due
     to sampling, and in the context of a programming language where a value
     referenced in multiple data structures is said to be "aliased". It is in
-    the latter sense that we use the word `aliasable` in this case. 
+    the latter sense that we use the word `fanout` in this case. 
 """
-aliasable(sig :: Aliasable{S}) where {S <: Signal} = sig
-aliasable(sig :: Signal) = Aliasable(sig, -1.0, 0.0f0)
-done(s :: Aliasable, t, dt) = done(s.sig, t, dt)
-function value(s :: Aliasable, t, dt)
+fanout(sig :: Fanout{S}) where {S <: Signal} = sig
+fanout(sig :: Signal) = Fanout(sig, -1.0, 0.0f0)
+done(s :: Fanout, t, dt) = done(s.sig, t, dt)
+function value(s :: Fanout, t, dt)
     if t > s.t
         s.t = t
         s.v = Float32(value(s.sig, t, dt))
@@ -210,8 +210,8 @@ end
 
 
 struct Stereo{L <: Signal, R <: Signal} <: Signal
-    left :: Aliasable{L}
-    right :: Aliasable{R}
+    left :: Fanout{L}
+    right :: Fanout{R}
     t :: Float64
     leftchan :: Float32
     rightchan :: Float32
@@ -244,19 +244,19 @@ end
 
 
 """
-    stereo(left :: Aliasable{L}, right :: Aliasable{R}) where {L <: Signal, R <: Signal}
+    stereo(left :: Fanout{L}, right :: Fanout{R}) where {L <: Signal, R <: Signal}
     stereo(left :: Signal, right :: Signal)
 
 Makes a "stereo signal" with the given left and right channel signals.
 The stereo signal is itself considered a signal which produces the
 mixed output of the left and right channels. However, you can pick out
 the left and right channels separately using [`left`](@ref) and [`right`](@ref)
-which produce aliasable versions of the two components.
+which produce fanout versions of the two components.
 
 !!! note "Aliasability"
-    Stereo signals are aliasable without calling [`aliasable`](@ref) on
-    them. The first method assumes that you're passing in aliasable signals
-    (recommended). The second will make them aliasable, before storing a
+    Stereo signals are fanout without calling [`fanout`](@ref) on
+    them. The first method assumes that you're passing in fanout signals
+    (recommended). The second will make them fanout, before storing a
     reference, so you should subsequently access the individual channels
     **only** via the [`left`](@ref) and [`right`](@ref) methods.
 
@@ -268,7 +268,7 @@ value(s::Stereo{L,R}, chan::Int, t, dt)
 
 where `chan` can be -1 for left, 0 for mixed middle and 1 for right channels.
 Note that calling `value` for different channels at the same time won't
-compute multiple times because `Stereo` is aliasable directly.
+compute multiple times because `Stereo` is fanout directly.
 
 The mixer and modulator operators (+/-/*) treat stereo signals as stereo and
 work accordingly. The other operators all (unless noted) are not cognizant of
@@ -277,11 +277,11 @@ stereo signals.
 
 $(see_also("left,right,mono"))
 """
-function stereo(left :: Aliasable{L}, right :: Aliasable{R}) where {L <: Signal, R <: Signal}
+function stereo(left :: Fanout{L}, right :: Fanout{R}) where {L <: Signal, R <: Signal}
     Stereo(left, right, 0.0, 0.0f0, 0.0f0, 0.0f0)
 end
 function stereo(left :: Signal, right :: Signal)
-    Stereo(aliasable(left), aliasable(right), 0.0, 0.0f0, 0.0f0, 0.0f0)
+    Stereo(fanout(left), fanout(right), 0.0, 0.0f0, 0.0f0, 0.0f0)
 end
 
 """

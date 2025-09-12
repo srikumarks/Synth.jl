@@ -32,7 +32,7 @@ The `bwfactor` setting gives the fraction of the inter-frequency bandwidth to fi
 The bandwidth has a floor given by `bwfloor` in Hz.
 """
 function basicvocoder(sig, f0, N, fnew; bwfactor = 0.2, bwfloor = 20.0)
-    asig = aliasable(sig)
+    asig = fanout(sig)
     bw = max(bwfloor, f0 * bwfactor)
     reduce(+, sinosc(heterodyne(asig, f0 * k, bw * k), fnew * k) for k in 1:N)
 end

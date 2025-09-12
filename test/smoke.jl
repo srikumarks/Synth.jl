@@ -11,7 +11,7 @@ end
 
 
 function model(a,f)
-    af = aliasable(f)
+    af = fanout(f)
     ff = sinosc(0.1 * af, phasor(0.25 * af))
     sinosc(a, phasor(af + ff))
 end
@@ -22,7 +22,7 @@ function heterodyne(sig, fc, bw)
 end
 
 function vocoder(sig, f0, N, fnew)
-    asig = aliasable(sig)
+    asig = fanout(sig)
     bw = min(20.0, f0 * 0.1, fnew * 0.1)
     reduce(+, sinosc(heterodyne(asig, f0 * k, bw), phasor(fnew * k)) for k in 1:N)
 end

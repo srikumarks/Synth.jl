@@ -41,7 +41,7 @@ Additionally, `value` is expected to be called with a monotonic `t` argument in
 time steps of `dt` -- i.e. `t` can either be the same as that of the previous
 call, or can advance by the given `dt`. Most signals do not need to account for
 repeated calls with same `t` since that can be handled by wrapping a concrete
-type as an [`aliasable`](@ref). 
+type as an [`fanout`](@ref). 
 
 The `value` method on a signal computes a single sample value. Having a
 function call to compute a single sample sounds like a significant overhead,

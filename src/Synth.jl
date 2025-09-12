@@ -3,7 +3,7 @@ module Synth
 
 using FileIO: load
 export load
-export konst, clip, sigfun, aliasable, feedback, connect, clock, clock_bpm, clamp, convolve
+export konst, clip, sigfun, fanout, feedback, connect, clock, clock_bpm, clamp, convolve
 export sinosc, phasor, noise, sample
 export line, expon, adsr, decay, Gen, follow
 export render, write, read_rawaudio

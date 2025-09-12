@@ -1,5 +1,5 @@
 
-mutable struct Follow{S <: Signal, R <: Signal}
+mutable struct Follow{S <: Signal, R <: Signal} <: Signal
     sig :: S
     rate :: R
     v :: Float32

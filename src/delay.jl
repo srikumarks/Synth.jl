@@ -13,7 +13,7 @@ end
 
 Sets up a delay ring buffer through which the given signal is passed. 
 A delay is pretty much a pass through and is useful only in conjunction
-with [`tap`](@ref). A delay is aliasable on its own, which means you can
+with [`tap`](@ref). A delay can fanout on its own, which means you can
 make multiple tap points on the same delay based on time varying tap
 locations.
 - `sig` is the signal that is delayed.
@@ -67,7 +67,7 @@ function tapat(sig :: Delay, at, t, dt)
 end
 
 
-struct Tap{S <: Signal, T <: Signal}
+struct Tap{S <: Signal, T <: Signal} <: Signal
     delay :: Delay{S}
     tap :: T
 end
@@ -86,7 +86,7 @@ end
 
 You can setup multiple time varying tap points on a delay line
 by calling `tap` multiple times and using it elsewhere. Since
-a delay is intrinsically aliasable, this is possible without
+a delay is intrinsically fanout capable, this is possible without
 further ado.
 """
 function tap(d :: Delay, t :: Signal)
@@ -97,7 +97,7 @@ function tap(d :: Delay, t :: Real)
     Tap(d, konst(t))
 end
 
-struct Later{S <: Signal}
+struct Later{S <: Signal} <: Signal
     sig :: S
     delay_secs :: Float64
 end
