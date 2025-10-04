@@ -266,7 +266,7 @@ stdleds() = begin
     stdleds(y,o,r)
 end
 
-function led(label::String, angle::Int, length_::Int, breadth::Int, colours::Vector{RGBA}, source::Channel{Float32}; fillratio=0.5, gamma=0.5)
+function LED(label::String, angle::Int, length_::Int, breadth::Int, colours::Vector{RGBA}, source::Channel{Float32}; fillratio=0.5, gamma=0.5)
     @assert angle == 0 || angle == 90
     N = length(colours)
     val = Ref(0.0f0)
@@ -299,7 +299,7 @@ stdlevelcolours() = begin
     [(0.0f0, g), (1.0f0, g)]
 end
 
-function level(label::String, angle::Int, length_::Int, breadth::Int, colours::Vector{Tuple{Float32,RGBA}}, source::Channel{Float32})
+function Level(label::String, angle::Int, length_::Int, breadth::Int, colours::Vector{Tuple{Float32,RGBA}}, source::Channel{Float32})
     @assert angle == 0 || angle == 90
     N = length(colours)
     val = Ref(0.0f0)
@@ -503,10 +503,10 @@ end
 src = Channel{Float32}(2)
 
 function test4()
-    led("blinker", 90, 200, 40, stdleds(), src)
+    LED("blinker", 90, 200, 40, stdleds(), src)
 end
 function test5()
-    level("blinker", 90, 200, 40, stdlevelcolours(), src)
+    Level("blinker", 90, 200, 40, stdlevelcolours(), src)
 end
 
 function test_main()
