@@ -116,7 +116,8 @@ end
 function adjust_control!(panel::Panel, k::KeyOp{Slider}, dx, dy)
     s = panel.widgetof[k.slider]
     v = s.adjustment.value
-    new_value = min(k.slider.maxval, max(k.slider.minval, v + 0.01 * dy * k.speed))
+    dmouse = if k.slider.angle == 0 dx else dy end
+    new_value = min(k.slider.maxval, max(k.slider.minval, v + 0.01 * dmouse * k.speed))
     s.adjustment.value = new_value
 end
 
