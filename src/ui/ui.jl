@@ -25,9 +25,11 @@ function Slider(ctrl::Synth.Control, label, angle, length, minval, maxval, step)
     end
     Slider(onchanged, label, angle, length, minval, maxval, step)
 end
+Slider(ctrl::Synth.Control, label, angle, length) =
+    Slider(ctrl, label, angle, length, 0.0f0, 1.0f0, 0.01f0)
 
-struct KeyOp{W <: KeyOperated, S <: AbstractSet{Int}}
-    keycode:: Int
+struct KeyOp{W<:KeyOperated,S<:AbstractSet{Int}}
+    keycode::Int
     modifiers::S
     speed::Float32
     slider::W
@@ -61,7 +63,7 @@ struct Level
     breadth::Int
     minval::Float32
     maxval::Float32
-    colours::Vector{Tuple{Float32, RGBA}}
+    colours::Vector{Tuple{Float32,RGBA}}
     canvas::Ref{Union{Nothing,GtkCanvas}}
     valdisp::Ref{Union{Nothing,GtkLabel}}
     value::Ref{Float32}
@@ -87,7 +89,7 @@ end
 
 function keymods(mod1::Symbol, mods...)
     b = BitSet([])
-    for m in vcat(mods,[mod1])
+    for m in vcat(mods, [mod1])
         if m == :shift
             push!(b, 1)
         elseif m == :control
@@ -116,7 +118,11 @@ end
 function adjust_control!(panel::Panel, k::KeyOp{Slider}, dx, dy)
     s = panel.widgetof[k.slider]
     v = s.adjustment.value
-    dmouse = if k.slider.angle == 0 dx else dy end
+    dmouse = if k.slider.angle == 0
+        dx
+    else
+        dy
+    end
     new_value = min(k.slider.maxval, max(k.slider.minval, v + 0.01 * dmouse * k.speed))
     s.adjustment.value = new_value
 end
@@ -145,8 +151,11 @@ function setup!(panel::Panel)
     end
 
     # Scroll controller
-    scroll_controller = Gtk4.GtkEventControllerScroll(Gtk4.EventControllerScrollFlags_VERTICAL, panel.window)
-    
+    scroll_controller = Gtk4.GtkEventControllerScroll(
+        Gtk4.EventControllerScrollFlags_VERTICAL,
+        panel.window,
+    )
+
     signal_connect(scroll_controller, "scroll") do controller, dx, dy
         #println("dx = ", dx, " dy = ", dy)
         for op in panel.active_keyops
@@ -155,11 +164,11 @@ function setup!(panel::Panel)
         end
         nothing
     end
-    
+
     return panel
 end
 
-function render(led :: LED, panel :: Panel)
+function render(led::LED, panel::Panel)
     horizontal = led.angle == 0
     vertical = led.angle == 90
     led_width = horizontal ? led.length : led.breadth
@@ -173,7 +182,7 @@ function render(led :: LED, panel :: Panel)
     push!(box, vertical ? label : valdisp)
     led.canvas[] = canvas
     led.valdisp[] = valdisp
-    
+
     @guarded draw(canvas) do widget
         ctx = Gtk4.getgc(widget)
         w = Gtk4.width(widget)
@@ -188,9 +197,13 @@ function render(led :: LED, panel :: Panel)
         ledh = h / led.numsteps
         ledfillw = led.fillratio * ledw
         ledfillh = led.fillratio * ledh
-        for i in 1:led.numsteps
-            x0 = vertical ? (1.0 - led.fillratio) * w/2 : (i-1) * ledw + (1.0 - led.fillratio) * ledw / 2
-            y0 = vertical ? (led.numsteps - i) * ledh + (1.0 - led.fillratio) * ledh / 2 : (1.0 - led.fillratio) * h/2 
+        for i = 1:led.numsteps
+            x0 =
+                vertical ? (1.0 - led.fillratio) * w/2 :
+                (i-1) * ledw + (1.0 - led.fillratio) * ledw / 2
+            y0 =
+                vertical ? (led.numsteps - i) * ledh + (1.0 - led.fillratio) * ledh / 2 :
+                (1.0 - led.fillratio) * h/2
             x1 = vertical ? w - x0 : x0 + ledfillw
             y1 = vertical ? y0 + ledfillh : h - y0
             c = led.colours[i]
@@ -222,7 +235,7 @@ function render(level::Level, panel::Panel)
     push!(box, vertical ? label : valdisp)
     level.canvas[] = canvas
     level.valdisp[] = valdisp
-    
+
     @guarded draw(canvas) do widget
         ctx = Gtk4.getgc(widget)
         w = Gtk4.width(widget)
@@ -231,8 +244,8 @@ function render(level::Level, panel::Panel)
         Cairo.set_source_rgb(ctx, 0, 0, 0)
         fill(ctx)
         v = level.value[]
-        gradient = if horizontal 
-            Cairo.pattern_create_linear(0, 0, w, 0) 
+        gradient = if horizontal
+            Cairo.pattern_create_linear(0, 0, w, 0)
         else
             Cairo.pattern_create_linear(0, h, 0, 0)
         end
@@ -259,19 +272,40 @@ function stdleds(ny::Integer, y::RGBA, no::Integer, o::RGBA, nr::Integer, r::RGB
     vcat(repeat([y], ny), repeat([o], no), repeat([r], nr))
 end
 
-stdleds(y::RGBA,o::RGBA,r::RGBA) = stdleds(9, y, 3, o, 2, r)
+stdleds(y::RGBA, o::RGBA, r::RGBA) = stdleds(9, y, 3, o, 2, r)
 stdleds() = begin
     y = RGBA(1.0f0, 1.0f0, 0.0f0, 1.0f0)
     o = RGBA(1.0f0, 0.65f0, 0.0f0, 1.0f0)
     r = RGBA(1.0f0, 0.0f0, 0.0f0, 1.0f0)
-    stdleds(y,o,r)
+    stdleds(y, o, r)
 end
 
-function LED(label::String, angle::Int, length_::Int, breadth::Int, colours::Vector{RGBA}, source::Channel{Float32}; fillratio=0.5, gamma=0.5)
+function LED(
+    label::String,
+    angle::Int,
+    length_::Int,
+    breadth::Int,
+    colours::Vector{RGBA},
+    source::Channel{Float32};
+    fillratio = 0.5,
+    gamma = 0.5,
+)
     @assert angle == 0 || angle == 90
     N = length(colours)
     val = Ref(0.0f0)
-    w = LED(label, angle, length_, breadth, N, colours, Float32(fillratio), Float32(gamma), nothing, nothing, val)
+    w = LED(
+        label,
+        angle,
+        length_,
+        breadth,
+        N,
+        colours,
+        Float32(fillratio),
+        Float32(gamma),
+        nothing,
+        nothing,
+        val,
+    )
     @async begin
         try
             while true
@@ -295,12 +329,22 @@ function LED(label::String, angle::Int, length_::Int, breadth::Int, colours::Vec
     return w
 end
 
+LED(label::String, angle::Int, length_::Int, source::Channel{Float32}) =
+    LED(label, angle, length_, div(length_, 5), stdleds(), source)
+
 stdlevelcolours() = begin
     g = RGBA(0.0f0, 1.0f0, 0.0f0, 1.0f0)
     [(0.0f0, g), (1.0f0, g)]
 end
 
-function Level(label::String, angle::Int, length_::Int, breadth::Int, colours::Vector{Tuple{Float32,RGBA}}, source::Channel{Float32})
+function Level(
+    label::String,
+    angle::Int,
+    length_::Int,
+    breadth::Int,
+    colours::Vector{Tuple{Float32,RGBA}},
+    source::Channel{Float32},
+)
     @assert angle == 0 || angle == 90
     N = length(colours)
     val = Ref(0.0f0)
@@ -328,26 +372,26 @@ function Level(label::String, angle::Int, length_::Int, breadth::Int, colours::V
     return w
 end
 
+Level(label::String, angle::Int, length_::Int, source::Channel{Float32}) =
+    LED(label, angle, length_, div(length_, 5), stdlevelcolours(), source)
+
 
 function render(k::Key, panel::Panel)
     btn = GtkButton(k.label * " (" * k.key * ")")
-    
-    action = Gtk4.GtkShortcut(
-        Gtk4.ShortcutTrigger(k.key),
-        Gtk4.ShortcutAction() do
-            k.onclicked(k)
-            nothing
-        end
-    )
-    
+
+    action = Gtk4.GtkShortcut(Gtk4.ShortcutTrigger(k.key), Gtk4.ShortcutAction() do
+        k.onclicked(k)
+        nothing
+    end)
+
     shortcut_controller = Gtk4.ShortcutController(parent.window)
     shortcut_controller.scope = Gtk4.ShortcutController.GLOBAL
     push!(shortcut_controller.shortcuts, action)
-    
+
     signal_connect(btn, "clicked") do widget
         k.onclicked(k)
     end
-    
+
     panel.widgetof[k] = btn
     return btn
 end
@@ -355,18 +399,18 @@ end
 function render(s::Slider, panel::Panel)
     box = s.angle == 0 ? GtkBox(:h) : GtkBox(:v)
     box.spacing = 5
-    
+
     label = GtkLabel(s.label)
-    
+
     adjustment = GtkAdjustment(
         s.minval,       # value
         s.minval,       # lower
         s.maxval,       # upper
         s.step,         # step_increment
         s.step,         # page_increment
-        0.0             # page_size
+        0.0,             # page_size
     )
-    
+
     scale = GtkScale(:h, adjustment)
     if s.angle == 90
         # For vertical orientation, we need to set the orientation
@@ -374,19 +418,19 @@ function render(s::Slider, panel::Panel)
         scale = GtkScale(:v, adjustment)
         scale.inverted = true
     end
-    
+
     scale.digits = 2
     scale.width_request = s.angle == 0 ? s.length : -1
     scale.height_request = s.angle == 90 ? s.length : -1
-    
+
     value_label = GtkLabel(@sprintf("%.2f", s.minval))
-    
+
     signal_connect(scale, "value-changed") do widget
         current_value = widget.adjustment.value
         value_label.label = @sprintf("%.2f", current_value)
         s.onchanged(s, current_value)
     end
-    
+
     if s.angle == 0
         push!(box, label)
         push!(box, scale)
@@ -396,13 +440,13 @@ function render(s::Slider, panel::Panel)
         push!(box, scale)
         push!(box, label)
     end
-    
+
     panel.widgetof[s] = scale
     return box
 end
 
-function sink(::Type{Slider}, c :: Synth.Control)
-    (s::Slider,v) -> c[] = v
+function sink(::Type{Slider}, c::Synth.Control)
+    (s::Slider, v) -> c[] = v
 end
 
 function sink(::Type{Slider}, chan::Channel{Float32})
@@ -422,12 +466,12 @@ function render(g::HGroup, panel::Panel)
     box.margin_bottom = 10
     box.margin_start = 10
     box.margin_end = 10
-    
+
     for child in g.children
         widget = render(child, panel)
         push!(box, widget)
     end
-    
+
     frame.child = box
     panel.widgetof[box] = frame
     return frame
@@ -440,12 +484,12 @@ function render(g::VGroup, panel::Panel)
     box.margin_bottom = 10
     box.margin_start = 10
     box.margin_end = 10
-    
+
     for child in g.children
         widget = render(child, panel)
         push!(box, widget)
     end
-    
+
     frame.child = box
     panel.widgetof[box] = frame
     return frame
@@ -457,71 +501,6 @@ function makepanel(app::GtkApplication)
     p = Panel(app, window, Dict(), [], Set([]))
     setup!(p)
     return p
-end
-
-function harnessed(testfn, app::GtkApplication)
-    panel = makepanel(app)
-    spec = testfn()
-    widget = render(spec, panel)
-    panel.window.child = widget
-    show(panel.window)
-end
-
-# Test functions remain largely the same
-function test1()
-    key1 = Key("meow", "m") do k::Key
-        println(k.label)
-    end
-    key2 = Key("bow", "b") do k::Key
-        println(k.label)
-    end
-    HGroup("animals", [key1,key2])
-end
-
-function test2()
-    s1 = Slider("one", 90, 150, 0.0f0, 1.0f0, 0.01f0) do s::Slider, v
-        println("one's value is now ", v) 
-    end
-    s2 = Slider("two", 90, 150, 0.0f0, 1.0f0, 0.01f0) do s::Slider, v
-        println("two's value is now ", v) 
-    end
-    HGroup("Sliders", [s1,s2])
-end
-
-function test3()
-    s1 = Slider("one", 90, 150, 0.0f0, 1.0f0, 0.01f0) do s::Slider, v
-        println("one's value is now ", v) 
-    end
-    s2 = Slider("two", 90, 150, 0.0f0, 1.0f0, 0.01f0) do s::Slider, v
-        println("two's value is now ", v) 
-    end
-    HGroup("Sliders", [
-                       KeyOp(Gtk4.KEY_c, BitSet(), 1f0, s1),
-                       KeyOp(Gtk4.KEY_v, BitSet(), 1f0, s2)
-                      ])
-end
-
-src = Channel{Float32}(2)
-
-function test4()
-    LED("blinker", 90, 200, 40, stdleds(), src)
-end
-function test5()
-    Level("blinker", 90, 200, 40, stdlevelcolours(), src)
-end
-
-function test_main()
-    app = GtkApplication("com.example.app", 0)
-    signal_connect(app, :activate) do app
-        harnessed(test5, app)
-    end
-    @async begin
-        for i in 1:1000
-            sleep(0.002)
-            put!(src, 0.5*(1.0+sin((i-1) * 0.001 * 48.0)))
-        end
-    end
-    run(app)
 end
 
 end
