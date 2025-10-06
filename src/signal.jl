@@ -118,8 +118,8 @@ hz2midi(hz::Real) = 69.0 + 12.0*log2(hz/440.0)
 hz2midi(sig::Signal) = map(hz2midi, sig)
 
 "We define done and value for Nothing type as a signal trivially."
-done(s :: Nothing, t, dt) = true
-value(s :: Nothing, t, dt) = 0.0f0
+done(s::Nothing, t, dt) = true
+value(s::Nothing, t, dt) = 0.0f0
 
 """
 A simple wrapper struct for cyclic access to vectors.
@@ -129,16 +129,16 @@ Note that the circular range is restricted to what
 was at creation time. This means you can use views
 as well.
 """
-struct Circular{T, V <: AbstractArray{T}}
-    vec :: V
-    N :: Int
+struct Circular{T,V<:AbstractArray{T}}
+    vec::V
+    N::Int
 end
 
-function Base.getindex(c :: Circular{T,V}, i) where {T, V <: AbstractArray{T}}
+function Base.getindex(c::Circular{T,V}, i) where {T,V<:AbstractArray{T}}
     return c.vec[mod1(i, c.N)]
 end
 
-function Base.setindex!(c :: Circular{T,V}, i, val :: T) where {T, V <: AbstractArray{T}}
+function Base.setindex!(c::Circular{T,V}, i, val::T) where {T,V<:AbstractArray{T}}
     c.vec[mod1(i, c.N)] = val
 end
 
@@ -147,18 +147,18 @@ end
 
 Makes a circular array that handles the modulo calculations.
 """
-circular(v :: AbstractArray) = begin
+circular(v::AbstractArray) = begin
     @assert length(v) > 0
     Circular(v, length(v))
 end
 
 # Turns a normal function of time into a signal.
 struct SigFun <: Signal
-    f :: Function
+    f::Function
 end
 
-done(f :: SigFun, t, dt) = false
-value(f :: SigFun, t, dt) = f.f(t)
+done(f::SigFun, t, dt) = false
+value(f::SigFun, t, dt) = f.f(t)
 
 """
     sigfun(f::Function) :: SigFun
@@ -167,10 +167,10 @@ Treats a simple function of time (in seconds) as a signal.
 """
 sigfun(f) = SigFun(f)
 
-mutable struct Fanout{S <: Signal} <: Signal
-    sig :: S
-    t :: Float64
-    v :: Float32
+mutable struct Fanout{S<:Signal} <: Signal
+    sig::S
+    t::Float64
+    v::Float32
 end
 
 
@@ -197,10 +197,10 @@ if `s = fanout(sig)`, then `fanout(s) = s`).
     referenced in multiple data structures is said to be "aliased". It is in
     the latter sense that we use the word `fanout` in this case. 
 """
-fanout(sig :: Fanout{S}) where {S <: Signal} = sig
-fanout(sig :: Signal) = Fanout(sig, -1.0, 0.0f0)
-done(s :: Fanout, t, dt) = done(s.sig, t, dt)
-function value(s :: Fanout, t, dt)
+fanout(sig::Fanout{S}) where {S<:Signal} = sig
+fanout(sig::Signal) = Fanout(sig, -1.0, 0.0f0)
+done(s::Fanout, t, dt) = done(s.sig, t, dt)
+function value(s::Fanout, t, dt)
     if t > s.t
         s.t = t
         s.v = Float32(value(s.sig, t, dt))
@@ -209,22 +209,22 @@ function value(s :: Fanout, t, dt)
 end
 
 
-struct Stereo{L <: Signal, R <: Signal} <: Signal
-    left :: Fanout{L}
-    right :: Fanout{R}
-    t :: Float64
-    leftchan :: Float32
-    rightchan :: Float32
-    mixed :: Float32
+struct Stereo{L<:Signal,R<:Signal} <: Signal
+    left::Fanout{L}
+    right::Fanout{R}
+    t::Float64
+    leftchan::Float32
+    rightchan::Float32
+    mixed::Float32
 end
 
-function done(s :: Stereo{L,R}, t, dt) where {L <: Signal, R <: Signal}
+function done(s::Stereo{L,R}, t, dt) where {L<:Signal,R<:Signal}
     done(s.left, t, dt) && done(s.right, t, dt)
 end
 
-value(s :: Stereo{L,R}, t, dt) where {L <: Signal, R <: Signal} = value(s, 0, t, dt)
+value(s::Stereo{L,R}, t, dt) where {L<:Signal,R<:Signal} = value(s, 0, t, dt)
 
-function value(s :: Stereo{L,R}, chan :: Int, t, dt) where {L <: Signal, R <: Signal}
+function value(s::Stereo{L,R}, chan::Int, t, dt) where {L<:Signal,R<:Signal}
     if t > s.t
         s.t = t
         s.leftchan = value(s.left, t, dt)
@@ -277,10 +277,10 @@ stereo signals.
 
 $(see_also("left,right,mono"))
 """
-function stereo(left :: Fanout{L}, right :: Fanout{R}) where {L <: Signal, R <: Signal}
+function stereo(left::Fanout{L}, right::Fanout{R}) where {L<:Signal,R<:Signal}
     Stereo(left, right, 0.0, 0.0f0, 0.0f0, 0.0f0)
 end
-function stereo(left :: Signal, right :: Signal)
+function stereo(left::Signal, right::Signal)
     Stereo(fanout(left), fanout(right), 0.0, 0.0f0, 0.0f0, 0.0f0)
 end
 
@@ -293,8 +293,8 @@ itself if passed a non-stereo signal (which is considered mono).
 
 $(see_also("right,mono,stereo"))
 """
-left(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = s.left
-left(s :: Signal) = s
+left(s::Stereo{L,R}) where {L<:Signal,R<:Signal} = s.left
+left(s::Signal) = s
 
 """
     right(s :: Stereo{L,R}) where {L <: Signal, R <: Signal}
@@ -305,8 +305,8 @@ itself if passed a non-stereo signal (which is considered mono).
 
 $(see_also("left,mono,stereo"))
 """
-right(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = s.right
-right(s :: Signal) = s
+right(s::Stereo{L,R}) where {L<:Signal,R<:Signal} = s.right
+right(s::Signal) = s
 
 """
     mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} 
@@ -326,10 +326,11 @@ and if you direct it to the left, you hear the left channel sound.
 
 $(see_also("left,right,stereo"))
 """
-mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} = konst(sqrt(0.5f0)) * (s.left + s.right)
-mono(s :: Signal) = s
-mono(s :: Stereo{L,R}, panval :: Real) where {L,R} = mono(s, konst(panval))
-mono(s :: Stereo{L,R}, panval :: Signal) where {L,R} = 0.5f0 * ((panval + 1.0f0) * right(s) + (1.0f0 - panval) * left(s))
+mono(s::Stereo{L,R}) where {L<:Signal,R<:Signal} = konst(sqrt(0.5f0)) * (s.left + s.right)
+mono(s::Signal) = s
+mono(s::Stereo{L,R}, panval::Real) where {L,R} = mono(s, konst(panval))
+mono(s::Stereo{L,R}, panval::Signal) where {L,R} =
+    0.5f0 * ((panval + 1.0f0) * right(s) + (1.0f0 - panval) * left(s))
 
 """
     pan(s :: Signal, lr :: Real)
@@ -345,19 +346,19 @@ When applied to a stereo signal, a "left pan" (`lr` in range `[-1,0]`) will
 result in the right signal being moved left  and a "right pan" (`lr` in range
 `[0,1]`) will result in the left signal being moved right.
 """
-function pan(s :: Signal, lr :: Signal)
+function pan(s::Signal, lr::Signal)
     stereo(0.5f0 * (1.0f0 - lr) * s, 0.5f0 * (1.0f0 + lr) * s)
 end
 
-function pan(s :: Signal, lr :: Real)
+function pan(s::Signal, lr::Real)
     pan(s, konst(lr))
 end
 
-function pan(s :: Stereo{L,R}, lr :: Real) where {L,R}
+function pan(s::Stereo{L,R}, lr::Real) where {L,R}
     pan(s, konst(lr))
 end
 
-function pan(s :: Stereo{L,R}, lr :: Signal) where {L,R}
+function pan(s::Stereo{L,R}, lr::Signal) where {L,R}
     if lr < 0.0
         stereo(s.left - lr * s.right, (1.0f0 + lr) * s.right)
     else
@@ -365,9 +366,9 @@ function pan(s :: Stereo{L,R}, lr :: Signal) where {L,R}
     end
 end
 
-struct Clip{S <: Signal} <: Signal
-    dur :: Float64
-    s :: S
+struct Clip{S<:Signal} <: Signal
+    dur::Float64
+    s::S
 end
 
 """
@@ -377,14 +378,17 @@ Clips the given signal to the given duration. Usually you'd use a "soft"
 version of this like a raised cosine or ADSR, but clip could be useful on
 its own.
 """
-function clip(dur :: Float64, s :: Signal)
+function clip(dur::Float64, s::Signal)
     Clip(dur, s)
 end
-function clip(dur :: Float64, s :: Stereo{L,R}) where {L <: Signal, R <: Signal}
+function clip(dur::Float64, s::Stereo{L,R}) where {L<:Signal,R<:Signal}
     stereo(clip(dur, s.left), clip(dur, s.right))
 end
 
-done(c :: Clip{S}, t, dt) where {S <: Signal} = t > c.dur || done(c.s, t, dt)
-value(c :: Clip{S}, t, dt) where {S <: Signal} = if t > c.dur 0.0f0 else value(c.s, t, dt) end
-
-
+done(c::Clip{S}, t, dt) where {S<:Signal} = t > c.dur || done(c.s, t, dt)
+value(c::Clip{S}, t, dt) where {S<:Signal} =
+    if t > c.dur
+        0.0f0
+    else
+        value(c.s, t, dt)
+    end

@@ -11,10 +11,10 @@ scheduling can happen on a different timeline than real time.
 - `clock(speed :: Signal, t_end)`
 - `clock_bpm(tempo_bpm, t_end)`
 """
-mutable struct Clock{S <: Signal} <: Signal
-    speed :: S
-    t :: Float64
-    t_end :: Float64
+mutable struct Clock{S<:Signal} <: Signal
+    speed::S
+    t::Float64
+    t_end::Float64
 end
 
 """
@@ -25,10 +25,10 @@ Constructs different kinds of clocks. Clocks can be speed controlled.
 Clocks used for audio signals should be made using the `clock` constructor
 and those for scheduling purposes using [`clock_bpm`](@ref).
 """
-function clock(speed :: Real, t_end :: Real = Inf) 
+function clock(speed::Real, t_end::Real = Inf)
     Clock(konst(speed), 0.0, t_end)
 end
-function clock(speed :: Signal, t_end :: Real = Inf)
+function clock(speed::Signal, t_end::Real = Inf)
     Clock(speed, 0.0, t_end)
 end
 
@@ -40,19 +40,17 @@ Constructs different kinds of clocks. Clocks can be speed controlled.
 Clocks used for audio signals should be made using the [`clock`](@ref) constructor
 and those for scheduling purposes using `clock_bpm`.
 """
-function clock_bpm(tempo_bpm :: Real = 60.0, t_end :: Real = Inf)
+function clock_bpm(tempo_bpm::Real = 60.0, t_end::Real = Inf)
     Clock(konst(tempo_bpm/60.0), 0.0, t_end)
 end
-function clock_bpm(tempo_bpm :: Signal, t_end :: Real = Inf)
+function clock_bpm(tempo_bpm::Signal, t_end::Real = Inf)
     Clock((1.0/60.0) * tempo_bpm, 0.0, t_end)
 end
 
-done(c :: Clock, t, dt) = t > c.t_end || done(c.speed, t, dt)
+done(c::Clock, t, dt) = t > c.t_end || done(c.speed, t, dt)
 
-function value(c :: Clock, t, dt)
+function value(c::Clock, t, dt)
     v = c.t
     c.t += value(c.speed, t, dt) * dt
     return v
 end
-
-

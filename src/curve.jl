@@ -1,8 +1,8 @@
 
 
 struct Seg
-    dur :: Float64
-    interp :: Function
+    dur::Float64
+    interp::Function
 end
 
 function interpolator(::Val{:linear}, v1::Float32, v2::Float32, dur::Float64)
@@ -44,7 +44,7 @@ end
 
 A segment that holds the value `v` for the duration `dur`.
 """
-function Seg(v :: Real, dur :: Float64)
+function Seg(v::Real, dur::Float64)
     vf = Float32(v)
     Seg(dur, (t::Float64) -> vf)
 end
@@ -59,22 +59,22 @@ over `dur` using the specified interpolator `interp`.
 `interp` can take on one of `[:linear, :exp, :cos, :harmonic]`.
 The default interpolation is `:linear`.
 """
-function Seg(v1 :: Real, v2 :: Real, dur :: Float64, interp::Symbol = :linear)
+function Seg(v1::Real, v2::Real, dur::Float64, interp::Symbol = :linear)
     v1f = Float32(v1)
     v2f = Float32(v2)
     Seg(dur, interpolator(Val(interp), v1f, v2f, dur))
 end
 
-seg(v,dur) = Seg(v, dur)
-seg(v1,v2,dur,interp) = Seg(v1,v2,dur,interp)
+seg(v, dur) = Seg(v, dur)
+seg(v1, v2, dur, interp) = Seg(v1, v2, dur, interp)
 
 mutable struct Curve <: Signal
-    segments :: Vector{Seg}
-    i :: Int
-    ti :: Float64
-    times :: Vector{Float64}
-    tend :: Float64
-    stop_at_end :: Bool
+    segments::Vector{Seg}
+    i::Int
+    ti::Float64
+    times::Vector{Float64}
+    tend::Float64
+    stop_at_end::Bool
 end
 
 """
@@ -88,21 +88,16 @@ If you pass `true` for `stop`, it means the curve will be `done`
 once all the segments are done. Otherwise the curve will yield
 the last value forever.
 """
-function curve(segments :: Vector{Seg}; stop=false)
+function curve(segments::Vector{Seg}; stop = false)
     times = vcat(0.0, accumulate(+, [v.dur for v in segments]))
-    Curve(
-          segments,
-          1,
-          0.0,
-          times,
-          times[end],
-          stop
-         )
+    Curve(segments, 1, 0.0, times, times[end], stop)
 end
 
-done(s :: Curve, t, dt) = s.stop_at_end ? t >= s.tend : false
-function value(s :: Curve, t, dt)
-    if t >= s.tend || s.i > length(s.segments) return s.segments[end].interp(1.0) end
+done(s::Curve, t, dt) = s.stop_at_end ? t >= s.tend : false
+function value(s::Curve, t, dt)
+    if t >= s.tend || s.i > length(s.segments)
+        return s.segments[end].interp(1.0)
+    end
     if t < s.times[s.i+1]
         seg = s.segments[s.i]
         trel = (t - s.times[s.i]) / seg.dur
@@ -112,5 +107,3 @@ function value(s :: Curve, t, dt)
         return value(s, t, dt)
     end
 end
-
-

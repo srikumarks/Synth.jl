@@ -1,17 +1,17 @@
 
 mutable struct Line <: Signal
-    v1 :: Float32
-    duration_secs :: Float32
-    v2 :: Float32
+    v1::Float32
+    duration_secs::Float32
+    v2::Float32
 end
 
-done(s :: Line, t, dt) = false
-function value(s :: Line, t, dt)
-    if t <= 0.0f0 
+done(s::Line, t, dt) = false
+function value(s::Line, t, dt)
+    if t <= 0.0f0
         s.v1
     elseif t <= s.duration_secs
         (s.v1 + (s.v2 - s.v1) * t / s.duration_secs)
-    else 
+    else
         s.v2
     end
 end
@@ -24,15 +24,16 @@ duration_secs`. In between the two times, it produces a linearly varying value
 between `v1` and `v2`. This signal is infinite in extent. Use [`clip`](@ref) to
 limit its extent.
 """
-line(v1 :: Real, duration_secs :: Real, v2 :: Real) = Line(Float32(v1), Float32(duration_secs), Float32(v2))
+line(v1::Real, duration_secs::Real, v2::Real) =
+    Line(Float32(v1), Float32(duration_secs), Float32(v2))
 
 mutable struct Expon <: Signal
-    v1 :: Float32
-    duration_secs :: Float32
-    v2 :: Float32
-    lv1 :: Float32
-    lv2 :: Float32
-    dlv :: Float32
+    v1::Float32
+    duration_secs::Float32
+    v2::Float32
+    lv1::Float32
+    lv2::Float32
+    dlv::Float32
 end
 
 """
@@ -43,15 +44,22 @@ Similar to line, but does exponential interpolation from `v1` to `v2` over
 The resultant signal is infinite in extent. Use [`clip`](@ref) to limit its
 extent.
 """
-function expon(v1 :: Real, duration_secs :: Real, v2 :: Real)
+function expon(v1::Real, duration_secs::Real, v2::Real)
     @assert v1 > 0.0
     @assert v2 > 0.0
     @assert duration_secs > 0.0
-    Expon(Float32(v1), Float32(duration_secs), Float32(v2), log(Float32(v1)), log(Float32(v2)), log(Float32(v2/v1)))
+    Expon(
+        Float32(v1),
+        Float32(duration_secs),
+        Float32(v2),
+        log(Float32(v1)),
+        log(Float32(v2)),
+        log(Float32(v2/v1)),
+    )
 end
 
-done(s :: Expon, t, dt) = false
-function value(s :: Expon, t, dt)
+done(s::Expon, t, dt) = false
+function value(s::Expon, t, dt)
     if t <= 0.0f0
         s.v1
     elseif t <= s.duration_secs
@@ -100,7 +108,7 @@ For example, `raisedcos(x, 0.25)` will give you a curve that will smoothly
 rise from 0.0 at x=0.0 to 1.0 at x=0.25, stay fixed at 1.0 until x = 0.75
 and smoothly decrease to 0.0 at x=1.0.
 """
-function raisedcos(x, overlap, scale=1.0f0)
+function raisedcos(x, overlap, scale = 1.0f0)
     if x < overlap
         return 0.5f0 * (cos(Float32(π * (x/overlap - 1.0))) + 1.0f0)
     elseif x > scale - overlap
@@ -109,5 +117,3 @@ function raisedcos(x, overlap, scale=1.0f0)
         return 1.0f0
     end
 end
-
-

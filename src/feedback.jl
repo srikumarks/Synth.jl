@@ -1,9 +1,9 @@
 mutable struct Feedback <: Signal
-    s :: Union{Nothing,Signal}
-    last_t :: Float64
-    calculating_t :: Float64
-    last_val :: Float32
-    last_done :: Bool
+    s::Union{Nothing,Signal}
+    last_t::Float64
+    calculating_t::Float64
+    last_val::Float32
+    last_done::Bool
 end
 
 """
@@ -25,11 +25,11 @@ feedback() = Feedback(nothing, 0.0, 0.0, 0.0f0, false)
 
 Connects a signal to a feedback point.
 """
-function connect(s :: Signal, fb :: Feedback)
+function connect(s::Signal, fb::Feedback)
     fb.s = s
 end
 
-function done(fb :: Feedback, t, dt)
+function done(fb::Feedback, t, dt)
     if t <= fb.calculating_t
         return fb.last_done
     end
@@ -42,7 +42,7 @@ function done(fb :: Feedback, t, dt)
     return out_done
 end
 
-function value(fb :: Feedback, t, dt)
+function value(fb::Feedback, t, dt)
     if t <= fb.calculating_t
         return fb.last_val
     end
@@ -54,5 +54,3 @@ function value(fb :: Feedback, t, dt)
     end
     return out_val
 end
-
-

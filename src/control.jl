@@ -1,15 +1,15 @@
 
 mutable struct Control <: Signal
-    chan :: Channel{Float32}
-    wv :: Float64
-    ws :: Float64
-    v :: Float32
-    latestval :: Float32
+    chan::Channel{Float32}
+    wv::Float64
+    ws::Float64
+    v::Float32
+    latestval::Float32
 end
 
-done(c :: Control, t, dt) = (c.state == :closed)
+done(c::Control, t, dt) = (c.state == :closed)
 
-function value(c :: Control, t, dt)
+function value(c::Control, t, dt)
     # `isready` won't error out even if the channel is closed. Doing this
     # conforms to the expectation that value may end up being called for a few
     # samples after the signal has actually ended and it must continue on for a
@@ -50,11 +50,21 @@ Close the channel to mark the control signal as "done".
     will be well under 1MB. Even if you have 1000 voices with 10 channels controlling
     each voice, the memory won't be significant (under 5MB) by 2025 standards.
 """
-function control(chan :: Channel{Float32}, dezipper_interval = 0.04; initial = 0.0f0, samplingrate=48000) :: Control
+function control(
+    chan::Channel{Float32},
+    dezipper_interval = 0.04;
+    initial = 0.0f0,
+    samplingrate = 48000,
+)::Control
     wv = 2 ^ (- 1.0 / (dezipper_interval * samplingrate))
     Control(chan, wv, 1.0 - wv, initial, initial)
 end
-function control(dezipper_interval = 0.04; bufferlength = 2, initial = 0.0f0, samplingrate = 48000) :: Control
+function control(
+    dezipper_interval = 0.04;
+    bufferlength = 2,
+    initial = 0.0f0,
+    samplingrate = 48000,
+)::Control
     control(Channel{Float32}(bufferlength), dezipper_interval; initial, samplingrate)
 end
 
@@ -68,6 +78,6 @@ an exception. If you control the sustain of an [`adsr`](@ref)
 using a control signal, then stopping the control will basically
 end the ADSR envelope by switching it into "release" phase.
 """
-function stop(c :: Control)
+function stop(c::Control)
     close(c.chan)
 end

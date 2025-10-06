@@ -1,12 +1,12 @@
 using SampledSignals: SampleBuf
 
 mutable struct Sample <: Signal
-    samples :: Vector{Float32}
-    N :: Int
-    i :: Int
-    looping :: Bool
-    loop_i :: Int
-    samplingrate :: Float32
+    samples::Vector{Float32}
+    N::Int
+    i::Int
+    looping::Bool
+    loop_i::Int
+    samplingrate::Float32
 end
 
 """
@@ -24,18 +24,40 @@ but can be asked to loop back to a specified point after that.
 Currently sample rate conversion is not supported, though that is a feature
 that must be added at some point.
 """
-function sample(samples :: Vector{Float32}; looping = false, loopto = 1.0, samplingrate=48000.0f0) 
-    Sample(samples, length(samples), 1, looping, floor(Int, loopto * length(samples)), samplingrate)
+function sample(
+    samples::Vector{Float32};
+    looping = false,
+    loopto = 1.0,
+    samplingrate = 48000.0f0,
+)
+    Sample(
+        samples,
+        length(samples),
+        1,
+        looping,
+        floor(Int, loopto * length(samples)),
+        samplingrate,
+    )
 end
-function sample(samples :: SampleBuf; looping = false, loopto = 1.0, samplingrate=samples.samplerate)
-    sample(Float32.(samples[:,1].data); looping, loopto, samplingrate)
+function sample(
+    samples::SampleBuf;
+    looping = false,
+    loopto = 1.0,
+    samplingrate = samples.samplerate,
+)
+    sample(Float32.(samples[:, 1].data); looping, loopto, samplingrate)
 end
-function sample(filename :: AbstractString; looping = false, loopto = 1.0, samplingrate=48000.0f0)
+function sample(
+    filename::AbstractString;
+    looping = false,
+    loopto = 1.0,
+    samplingrate = 48000.0f0,
+)
     buf = load(filename)
-    sample(Float32.(buf[:,1].data); looping, loopto, samplingrate)
+    sample(Float32.(buf[:, 1].data); looping, loopto, samplingrate)
 end
 
-function done(s :: Sample, t, dt)
+function done(s::Sample, t, dt)
     if s.looping
         false
     else
@@ -43,8 +65,10 @@ function done(s :: Sample, t, dt)
     end
 end
 
-function value(s :: Sample, t, dt)
-    if s.i > s.N return 0.0f0 end
+function value(s::Sample, t, dt)
+    if s.i > s.N
+        return 0.0f0
+    end
     v = s.samples[s.i]
     s.i = s.i + 1
     if s.i > s.N
@@ -55,7 +79,6 @@ function value(s :: Sample, t, dt)
     return v
 end
 
-function convolve(s1 :: Sample, s2 :: Sample) :: Sample
+function convolve(s1::Sample, s2::Sample)::Sample
     sample(rescale(0.5f0, convolve(s1.samples, s2.samples)))
 end
-

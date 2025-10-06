@@ -1,21 +1,21 @@
 
-mutable struct Probe{S <: Signal} <: Signal
-    s :: S
-    chan :: Channel{Float32}
-    interval :: Float64
-    t :: Float64
-    wv :: Float64
-    ws :: Float64
-    v :: Float32
+mutable struct Probe{S<:Signal} <: Signal
+    s::S
+    chan::Channel{Float32}
+    interval::Float64
+    t::Float64
+    wv::Float64
+    ws::Float64
+    v::Float32
 end
 
-done(p :: Probe{S}, t, dt) where {S <: Signal} = done(p.s, t, dt)
+done(p::Probe{S}, t, dt) where {S<:Signal} = done(p.s, t, dt)
 
-function value(p :: Probe{S}, t, dt) where {S <: Signal}
+function value(p::Probe{S}, t, dt) where {S<:Signal}
     sv = value(p.s, t, dt)
     p.v = p.wv * p.v + p.ws * sv
     p.t -= dt
-    if p.t < 0.0 
+    if p.t < 0.0
         # TODO: There is perhaps room for some improvement here
         # to keep the probe value fresh in case it is taking
         # time to draw out already probed values.
@@ -41,11 +41,15 @@ fast. The default value has it sampling the signal every 40ms.
 The channel can then be connected to a UI display widget that shows values
 as they come in on the channel.
 """
-function probe(s :: Signal, chan :: Channel{Float32}, interval :: Float64 = 0.04; samplingrate = 48000)
+function probe(
+    s::Signal,
+    chan::Channel{Float32},
+    interval::Float64 = 0.04;
+    samplingrate = 48000,
+)
     wv = 2 ^ (- 1.0 / (interval * samplingrate))
     Probe(s, chan, interval, 0.0, wv, 1.0 - wv, 0.0f0)
 end
-function probe(s :: Signal, interval :: Float64 = 0.04; samplingrate = 48000)
+function probe(s::Signal, interval::Float64 = 0.04; samplingrate = 48000)
     probe(s, Channel{Float32}(2), interval; samplingrate)
 end
-

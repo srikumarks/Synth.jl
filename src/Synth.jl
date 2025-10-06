@@ -7,7 +7,8 @@ export konst, clip, sigfun, fanout, feedback, connect, clock, clock_bpm, clamp, 
 export sinosc, phasor, noise, sample
 export line, expon, adsr, decay, Gen, follow
 export render, write, read_rawaudio
-export startaudio, synthesizer, synthchan, play!, play, control, probe, scheduler, sched, now, seq
+export startaudio,
+    synthesizer, synthchan, play!, play, control, probe, scheduler, sched, now, seq
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf
 export waveshape, linearmap, delay, tap
 export wavetable, maketable
@@ -18,7 +19,8 @@ export compress
 export stereo, left, right, pan
 export simplegrains, chorusgrains, write, rescale, expmap
 
-see_also(meths) = "**See also**: " * join(["[`$m`](@ref)" for m in split(meths,",")], ", ", " and ")
+see_also(meths) =
+    "**See also**: " * join(["[`$m`](@ref)" for m in split(meths, ",")], ", ", " and ")
 
 include("signal.jl")
 include("basics.jl")

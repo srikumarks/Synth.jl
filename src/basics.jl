@@ -2,11 +2,11 @@
 import DSP
 
 mutable struct Konst <: Signal
-    k :: Float32
+    k::Float32
 end
 
-value(s :: Konst, t, dt) = s.k
-done(s :: Konst, t, dt) = false
+value(s::Konst, t, dt) = s.k
+done(s::Konst, t, dt) = false
 
 """
     konst(v::Real)
@@ -25,7 +25,7 @@ Rescales the samples so that the maximum extent fits within the given `maxamp`
 (which must be positive). The renderer automatically rescales to avoid
 clamping.
 """
-function rescale(maxamp :: Real, samples :: AbstractArray)
+function rescale(maxamp::Real, samples::AbstractArray)
     @assert maxamp > 0.0 "The maximum allowed amplitude must be a positive number."
     sadj = samples .- (sum(samples) / length(samples))
     amp = maximum(abs.(samples))
@@ -37,14 +37,15 @@ function rescale(maxamp :: Real, samples :: AbstractArray)
 end
 
 
-struct Clamp{S <: Signal}
-    sig :: S
-    minval :: Float32
-    maxval :: Float32
+struct Clamp{S<:Signal}
+    sig::S
+    minval::Float32
+    maxval::Float32
 end
 
-done(s :: Clamp{S}, t, dt) where {S <: Signal} = done(s.sig, t, dt)
-value(s :: Clamp{S}, t, dt) where {S <: Signal} = max(s.minval, min(s.maxval, value(s.sig, t, dt)))
+done(s::Clamp{S}, t, dt) where {S<:Signal} = done(s.sig, t, dt)
+value(s::Clamp{S}, t, dt) where {S<:Signal} =
+    max(s.minval, min(s.maxval, value(s.sig, t, dt)))
 
 """
     clamp(minval::Real, maxval::Real, sig::Signal)
@@ -58,7 +59,7 @@ function clamp(minval::Real, maxval::Real, sig::Signal)
     Clamp(sig, Float32(minval), Float32(maxval))
 end
 
-function clamp(minval::Real, maxval::Real, sig::Stereo{L,R}) where {L <: Signal, R <: Signal}
+function clamp(minval::Real, maxval::Real, sig::Stereo{L,R}) where {L<:Signal,R<:Signal}
     stereo(clamp(minval, maxval, sig.left), clamp(minval, maxval, sig.right))
 end
 

@@ -1,14 +1,14 @@
-mutable struct SinOsc{Mod <: Signal, Freq <: Signal} <: Signal
-    modulator :: Mod
-    freq :: Freq
-    phase :: Float32
+mutable struct SinOsc{Mod<:Signal,Freq<:Signal} <: Signal
+    modulator::Mod
+    freq::Freq
+    phase::Float32
 end
 
-function done(s :: SinOsc, t, dt)
+function done(s::SinOsc, t, dt)
     done(s.modulator, t, dt) || done(s.freq, t, dt)
 end
 
-function value(osc :: SinOsc, t, dt)
+function value(osc::SinOsc, t, dt)
     m = value(osc.modulator, t, dt)
     f = value(osc.freq, t, dt)
     @fastmath v = sin(2π * osc.phase)
@@ -34,9 +34,7 @@ the starting phase within the cycle.
     So essentially `sinosc(m, f)` is equivalent to `sinosc_v1(m, phasor(f))`
     where `sinosc_v1` was the previous version.
 """
-sinosc(m :: Real, f :: Real; phase = 0.0) = SinOsc(konst(m), konst(f), Float32(2π*phase))
-sinosc(m :: Real, f :: Signal; phase = 0.0) = SinOsc(konst(m), f, Float32(2π*phase))
-sinosc(m :: Signal, f :: Real; phase = 0.0) = SinOsc(m, konst(f), Float32(2π*phase))
-sinosc(m :: Signal, f :: Signal; phase = 0.0) = SinOsc(m, f, Float32(2π*phase))
-
-
+sinosc(m::Real, f::Real; phase = 0.0) = SinOsc(konst(m), konst(f), Float32(2π*phase))
+sinosc(m::Real, f::Signal; phase = 0.0) = SinOsc(konst(m), f, Float32(2π*phase))
+sinosc(m::Signal, f::Real; phase = 0.0) = SinOsc(m, konst(f), Float32(2π*phase))
+sinosc(m::Signal, f::Signal; phase = 0.0) = SinOsc(m, f, Float32(2π*phase))

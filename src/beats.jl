@@ -33,35 +33,36 @@ indicate the end of the sequence after which no `genbeat` call will
 be made, or a `Signal` to start playing at the time.
 """
 function genbeat(
-        bg :: BeatGen,
-        phase :: AbstractFloat,
-        count :: Integer,
-        trigger :: Bool,
-        dphase :: AbstractFloat,
-        dt :: AbstractFloat) :: Tuple{Bool,Union{Nothing,Signal}}
+    bg::BeatGen,
+    phase::AbstractFloat,
+    count::Integer,
+    trigger::Bool,
+    dphase::AbstractFloat,
+    dt::AbstractFloat,
+)::Tuple{Bool,Union{Nothing,Signal}}
     error("Unimplemented genbeat for $(typeof(bg))")
 end
 
-mutable struct Beats{T <: Signal, BG <: BeatGen} <: Signal
-    tempo :: T
-    gen :: BG
-    phase :: Float64
-    count :: Int
-    voices :: Vector{Tuple{Float64,Signal}}
-    ended :: Bool
+mutable struct Beats{T<:Signal,BG<:BeatGen} <: Signal
+    tempo::T
+    gen::BG
+    phase::Float64
+    count::Int
+    voices::Vector{Tuple{Float64,Signal}}
+    ended::Bool
 end
 
 function trimvoices!(v::AbstractVector{Tuple{Float64,Signal}}, t, dt)
-    filter!(v) do (vt,v)
+    filter!(v) do (vt, v)
         !done(v, t-vt, dt)
     end
 end
 
-function done(s :: Beats{P}, t, dt) where {P <: Signal} 
-    done(s.tempo, t, dt) || (s.ended && all(done(v,t-vt,dt) for (vt,v) in s.voices))
+function done(s::Beats{P}, t, dt) where {P<:Signal}
+    done(s.tempo, t, dt) || (s.ended && all(done(v, t-vt, dt) for (vt, v) in s.voices))
 end
 
-function value(s :: Beats{P}, t, dt) where {P <: Signal}
+function value(s::Beats{P}, t, dt) where {P<:Signal}
     dp = value(s.tempo, t, dt) * dt
     p = s.phase + dp
     pm = mod(p, 1.0)
@@ -71,7 +72,7 @@ function value(s :: Beats{P}, t, dt) where {P <: Signal}
         trimvoices!(s.voices, t, dt)
     end
     s.phase = pm
- 
+
     if !s.ended
         # If the generation has ended, don't do any
         # further generation calculations and only
@@ -87,12 +88,12 @@ function value(s :: Beats{P}, t, dt) where {P <: Signal}
 
     # Play out the voices
     val = 0.0f0
-    for (vt,v) in s.voices
+    for (vt, v) in s.voices
         val += value(v, t-vt, dt)
     end
     return val
 end
-    
+
 """
     beats(tempo :: Signal, gen :: BeatGen; phase = 1.0f0, count = -1) :: Beats
     beats(tempo :: Real, gen :: BeatGen; phase=1.0, count=-1) :: Beats
@@ -102,9 +103,9 @@ The default values are such that the very first sample produced is considered
 to be the start of a beat. If you need to start it a little later, supply a
 corresponding value of phase that's < 1.0.
 """
-function beats(tempo :: Signal, gen :: BeatGen; phase=1.0, count=-1)
+function beats(tempo::Signal, gen::BeatGen; phase = 1.0, count = -1)
     Beats(tempo, gen, phase, count, Vector{Tuple{Float64,Signal}}(), false)
 end
-function beats(tempo :: Real, gen :: BeatGen; phase=1.0, count=-1)
+function beats(tempo::Real, gen::BeatGen; phase = 1.0, count = -1)
     beats(konst(tempo), gen; phase, count)
 end
