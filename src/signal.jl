@@ -392,3 +392,50 @@ value(c::Clip{S}, t, dt) where {S<:Signal} =
     else
         value(c.s, t, dt)
     end
+
+mutable struct KRate{S <: Signal} <: Signal
+    const sig::S
+    const interval_secs::Float64
+    t::Float64
+    v::Float32
+    dv::Float32
+    done::Bool
+end
+
+"""
+    krate(rate_hz :: Float64, s :: Signal)
+
+Short for "control-rate limited" signal. Useful with signals that vary slowly
+but are computationally expensive to do at audio rates. Same idea as in the
+original CSound and in many audio synthesis kits.
+
+Produces a signal that will evaluate the given signal at a much lower sampling
+interval and linearly interpolate between the values to reduce computation.
+The given signal will effectively be "sampled" at the lower given interval.
+For example, `krate(100.0, sinosc(0.5f0, 10.0f0))` will construct a 10Hz sine
+that is sampled only 100 times a second and interpolated, instead of having to 
+calculate sines 48000 times a second.
+"""
+function krate(rate_hz :: Real, s :: Signal)
+    return KRate(s, Float64(1.0/rate_hz), 0.0, 0.0f0, 0.0f0, false)
+end
+
+function done(s::KRate{S}, t, dt) where {S<:Signal}
+    if t - s.t < s.interval_secs || s.done
+        s.done
+    else
+        s.t = t
+        s.done = done(s.sig, t, s.interval_secs)
+    end
+end
+
+function value(s::KRate{S}, t, dt) where {S<:Signal}
+    if t - s.t > s.interval_secs
+        v = value(s.sig, t, s.interval_secs)
+        s.dv = (v - s.v) / (s.t < dt ? s.interval_secs : (t - s.t))
+        s.t = t
+        s.v = v
+    end
+    Float32(s.v + s.dv * (t - s.t))
+end
+
