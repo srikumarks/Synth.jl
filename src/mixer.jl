@@ -1,22 +1,35 @@
 mutable struct Mix{S1<:Signal,S2<:Signal} <: Signal
     w1::Float32
     s1::S1
+    alive1::Bool
     w2::Float32
     s2::S2
+    alive2::Bool
 end
 
 mutable struct Mod{M<:Signal,S<:Signal} <: Signal
     mod::M
     signal::S
+    alive::Bool
 end
 
 
 function done(s::Mix, t, dt)
-    done(s.s1, t, dt) && done(s.s2, t, dt)
+    s.alive1 = done(s.s1, t, dt)
+    s.alive2 = done(s.s2, t, dt)
+    return s.alive1 && s.slive2
 end
 
+
 function value(s::Mix, t, dt)
-    s.w1 * value(s.s1, t, dt) + s.w2 * value(s.s2, t, dt)
+    v = 0.0f0
+    if s.alive1
+        v += s.w1 * value(s.s1, t, dt)
+    end
+    if s.alive2
+        v += s.w2 * value(s.s2, t, dt)
+    end
+    return v
 end
 
 """
@@ -29,7 +42,7 @@ some unnecessary combinations and reduce them down to simpler
 forms where possible.
 """
 function mix(w1::Real, s1::Signal, w2::Real, s2::Signal)
-    Mix(Float32(w1), s1, Float32(w2), s2)
+    Mix(Float32(w1), s1, true, Float32(w2), s2, true)
 end
 
 function mix(w1::Real, s1::Mod{Konst,S1}, w2::Real, s2::Signal) where {S1}
@@ -74,11 +87,15 @@ end
 (Base.:-)(s1::Signal, s2::Stereo{L,R}) where {L,R} = stereo(s1 - s2.left, s1 - s2.right)
 
 function done(s::Mod, t, dt)
-    done(s.mod, t, dt) || done(s.signal, t, dt)
+    s.alive = s.alive && !(done(s.mod, t, dt) || done(s.signal, t, dt))
 end
 
 function value(s::Mod, t, dt)
-    value(s.mod, t, dt) * value(s.signal, t, dt)
+    if s.alive
+        value(s.mod, t, dt) * value(s.signal, t, dt)
+    else
+        0.0f0
+    end
 end
 
 """
@@ -89,7 +106,7 @@ operator support. This and [`mix`](@ref) together implement some expression
 simplifications that remove unnecessary combinations.
 """
 function modulate(m::Signal, s::Signal)
-    Mod(m, s)
+    Mod(m, s, true)
 end
 
 function modulate(m::Konst, s::Mix{S1,S2}) where {S1,S2}
