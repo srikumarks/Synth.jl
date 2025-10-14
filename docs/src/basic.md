@@ -16,6 +16,7 @@ Synth.clock_bpm
 Synth.clamp
 Synth.mix
 Synth.modulate
+Synth.krate
 ```
 
 
