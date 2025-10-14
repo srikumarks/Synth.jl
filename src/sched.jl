@@ -1,4 +1,6 @@
 
+import Base: Tuple
+
 """
 A "Gen" is a process for producing signals.
 The `proc(::Gen,::Scheduler,t)` which returns

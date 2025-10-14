@@ -39,7 +39,6 @@ include("waveshape.jl")
 
 include("clock.jl")
 include("sched.jl")
-include("seq.jl")
 include("curve.jl")
 include("delay.jl")
 include("filters.jl")
