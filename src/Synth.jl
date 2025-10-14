@@ -5,10 +5,11 @@ using FileIO: load
 export load
 export konst, krate, clip, sigfun, fanout, feedback, connect, clock, clock_bpm, clamp, convolve
 export sinosc, phasor, noise, sample
-export line, expon, adsr, decay, Gen, follow
+export line, expon, adsr, decay, follow
 export render, write, read_rawaudio
 export startaudio,
-    synthesizer, synthchan, play!, play, control, probe, scheduler, sched, now, seq
+    play, control, probe, scheduler, sched, now
+export Gen, ping, track, loop, pause, isstop, iscont, Stop, Cont
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf
 export waveshape, linearmap, delay, tap
 export wavetable, maketable
@@ -43,7 +44,6 @@ include("curve.jl")
 include("delay.jl")
 include("filters.jl")
 include("noise.jl")
-include("gen.jl") # Include in signal.jl
 include("feedback.jl")
 include("granular.jl")
 
@@ -60,6 +60,7 @@ include("player.jl")
 include("fx.jl")
 
 include("models/models.jl")
+include("gens.jl")
 #include("ui/ui.jl")
 
 end # module Synth

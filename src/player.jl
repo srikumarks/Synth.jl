@@ -1,6 +1,12 @@
 import ThreadPools
 using SampledSignals: SampleBuf
 
+function drain(ch)
+    while isready(ch)
+        take!(ch)
+    end
+end
+
 function audiothread(stream, rq, wq)
     #println("In audiothread $stream, $rq, $wq")
     endmarker = Val(:done)
@@ -11,6 +17,8 @@ function audiothread(stream, rq, wq)
         buf = take!(rq)
     end
     close(stream)
+    drain(rq)
+    drain(wq)
     close(wq)
     close(rq)
     #println("Audio thread done!")
@@ -48,42 +56,14 @@ function startaudio(callback; chans::Int = 1, blocksize::Int = 64)
 
 
     #println("Starting threads...")
-    ThreadPools.@tspawnat 1 callback(stream.sample_rate, wq, rq)
-    while rq.n_avail_items < rq.sz_max
-        sleep(0.05)
+    Threads.@spawn begin
+        callback(stream.sample_rate, wq, rq)
     end
-    ThreadPools.@tspawnat 2 audiothread(stream, rq, wq)
+    Threads.@spawn begin
+        audiothread(stream, rq, wq)
+    end
+
     return () -> put!(wq, Val(:done))
-end
-
-const SynthCommands = Channel{Tuple{Float64,Signal}}
-
-"""
-    synthchan() :: Channel{Tuple{Float64, Signal}}
-
-Makes a channel suitable for use with [`synthesizer`](@ref).
-You can then send signals to this channel using [`play!`](@ref)
-or in special cases directly using it like `put!(time(), sig)`
-where the time can be noted several steps earlier for a sense
-of immediacy.
-"""
-function synthchan()::SynthCommands
-    SynthCommands(2)
-end
-
-"""
-    play!(commands :: Channel{Tuple{Float64, Signal}}, sig :: Signal)
-    play!(commands :: Channel{Tuple{Float64, Signal}}, sig :: Signal, t :: Float64)
-
-Plays the signal by adding it to the command queue of a synthesizer.
-When the `t` argument is omitted, it is taken to mean the "current time"
-in the absolute sense of `time()`.
-"""
-function play!(commands::SynthCommands, sig::Signal)
-    put!(commands, (time(), sig))
-end
-function play!(commands::SynthCommands, sig::Signal, t::Float64)
-    put!(commands, (t, sig))
 end
 
 function mixin!(buf::SampleBuf{Float32,2}, i::Integer, sig::Signal, t, dt)
@@ -107,65 +87,6 @@ function mixin!(
     else
         buf[i, :] .= 0.0f0
     end
-end
-
-"""
-    synthesizer(commands::Channel{Tuple{Float64,Signal}}; blocksize=64)
-
-Wraps `startaudio` such that you can send signals at arbitrary times
-to the given channel and the synthesizer will immediately start playing
-the signal. The first part of the tuple is expected to be a time stamp
-of arrival of event that triggers the signal. So in the event receiver,
-capture this time stamp upon entry by calling the `time()` function
-before doing anything else and use that value for the tuple.
-
-Returns a stop function which when called with no arguments will
-stop the synth.
-
-You can use [`synthchan`](@ref) to make a channel.
-"""
-function synthesizer(commands::SynthCommands; chans = 1, blocksize = 64)
-    function callback(sample_rate, rq, wq)
-        #println("In callback $sample_rate, $rq, $wq")
-        dt = 1.0 / sample_rate
-        t = 0.0
-        t0 = -1.0
-        rt0 = -1.0
-        endmarker = Val(:done)
-        voices = Vector{Tuple{Float64,Signal}}()
-        while true
-            buf = take!(rq)
-            if buf == endmarker
-                break
-            end
-            while isready(commands)
-                (rt, sig) = take!(commands)
-                if rt0 < 0.0
-                    # Note down the start time, since all other time stamps
-                    # will be considered relative to this.
-                    rt0 = rt
-                    t0 = t
-                end
-                push!(voices, (t0 + rt - rt0, sig))
-            end
-            fill!(buf, 0.0f0)
-            for i = 1:size(buf, 1)
-                for (vt, v) in voices
-                    if t > vt
-                        mixin!(buf, i, v, t-vt, dt)
-                    end
-                end
-                t += dt
-            end
-            put!(wq, buf)
-            filter!(voices) do (vt, v)
-                !done(v, t-vt, dt)
-            end
-        end
-        put!(wq, endmarker)
-        #println("Audio generator done!")
-    end
-    startaudio(callback; chans, blocksize)
 end
 
 """

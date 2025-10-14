@@ -5,29 +5,40 @@ mutable struct Control <: Signal
     ws::Float64
     v::Float32
     latestval::Float32
+    last_t::Float64 # Automatically support fanning out controls.
 end
 
 done(c::Control, t, dt) = (c.state == :closed)
 
 function value(c::Control, t, dt)
-    # `isready` won't error out even if the channel is closed. Doing this
-    # conforms to the expectation that value may end up being called for a few
-    # samples after the signal has actually ended and it must continue on for a
-    # little longer until done gets called to check the state.
-    while isready(c.chan)
-        c.latestval = take!(c.chan)
-    end
+    if t > c.last_t
+        # `isready` won't error out even if the channel is closed. Doing this
+        # conforms to the expectation that value may end up being called for a few
+        # samples after the signal has actually ended and it must continue on for a
+        # little longer until done gets called to check the state.
+        while isready(c.chan)
+            c.latestval = take!(c.chan)
+        end
 
-    # Dezipper the control signal.
-    v = c.v * c.wv + c.latestval * c.ws
-    c.v = v
-    return v
+        # Dezipper the control signal.
+        v = c.v * c.wv + c.latestval * c.ws
+        c.v = v
+        c.last_t = t
+        return v
+    end
+    return c.v
 end
 
 function Base.setindex!(c::Control, val::Real)
     put!(c.chan, Float32(val))
     val
 end
+
+"""
+A `Control` automatically supports fanout without needing to be
+wrapped.
+"""
+fanout(sig::Control) = sig
 
 """
     control(chan :: Channel{Float32}, dezipper_interval = 0.04; initial = 0.0f0, samplingrate=48000) :: Control
