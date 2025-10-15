@@ -15,9 +15,9 @@ end
 
 
 function done(s::Mix, t, dt)
-    s.alive1 = done(s.s1, t, dt)
-    s.alive2 = done(s.s2, t, dt)
-    return s.alive1 && s.slive2
+    s.alive1 = !done(s.s1, t, dt)
+    s.alive2 = !done(s.s2, t, dt)
+    return !(s.alive1 || s.slive2)
 end
 
 
@@ -87,7 +87,10 @@ end
 (Base.:-)(s1::Signal, s2::Stereo{L,R}) where {L,R} = stereo(s1 - s2.left, s1 - s2.right)
 
 function done(s::Mod, t, dt)
-    s.alive = s.alive && !(done(s.mod, t, dt) || done(s.signal, t, dt))
+    done1 = done(s.mod, t, dt)
+    done2 = done(s.signal, t, dt)
+    s.alive = s.alive && !(done1 || done2)
+    return !s.alive
 end
 
 function value(s::Mod, t, dt)
