@@ -216,6 +216,7 @@ end
     ping(pitch :: Real, dur :: Real, vel :: Real = 0.5f0, decay :: Real = dur) :: Gen
     ping(pitch :: AbstractVector{R}, dur :: Real, vel :: Real = 0.5f0, decay :: Real = dur) :: Gen where {R <: Real}
     ping(pitch :: AbstractVector{R}, dur :: AbstractVector{RD}, vel :: Real = 0.5f0, decay :: Real = dur) :: Gen where {R <: Real, RD <: Real}
+    ping(pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, decay :: Real = dur) :: Gen
 
 A "ping" is a simple decaying sine tone for illustrating how to create a `Gen`.
 If you use the array versions, they're made into corresponding tracks for ease of use.
