@@ -6,16 +6,16 @@ struct Ping <: Gen
 end
 
 """
-    ping(pitch :: Real, vel :: Real, decay :: Real, dur :: Real) :: Gen
+    ping(pitch :: Real, dur :: Real, vel :: Real = 0.5f0, decay :: Real = dur) :: Gen
 
 A "ping" is a simple decaying sine tone for illustrating how to create a `Gen`.
 """
-function ping(pitch :: Real, vel :: Real, decay :: Real, dur :: Real)
+function ping(pitch :: Real, dur :: Real, vel :: Real = 0.5f0, decay :: Real = dur)
     Ping(Float32(pitch), Float32(vel), Float32(decay), Float64(dur))
 end
 
 function proc(g :: Ping, s :: Scheduler, t)
-    sched(s, t, sinosc(adsr(g.vel, 0.0; release_secs=g.dur), midi2hz(g.pitch)))
+    sched(s, t, sinosc(adsr(g.vel, 0.0; release_secs=g.dur, attack_secs=0.1, decay_secs=0.1), midi2hz(g.pitch)))
     return (t + g.dur, Cont())
 end
 
@@ -27,7 +27,7 @@ struct Track{VT} <: Gen
 end
 
 """
-    track(gs :: AbstractVector{Gen})
+    track(gs :: AbstractVector{G}) :: Gen where {G <: Gen}
 
 A "track" is a sequence of Gens. When each gen finishes,
 its `proc` call will produce a `Cont` which indicates it is
@@ -78,7 +78,7 @@ struct Pause <: Gen
 end
 
 """
-    pause(dur :: Real)
+    pause(dur :: Real) :: Gen
 
 Schedules no signals but just waits for the given duration
 before proceeding.
