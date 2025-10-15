@@ -241,6 +241,14 @@ function ping(pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, decay :: Real
 end
 
 function proc(g :: Ping, s :: Scheduler, t)
-    sched(s, t, sinosc(adsr(g.vel, 0.0; release_secs=g.dur, release_factor=1.0, attack_secs=0.1, decay_secs=0.1), midi2hz(g.pitch)))
+    amp = adsr(g.vel, 0.0;
+               release_secs=g.dur,
+               release_factor=1.1,
+               attack_secs=0.1,
+               decay_secs=0.1)
+    sched(s, t, sinosc(amp, midi2hz(g.pitch)))
     return (t + g.dur, Cont())
 end
+
+
+
