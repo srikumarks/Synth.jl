@@ -14,7 +14,7 @@ function seq(ga :: GA, gb :: GB) where {GA <: Gen, GB <: Gen}
     Seq(ga, gb)
 end
 
-function proc(g :: Seq, s :: Scheduler, t)
+function proc(g :: Seq, s :: Bus, t)
     (t2, g2) = proc(g.ga, s, t)
     if iscont(g2)
         (t2, g.gb)
@@ -43,7 +43,7 @@ function track(gs :: AbstractVector)
     Track(gs, 1, gs[1])
 end
 
-function proc(g :: Track, s :: Scheduler, t)
+function proc(g :: Track, s :: Bus, t)
     (t2,g2) = proc(g.g, s, t)
     if iscont(g2)
         if g.i < length(g.gens)
@@ -71,7 +71,7 @@ function durn(d :: Real, gen :: Gen)
     return Durn(Float64(d), gen)
 end
 
-function proc(g :: Durn{G}, s :: Scheduler, t) where {G <: Gen}
+function proc(g :: Durn{G}, s :: Bus, t) where {G <: Gen}
     (t2, g2) = proc(g.gen, s, t)
     (t + g.dur, Dur(g.dur, g2))
 end
@@ -92,7 +92,7 @@ function chord(gens :: AbstractVector)
     Chord(gens)
 end
 
-function proc(g :: Chord, s :: Scheduler, t)
+function proc(g :: Chord, s :: Bus, t)
     gens = []
     tmax = t
     conts = 0
@@ -130,7 +130,7 @@ function loop(n :: Int, g :: G) where {G <: Gen}
     n <= 0 ? Cont() : Loop(n, g)
 end
 
-function proc(g :: Loop{G}, s :: Scheduler, t) where {G <: Gen}
+function proc(g :: Loop{G}, s :: Bus, t) where {G <: Gen}
     if g.n <= 0
         return (t, Cont())
     end
@@ -153,7 +153,7 @@ function pause(dur :: Real)
     Pause(Float64(dur))
 end
 
-function proc(g :: Pause, s :: Scheduler, t)
+function proc(g :: Pause, s :: Bus, t)
     (t + g.dur, Cont())
 end
 
@@ -174,7 +174,7 @@ function dyn(fn :: Function, i :: Int, n :: Int)
     Dyn(fn, i, n)
 end
 
-function proc(g :: Dyn, s :: Scheduler, t)
+function proc(g :: Dyn, s :: Bus, t)
     g2 = g.fn(g.i, g.n)
     if iscont(g2)
         # Returning Cont will abort the sequence
@@ -240,7 +240,7 @@ function ping(pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, decay :: Real
     chord([ping(p,dur,vel,decay) for p in pch.pitches])
 end
 
-function proc(g :: Ping, s :: Scheduler, t)
+function proc(g :: Ping, s :: Bus, t)
     amp = adsr(g.vel, 0.0;
                release_secs=g.dur,
                release_factor=1.1,

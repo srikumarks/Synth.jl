@@ -8,7 +8,7 @@ export sinosc, phasor, noise, sample
 export line, expon, adsr, decay, follow
 export render, write, read_rawaudio
 export startaudio,
-    play, control, probe, scheduler, sched, now
+    play, control, probe, bus, sched, now
 export Gen, ping, ch, seq, track, chord, dyn, durn, loop, pause, isstop, iscont, Stop, Cont
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf
 export waveshape, linearmap, delay, tap
@@ -38,7 +38,7 @@ include("wavetable.jl")
 include("waveshape.jl")
 
 include("clock.jl")
-include("sched.jl")
+include("bus.jl")
 include("curve.jl")
 include("delay.jl")
 include("filters.jl")

@@ -3,9 +3,9 @@ import Base: Tuple
 
 """
 A "Gen" is a process for producing signals.
-The `proc(::Gen,::Scheduler,t)` which returns
+The `proc(::Gen,::Bus,t)` which returns
 `Tuple{Float64,Gen}` needs to be defined for a
-gen to be usable by the `Scheduler`.
+gen to be usable by the `Bus`.
 
 The `Gen` returned by the `proc` call semantically
 replaces the gen that produced it. That way, we
@@ -25,7 +25,7 @@ isstop(g::Stop) = true
 iscont(g::Gen) = false
 iscont(g::Cont) = true
 
-mutable struct Scheduler{Clk<:Signal} <: Signal
+mutable struct Bus{Clk<:Signal} <: Signal
     const clock::Clk
     t::Float64
     next_t::Float64
@@ -37,35 +37,35 @@ mutable struct Scheduler{Clk<:Signal} <: Signal
     const realtime::Vector{Float64}
 end
 
-function proc(g :: Gen, s :: Scheduler, t)
+function proc(g :: Gen, s :: Bus, t)
     @assert false "Unimplemented proc for $(typeof(g))"
     return (Inf,Stop())
 end
 
-function proc(g :: Stop, s :: Scheduler, t)
+function proc(g :: Stop, s :: Bus, t)
     (Inf, g)
 end
 
-function proc(g :: Cont, s :: Scheduler, t)
+function proc(g :: Cont, s :: Bus, t)
     (t, g)
 end
 
 
-function now(s::Scheduler{Clk})::Float64 where {Clk<:Signal}
+function now(s::Bus{Clk})::Float64 where {Clk<:Signal}
     return s.t
 end
 
 """
-    scheduler(clk :: Signal) :: Scheduler
+    bus(clk :: Signal) :: Bus
 
-Creates a "scheduler" which is itself a signal that can be composed
-with other signals and processors. The scheduler runs on its own 
+Creates a "bus" which is itself a signal that can be composed
+with other signals and processors. The bus runs on its own 
 clock and sending `Tuple{Float64,Signal}` values on the `.gchan`
 property will trigger those signals at the given times according
 to the clock. The scheduling is sample accurate.
 """
-function scheduler(clk::Signal)
-    Scheduler(
+function bus(clk::Signal)
+    Bus(
         clk,
         0.0,
         0.0,
@@ -79,35 +79,35 @@ function scheduler(clk::Signal)
 end
 
 """
-    scheduler(tempo_bpm::Real)
+    bus(tempo_bpm::Real)
 
-Simpler constructor for a fixed tempo scheduler.
+Simpler constructor for a fixed tempo bus.
 """
-function scheduler(tempo_bpm::Real)
-    scheduler(clock_bpm(tempo_bpm))
+function bus(tempo_bpm::Real = 60.0)
+    bus(clock_bpm(tempo_bpm))
 end
 
 """
-    sched(sch :: Scheduler{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
+    sched(sch :: Bus{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
 
 Schedules a signal to start at time `t` according to the clock of the
-given scheduler.
+given bus.
 """
-function sched(sch::Scheduler{Clk}, t::Float64, s::Signal) where {Clk<:Signal}
+function sched(sch::Bus{Clk}, t::Float64, s::Signal) where {Clk<:Signal}
     put!(sch.vchan, (t, s))
 end
-function sched(sch::Scheduler{Clk}, t::Float64, g::Gen) where {Clk<:Signal}
+function sched(sch::Bus{Clk}, t::Float64, g::Gen) where {Clk<:Signal}
     put!(sch.gchan, (t,g))
 end
 
-function done(s::Scheduler{Clk}, t, dt) where {Clk<:Signal}
+function done(s::Bus{Clk}, t, dt) where {Clk<:Signal}
     inactive = findall(tv -> done(tv[2], t, dt), s.voices)
     deleteat!(s.voices, inactive)
     deleteat!(s.realtime, inactive)
     done(s.clock, t, dt)
 end
 
-function value(s::Scheduler{Clk}, t, dt) where {Clk<:Signal}
+function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
     ct = value(s.clock, t, dt)
     s.t = ct
     if ct >= s.next_t
