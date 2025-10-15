@@ -3,7 +3,7 @@ import Base: Tuple
 
 """
 A "Gen" is a process for producing signals.
-The `proc(::Gen,::Bus,t)` which returns
+The `proc(::Gen,::AbstractBus,t)` which returns
 `Tuple{Float64,Gen}` needs to be defined for a
 gen to be usable by the `Bus`.
 
@@ -25,7 +25,17 @@ isstop(g::Stop) = true
 iscont(g::Gen) = false
 iscont(g::Cont) = true
 
-mutable struct Bus{Clk<:Signal} <: Signal
+"""
+An `AbstractBus` is expected to only support the two
+`sched` methods - 
+
+ - `sched(sch::AbstractBus, t::Float64, s::Signal)`
+ - `sched(sch::AbstractBus, t::Float64, g::Gen)`
+"""
+abstract type AbstractBus <: Signal end
+
+
+mutable struct Bus{Clk<:Signal} <: AbstractBus
     const clock::Clk
     t::Float64
     next_t::Float64
@@ -35,18 +45,20 @@ mutable struct Bus{Clk<:Signal} <: Signal
     const vchan::Channel{Tuple{Float64,Signal}}
     const voices::Vector{Tuple{Float64,Signal}}
     const realtime::Vector{Float64}
+    last_t::Float64
+    last_val::Float32
 end
 
-function proc(g :: Gen, s :: Bus, t)
+function proc(g :: Gen, s :: AbstractBus, t)
     @assert false "Unimplemented proc for $(typeof(g))"
     return (Inf,Stop())
 end
 
-function proc(g :: Stop, s :: Bus, t)
+function proc(g :: Stop, s :: AbstractBus, t)
     (Inf, g)
 end
 
-function proc(g :: Cont, s :: Bus, t)
+function proc(g :: Cont, s :: AbstractBus, t)
     (t, g)
 end
 
@@ -63,6 +75,8 @@ with other signals and processors. The bus runs on its own
 clock and sending `Tuple{Float64,Signal}` values on the `.gchan`
 property will trigger those signals at the given times according
 to the clock. The scheduling is sample accurate.
+
+A "bus" supports fanout.
 """
 function bus(clk::Signal)
     Bus(
@@ -75,7 +89,9 @@ function bus(clk::Signal)
         Channel{Tuple{Float64,Signal}}(16),
         Vector{Tuple{Float64,Signal}}(),
         Vector{Float64}(),
-    )
+        0.0,
+        0.0f0
+       )
 end
 
 """
@@ -108,6 +124,11 @@ function done(s::Bus{Clk}, t, dt) where {Clk<:Signal}
 end
 
 function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
+    if t <= s.last_t
+        return s.last_val
+    end
+    s.last_t = t
+
     ct = value(s.clock, t, dt)
     s.t = ct
     if ct >= s.next_t
@@ -152,5 +173,6 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
         sv += value(v, t - s.realtime[i], dt)
     end
 
+    s.last_val = sv
     return sv
 end
