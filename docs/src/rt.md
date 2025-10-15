@@ -34,9 +34,14 @@ runs.
 
 ```@docs
 Synth.Gen
+Synth.seq
 Synth.track
+Synth.durn
+Synth.chord
 Synth.loop
+Synth.dyn
 Synth.ping
+Synth.ch
 ```
 
 

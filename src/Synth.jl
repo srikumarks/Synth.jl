@@ -9,7 +9,7 @@ export line, expon, adsr, decay, follow
 export render, write, read_rawaudio
 export startaudio,
     play, control, probe, scheduler, sched, now
-export Gen, ping, track, loop, pause, isstop, iscont, Stop, Cont
+export Gen, ping, ch, seq, track, chord, dyn, durn, loop, pause, isstop, iscont, Stop, Cont
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf
 export waveshape, linearmap, delay, tap
 export wavetable, maketable
