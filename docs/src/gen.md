@@ -10,6 +10,9 @@ white noise and [`sample`](@ref) plays back a "sample".
 ```@docs
 Synth.sinosc
 Synth.phasor
+Synth.saw
+Synth.tri
+Synth.sq
 Synth.noise
 Synth.sample
 Synth.register!
