@@ -13,6 +13,7 @@ Synth.play
 Synth.control
 Synth.stop
 Synth.probe
+Synth.waveprobe
 Synth.level
 Synth.bus
 Synth.sched

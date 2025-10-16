@@ -96,6 +96,11 @@ end
 
 const named_wavetables = Dict{Symbol,Vector{Float32}}()
 
+"""
+    wavetable(name :: Symbol, amp, freq)
+
+Uses the named table. See [`register!`](@ref).
+"""
 function wavetable(name :: Symbol, amp, freq)
     wavetable(named_wavetables[name], amp, freq)
 end
