@@ -15,14 +15,14 @@ assumes `using Synth`.
 
 1. Play a 440Hz tone at 0.25 amplitude for 2.0 seconds.
 
-    ```julia
-    > play(sinosc(0.25, 440.0), 2.0)
-    ```
+   ```julia
+   > play(sinosc(0.25, 440.0), 2.0)
+   ```
 2. Play a middle C note at 0.25 amplitude for 2.0 seconds.
 
-    ```julia
-    > play(sinosc(0.25, midi2hz(60)), 2.0)
-    ```
+   ```julia
+   > play(sinosc(0.25, midi2hz(60)), 2.0)
+   ```
 
    Here, [`midi2hz`](@ref) is used to convert a MIDI note number
    to a Hz frequency value. This function also supports constructing
@@ -31,9 +31,9 @@ assumes `using Synth`.
 
 3. Play a harsh sawtooth wave.
 
-    ```julia
-    > play(0.25 * phasor(440.0), 2.0)
-    ```
+   ```julia
+   > play(0.25 * phasor(440.0), 2.0)
+   ```
 
    The [`phasor`](@ref) goes from 0.0 to 1.0 at the given frequency
    and loops around. It therefore has a discontinuous jump from 1.0
@@ -41,11 +41,11 @@ assumes `using Synth`.
 
 4. Play a sawtooth, square or triangular wave.
 
-    ```julia
-    > play(0.25 * tri(440.0), 2.0)
-    > play(0.25 * saw(440.0), 2.0)
-    > play(0.25 * sq(440.0), 2.0)
-    ```
+   ```julia
+   > play(0.25 * tri(440.0), 2.0)
+   > play(0.25 * saw(440.0), 2.0)
+   > play(0.25 * sq(440.0), 2.0)
+   ```
 
    These are "softened" version where the sharpness of these waveforms
    is mitigated using a large cut off low-pass-filter. (See [`protect`](@ref)).
@@ -53,16 +53,16 @@ assumes `using Synth`.
 5. You can combine these waveforms using common addition and modulation
    operations.
 
-    ```julia
-    > play(0.2 * tri(330.0) + 0.4 * tri(440.0) + sinosc(0.2, 660.0), 2.0)
-    ```
+   ```julia
+   > play(0.2 * tri(330.0) + 0.4 * tri(440.0) + sinosc(0.2, 660.0), 2.0)
+   ```
 
 6. Yes the multipliers can themselves be signals, so the following works
    too.
 
-    ```julia
-    > play(sinosc(1.0, 10.0) * sinosc(0.25, 440.0), 2.0)
-    ```
+   ```julia
+   > play(sinosc(1.0, 10.0) * sinosc(0.25, 440.0), 2.0)
+   ```
 
 ## Filters
 
