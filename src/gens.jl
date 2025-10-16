@@ -233,7 +233,7 @@ recursive time evolution at a level higher than signals.
 Note that the function called by `rec` can itself return
 another recursive process as a part of its evolution.
 """
-function rec(fn :: Function, c :: C s :: S) where {C,S}
+function rec(fn :: Function, c :: C, s :: S) where {C,S}
     Rec{C,S}(fn, c, s)
 end
 
