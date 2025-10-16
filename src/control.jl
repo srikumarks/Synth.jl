@@ -8,9 +8,6 @@ mutable struct Control <: Signal
     last_t::Float64 # Automatically support fanning out controls.
 end
 
-# Formally mark Control as supporting fanout.
-fanout(c :: Control) = c
-
 done(c::Control, t, dt) = (c.state == :closed)
 
 function value(c::Control, t, dt)
