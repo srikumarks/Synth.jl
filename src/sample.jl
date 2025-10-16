@@ -1,17 +1,18 @@
+import SampledSignals
 using SampledSignals: SampleBuf
 
 mutable struct Sample <: Signal
-    samples::Vector{Float32}
-    N::Int
+    const samples::Vector{Float32}
+    const N::Int
     i::Int
-    looping::Bool
-    loop_i::Int
-    samplingrate::Float32
+    const looping::Bool
+    const loop_i::Int
+    const samplingrate::Float64
 end
 
 """
     sample(samples :: Vector{Float32}; looping = false, loopto = 1.0) 
-    sample(filename :: AbstractString; looping = false, loopto = 1.0, samplingrate=48000.0f0)
+    sample(filename :: AbstractString; looping = false, loopto = 1.0, samplingrate=48000.0)
 
 Produces a sampled signal which samples from the given array as a source.
 It starts from the beginning and goes on until the end of the array,
@@ -28,7 +29,7 @@ function sample(
     samples::Vector{Float32};
     looping = false,
     loopto = 1.0,
-    samplingrate = 48000.0f0,
+    samplingrate = 48000.0,
 )
     Sample(
         samples,
@@ -43,7 +44,7 @@ function sample(
     samples::SampleBuf;
     looping = false,
     loopto = 1.0,
-    samplingrate = samples.samplerate,
+    samplingrate = SampledSignals.samplerate(samples),
 )
     sample(Float32.(samples[:, 1].data); looping, loopto, samplingrate)
 end
@@ -51,10 +52,36 @@ function sample(
     filename::AbstractString;
     looping = false,
     loopto = 1.0,
-    samplingrate = 48000.0f0,
+    samplingrate = 48000.0,
 )
     buf = load(filename)
+    @assert abs(samplingrate - SampledSignals.samplerate(buf)) < 0.5 / samplingrate
     sample(Float32.(buf[:, 1].data); looping, loopto, samplingrate)
+end
+
+const named_samples = Dict{Symbol,Sample}()
+
+"""
+    sample(name :: Symbol) :: Sample
+
+Retrieve named sample. The retrieved sample will have the
+same looping settings as the stored sample, but not its
+running state.
+"""
+function sample(name :: Symbol)
+    s = named_samples[name]
+    Sample(s.samples, s.N, 1, s.looping, s.loop_i, s.samplingrate)
+end
+
+"""
+    register!(name :: Symbol, s :: Sample)
+
+Associates the given name with the given sample so it can be retrieved
+using `sample(::String)`.
+"""
+function register!(name :: Symbol, s :: Sample)
+    named_samples[name] = s
+    return s
 end
 
 function done(s::Sample, t, dt)

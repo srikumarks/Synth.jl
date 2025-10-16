@@ -250,5 +250,119 @@ function proc(g :: Ping, s :: AbstractBus, t)
     return (t + g.dur, Cont())
 end
 
+struct Tone <: Gen
+    pitch :: Float32
+    vel :: Float32
+    dur :: Float64
+    release_secs :: Float32
+end
+
+
+"""
+    tone(pitch :: Real, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05) :: Gen
+    tone(pitch :: AbstractVector{R}, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05) :: Gen where {R <: Real}
+    tone(pitch :: AbstractVector{R}, dur :: AbstractVector{RD}, vel :: Real = 0.5f0; release_secs :: Real = 0.05) :: Gen where {R <: Real, RD <: Real}
+    tone(pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, release_secs :: Real = 0.05) :: Gen
+
+`tone` is related to [`ping`](@ref) in that it will sustain a tone for the given duration
+as opposed to `ping` which will immediately start releasing the tone. In other
+words, a `ping` is a `note` with zero duration. However, the note is configured
+with a default short release time where the default release of a ping is determined
+by its duration.
+
+Note that you can force the duration of a gen to be whatever you want using [`durn`](@ref).
+"""
+function tone(pitch :: Real, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05)
+    Tone(Float32(pitch), Float32(vel), Float64(dur), Float32(release_secs))
+end
+
+function tone(pitch :: AbstractVector{R}, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05) where {R <: Real}
+    track([tone(p,dur,vel; release_secs) for p in pitch])
+end
+
+function tone(pitch :: AbstractVector{R}, dur :: AbstractVector{RD}, vel :: Real = 0.5f0; release_secs :: Real = 0.05) where {R <: Real, RD <: Real}
+    track([tone(pitch[i],dur[mod1(i,length(dur))],vel;release_secs) for i in eachindex(pitch)])
+end
+
+function tone(pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, release_secs :: Real = 0.05)
+    chord([tone(p,dur,vel;release_secs) for p in pch.pitches])
+end
+
+function proc(g :: Tone, s :: AbstractBus, t)
+    amp = adsr(g.vel, g.dur;
+               release_secs=g.release_secs,
+               release_factor=1.0,
+               attack_secs=0.05,
+               decay_secs=0.05)
+    sched(s, t, sinosc(amp, midi2hz(g.pitch)))
+    return (t + g.dur, Cont())
+end
+
+struct WaveTone <: Gen
+    wave_table :: Vector{Float32}
+    pitch :: Float32
+    vel :: Float32
+    dur :: Float64
+    release_secs :: Float32
+end
+
+function proc(g :: WaveTone, s :: AbstractBus, t)
+    amp = adsr(g.vel, g.dur;
+               release_secs=g.release_secs,
+               release_factor=1.0,
+               attack_secs=0.05,
+               decay_secs=0.05)
+    sched(s, t, wavetable(g.wave_table, amp, phasor(midi2hz(g.pitch))))
+    return (t + g.dur, Cont())
+end
+
+"""
+    tone(wt :: Vector{Float32}, pitch, dur, vel = 0.5f0; release_secs = 0.05) :: Gen
+    tone(wt :: Wavetable, pitch, dur, vel = 0.5f0; release_secs = 0.05) :: Gen where {R <: Real}
+    tone(wt :: Symbol, pitch, dur, vel = 0.5f0; release_secs = 0.05) :: Gen where {R <: Real, RD <: Real}
+"""
+
+
+function tone(wt :: Vector{Float32}, pitch :: Real, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05)
+    WaveTone(wt, Float32(pitch), Float32(vel), Float32(dur))
+end
+
+function tone(wt :: Vector{Float32}, pitch :: AbstractVector{R}, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05) where {R <: Real}
+    track([tone(wt, p,dur,vel; release_secs) for p in pitch])
+end
+
+function tone(wt :: Vector{Float32}, pitch :: AbstractVector{R}, dur :: AbstractVector{RD}, vel :: Real = 0.5f0; release_secs :: Real = 0.05) where {R <: Real, RD <: Real}
+    track([tone(wt, pitch[i],dur[mod1(i,length(dur))],vel;release_secs) for i in eachindex(pitch)])
+end
+
+function tone(wt :: Vector{Float32}, pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, release_secs :: Real = 0.05)
+    chord([tone(wt, p,dur,vel;release_secs) for p in pch.pitches])
+end
+
+function tone(wt :: Wavetable, pitch, dur, vel = 0.5f0; release_secs = 0.05)
+    # We can't just pass wt.samples because the table stored inside Wavetable has 4 extra samples
+    # stored at the end for interpolation purposes.
+    tone(wt.samples[1:wt.N], pitch, dur, vel; release_secs)
+end
+
+function tone(wt :: Symbol, pitch, dur, vel = 0.5f0; release_secs = 0.05)
+    tone(named_wavetables[wt], pitch, dur, vel; release_secs)
+end
+
+"""
+    tone(wt :: WaveTone, pitch, dur, vel = 0.5f0; release_secs = 0.05)
+
+With this, you can take an existing configured wavetable tone and assign a
+different pitch/dur/vel characteristic to it.
+"""
+function tone(wt :: WaveTone, pitch, dur, vel = 0.5f0; release_secs = 0.05)
+    tone(wt.wave_table, pitch, dur, vel; release_secs)
+end
+
+struct Sound <: Gen
+    samples :: Vector{Float32}
+end
+
+
 
 

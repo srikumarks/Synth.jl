@@ -1,4 +1,4 @@
-mutable struct Wavetable{Amp<:Signal,Ph<:Signal} <: Signal
+struct Wavetable{Amp<:Signal,Ph<:Signal} <: Signal
     table::Vector{Float32}
     N::Int
     amp::Amp
@@ -18,10 +18,15 @@ end
 
 """
     wavetable(table :: Vector{Float32}, amp :: Signal, phase :: Signal)
+    wavetable(s :: Sample, amp :: Signal, phase :: Signal)
+    wavetable(s :: Sample, amp :: Signal, freq :: Real)
+    wavetable(s :: Sample, amp :: Real, freq :: Real)
 
 A simple wavetable synth that samples the given table using the given phasor
 and scales the table by the given amplitude modulator. A copy of the given
-table is stored.
+table is stored. If you already have a [`Sample`](@ref), you can use its
+samples by passing it in directly. The sample's loop settings are not used
+in this case.
 
 The wavetable is a simple array of samples, often in the same sampling rate as
 the output audio end point, but not necessarily so. The `phase` signal, which
@@ -77,6 +82,35 @@ function wavetable(table::Vector{Float32}, amp::Signal, phase::Signal)
     Wavetable(table2, N, amp, phase)
 end
 
+function wavetable(s :: Sample, amp :: Signal, phase :: Signal)
+    wavetable(s.samples, amp, phase)
+end
+
+function wavetable(s :: Sample, amp :: Signal, freq :: Real)
+    wavetable(s.samples, amp, phasor(freq))
+end
+
+function wavetable(s :: Sample, amp :: Real, freq :: Real)
+    wavetable(s.samples, konst(amp), phasor(freq))
+end
+
+const named_wavetables = Dict{Symbol,Vector{Float32}}()
+
+function wavetable(name :: Symbol, amp, freq)
+    wavetable(named_wavetables[name], amp, freq)
+end
+
+"""
+    register!(name :: Symbol, wt :: Vector{Float32})
+
+Associates the given wave table with the given name so it can
+be retrieved using `wavetable(::String)`.
+"""
+function register!(name :: Symbol, wt :: Vector{Float32})
+    named_wavetables[name] = wt
+    return wt
+end
+
 """
     maketable(L :: Int, f)
 
@@ -85,3 +119,5 @@ Utility function to construct a table for use with `wavetable`.
 table of the given length `L`.
 """
 maketable(f, L::Int) = [f(Float32(i/L)) for i = 0:(L-1)]
+
+

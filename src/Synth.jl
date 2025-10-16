@@ -7,12 +7,11 @@ export konst, krate, clip, sigfun, fanout, feedback, connect, clock, clock_bpm, 
 export sinosc, phasor, noise, sample
 export line, expon, adsr, decay, follow
 export render, write, read_rawaudio
-export startaudio,
-    play, control, probe, bus, sched, now
-export Gen, ping, ch, seq, track, chord, dyn, durn, loop, pause, isstop, iscont, Stop, Cont
+export startaudio, play, control, probe, waveprobe, bus, sched, now
+export Gen, ping, tone, ch, seq, track, chord, dyn, durn, loop, pause, isstop, iscont, Stop, Cont
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf
 export waveshape, linearmap, delay, tap
-export wavetable, maketable
+export wavetable, maketable, register!
 export granulate, simplegrains, chorusgrains, Grain
 export beats
 export dBscale, interp4, raisedcos, midi2hz, hz2midi, easeinout, curve, Seg, circular

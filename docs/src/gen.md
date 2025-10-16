@@ -12,6 +12,7 @@ Synth.sinosc
 Synth.phasor
 Synth.noise
 Synth.sample
+Synth.register!
 ```
 
 
