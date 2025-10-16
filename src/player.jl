@@ -105,18 +105,23 @@ function play(signal::Signal, duration_secs = Inf; chans = 1, blocksize = 64)
         dt = 1.0 / sample_rate
         t = 0.0
         endmarker = Val(:done)
-        while t < duration_secs && !done(signal, t, dt)
-            buf = take!(rq)
-            if buf != endmarker
-                fill!(buf, 0.0f0)
-                for i = 1:size(buf, 1)
-                    mixin!(buf, i, signal, t, dt)
-                    t += dt
+        try
+            while t < duration_secs && !done(signal, t, dt)
+                buf = take!(rq)
+                if buf != endmarker
+                    fill!(buf, 0.0f0)
+                    for i = 1:size(buf, 1)
+                        mixin!(buf, i, signal, t, dt)
+                        t += dt
+                    end
+                    put!(wq, buf)
+                else
+                    break
                 end
-                put!(wq, buf)
-            else
-                break
             end
+        catch e
+            cb = catch_backtrace()
+            show(stderr, "player.jl: ", e, cb)
         end
         put!(wq, endmarker)
         #println("Audio generator done!")
