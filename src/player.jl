@@ -7,8 +7,9 @@ function drain(ch)
     end
 end
 
-function audiothread(stream, rq, wq)
+function audiothread(chans, samplingrate, rq, wq)
     #println("In audiothread $stream, $rq, $wq")
+    stream = PortAudio.PortAudioStream(0, chans; samplerate = samplingrate)
     endmarker = Val(:done)
     buf = take!(rq)
     while buf != endmarker
@@ -42,13 +43,12 @@ It returns a function that can be called (without any arguments)
 to stop the audio processing thread. Make sure to start julia with
 a sufficient number of threads for this to work.
 """
-function startaudio(callback; chans::Int = 1, blocksize::Int = 64)
-    stream = PortAudio.PortAudioStream(0, chans)
+function startaudio(callback; samplingrate :: Float64 = 48000.0, chans::Int = 1, blocksize::Int = 64)
     rq = Channel{Union{Val{:done},SampleBuf{Float32,2}}}(2)
     wq = Channel{Union{Val{:done},SampleBuf{Float32,2}}}(2)
     #println("Writing empty buffers...")
-    b1 = SampleBuf(Float32, stream.sample_rate, blocksize, chans)
-    b2 = SampleBuf(Float32, stream.sample_rate, blocksize, chans)
+    b1 = SampleBuf(Float32, samplingrate, blocksize, chans)
+    b2 = SampleBuf(Float32, samplingrate, blocksize, chans)
     b1 .= 0.0f0
     b2 .= 0.0f0
     put!(wq, b1)
@@ -57,10 +57,10 @@ function startaudio(callback; chans::Int = 1, blocksize::Int = 64)
 
     #println("Starting threads...")
     Threads.@spawn begin
-        callback(stream.sample_rate, wq, rq)
+        callback(samplingrate, wq, rq)
     end
     Threads.@spawn begin
-        audiothread(stream, rq, wq)
+        audiothread(chans, samplingrate, rq, wq)
     end
 
     return () -> put!(wq, Val(:done))
