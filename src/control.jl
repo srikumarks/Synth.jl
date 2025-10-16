@@ -8,7 +8,7 @@ mutable struct Control <: Signal
     last_t::Float64 # Automatically support fanning out controls.
 end
 
-done(c::Control, t, dt) = (c.state == :closed)
+done(c::Control, t, dt) = (c.chan.state == :closed)
 
 function value(c::Control, t, dt)
     if t > c.last_t
@@ -63,15 +63,15 @@ Close the channel to mark the control signal as "done".
 """
 function control(
     chan::Channel{Float32},
-    dezipper_interval = 0.04;
+    dezipper_interval = 0.0075;
     initial = 0.0f0,
     samplingrate = 48000,
 )::Control
     wv = 2 ^ (- 1.0 / (dezipper_interval * samplingrate))
-    Control(chan, wv, 1.0 - wv, initial, initial)
+    Control(chan, wv, 1.0 - wv, initial, initial, 0.0)
 end
 function control(
-    dezipper_interval = 0.04;
+    dezipper_interval = 0.0075;
     bufferlength = 2,
     initial = 0.0f0,
     samplingrate = 48000,
