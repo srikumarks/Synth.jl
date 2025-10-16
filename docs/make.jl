@@ -8,6 +8,10 @@ makedocs(
          pages = [
                   "Home" => Any[
                              "index.md",
+                             "start.md",
+                             "tutorial.md",
+                            ],
+                  "Reference" => Any[
                              "basic.md",
                              "stereo.md",
                              "gen.md",
