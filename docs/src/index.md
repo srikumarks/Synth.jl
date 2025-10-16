@@ -28,6 +28,27 @@ Signals can be rendered to `SampleBuf` buffers, to raw `Float32` files or in
 real time to the computer's sound output using [`play`](@ref). There is also
 some minimal support for [`stereo`](@ref) signals.
 
+Combined with the [`bus`](@ref) mechanism, the notion of a process for
+producing both sound and audio events can be expressed quite nicely using
+this API. An example below - 
+
+```julia
+using Synth
+
+b = bus(60.0)
+play(0.3 * b, 20.0)
+nonsense_tests = [
+         tone(ch([60,64,67]), 1.0),
+         tone(ch(12 .+ [60,62,65,69]), 1.0),
+         ping(72, 1.0),
+         pause(0.5),
+         loop(3, ping([67,72], 0.2)),
+         tone(12 .+ [60, 62, 64, 65, 67, 69, 71, 72, 71, 69, 67, 65, 64, 62, 60], 1/16)
+        ]
+sched(b, track(nonsense_tests))
+sleep(10.0)
+```
+
 ## The Signal type
 
 ```@docs
