@@ -159,28 +159,28 @@ end
 
 struct Dyn <: Gen
     fn :: Function
-    i :: Int
     n :: Int
+    i :: Int
 end
 
 """
-    dyn(fn :: Function, i :: Int, n :: Int) :: Gen
+    dyn(fn :: Function, n :: Int, i :: Int) :: Gen
 
 A "dyn" gen calls the function with each i to determine the gen
 that should be performed. The function will be called with
 two arguments `i` and `n` where `i` will range from 1 to `n`.
 """
-function dyn(fn :: Function, i :: Int, n :: Int)
-    Dyn(fn, i, n)
+function dyn(fn :: Function, n :: Int, i :: Int)
+    Dyn(fn, n, i)
 end
 
 function proc(g :: Dyn, s :: AbstractBus, t)
-    g2 = g.fn(g.i, g.n)
+    g2 = g.fn(g.n, g.i)
     if iscont(g2)
         # Returning Cont will abort the sequence
         # and move on to anything that follows.
         if g.i < g.n
-            (t, dyn(fn, g.i+1, g.n))
+            (t, dyn(fn, g.n, g.i+1))
         else
             (t, g2)
         end
@@ -188,7 +188,64 @@ function proc(g :: Dyn, s :: AbstractBus, t)
         (Inf, g2)
     else
         (t3,g3) = proc(g2, s, t)
-        (t3, g.i < g.n ? seq(g3, dyn(fn, g.i+1, g.n)) : g3)
+        (t3, g.i < g.n ? seq(g3, dyn(fn, g.n, g.i+1)) : g3)
+    end
+end
+
+struct Rec{C,S} <: Gen
+    fn :: Function
+    conf :: C # The conf part does not change from call to call.
+    state :: S # The state may change from call to call.
+end
+
+
+"""
+    rec(fn :: Function, c :: C, s :: S) :: Gen where {C,S}
+
+Constructs a recursive process using the given function.
+The function takes the current state and is expected to
+return a tuple of a Gen and the next state. If the
+returned gen is `Cont`, then the gen is considered
+finished and will move on to the next gen in whatever
+context it was invoked.
+
+## Iterating an octave
+
+For example, if you want a gen which iterates through the
+pitches of an octave you can do it this way (though you
+can accomplish it using track as well).
+
+```
+function octave(p :: Real, i :: Int)
+    if i <= 12
+        (tone(p + i, 0.25), i+1)
+    else
+        (Cont(), i+1)
+    end
+end
+b = bus()
+sched(b, rec(octave, 60, 0::Int))
+play(b, 4.0)
+```
+
+`rec` is therefore a general mechanism to implement stateful
+recursive time evolution at a level higher than signals.
+Note that the function called by `rec` can itself return
+another recursive process as a part of its evolution.
+"""
+function rec(fn :: Function, c :: C s :: S) where {C,S}
+    Rec{C,S}(fn, c, s)
+end
+
+function proc(g :: Rec{S}, s :: AbstractBus, t) where {S}
+    (g2, state2) = g.fn(g.conf, g.state)
+    if iscont(g2)
+        (t, g2)
+    elseif isstop(g2)
+        (Inf, g2)
+    else
+        (t3, g3) = proc(g2, s, t)
+        (t3, seq(g3, rec(g.fn, g.conf, state2)))
     end
 end
 
