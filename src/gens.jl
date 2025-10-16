@@ -417,10 +417,3 @@ function tone(wt :: WaveTone, pitch, dur, vel = 0.5f0; release_secs = 0.05)
     tone(wt.wave_table, pitch, dur, vel; release_secs)
 end
 
-struct Sound <: Gen
-    samples :: Vector{Float32}
-end
-
-
-
-
