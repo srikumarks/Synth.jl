@@ -31,6 +31,7 @@ An `AbstractBus` is expected to only support the two
 
  - `sched(sch::AbstractBus, t::Float64, s::Signal)`
  - `sched(sch::AbstractBus, t::Float64, g::Gen)`
+ - `sched(sch::AbstractBus, g::Gen)`
 
 All buses are expected to support fanout without having
 to use the [`fanout`](@ref) operator.
@@ -69,7 +70,7 @@ end
 
 
 function now(s::Bus{Clk})::Float64 where {Clk<:Signal}
-    return s.t
+    return s.next_t
 end
 
 """
@@ -110,15 +111,24 @@ end
 
 """
     sched(sch :: Bus{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
+    sched(sch::Bus{Clk}, t::Float64, g::Gen) where {Clk<:Signal}
+    sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
 
 Schedules a signal to start at time `t` according to the clock of the
-given bus.
+given bus. In the third variant without a `t`, the scheduling happens
+at an ill-specified "now" - which basically means "asap".
 """
 function sched(sch::Bus{Clk}, t::Float64, s::Signal) where {Clk<:Signal}
     put!(sch.vchan, (t, s))
+    nothing
 end
 function sched(sch::Bus{Clk}, t::Float64, g::Gen) where {Clk<:Signal}
     put!(sch.gchan, (t,g))
+    nothing
+end
+function sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
+    put!(sch.gchan, (now(sch),g))
+    nothing
 end
 
 function done(s::Bus{Clk}, t, dt) where {Clk<:Signal}
