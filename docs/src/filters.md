@@ -16,6 +16,7 @@ Synth.hpf
 Synth.delay
 Synth.tap
 Synth.maxdelay
+Synth.protect
 ```
 
 

@@ -307,3 +307,14 @@ Standard second order high pass filter with given cut off frequency and Q.
 function hpf(sig::Signal, freq, q; samplingrate = 48000)
     biquad(HighPassFilter, sig, freq, q, 1/samplingrate)
 end
+
+"""
+    protect(sig::Signal; cutoff::Real = 4000.0f0, q::Real = 10.0f0)
+
+Does a simple LPF of the signal with a modest cut off frequency
+to prevent too many high frequencies from getting through and possibly
+causing aliasing effects.
+"""
+protect(sig; cutoff::Real = 4000.0f0, q::Real = 10.0f0) = lpf(sig, Float32(cutoff), Float32(q))
+
+
