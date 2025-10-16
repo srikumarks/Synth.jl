@@ -293,6 +293,7 @@ function proc(g :: Tone, s :: AbstractBus, t)
                release_secs=g.release_secs,
                release_factor=1.0,
                attack_secs=0.05,
+               attack_factor=1.0,
                decay_secs=0.05)
     sched(s, t, sinosc(amp, midi2hz(g.pitch)))
     return (t + g.dur, Cont())
