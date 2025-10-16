@@ -31,9 +31,13 @@ An `AbstractBus` is expected to only support the two
 
  - `sched(sch::AbstractBus, t::Float64, s::Signal)`
  - `sched(sch::AbstractBus, t::Float64, g::Gen)`
+
+All buses are expected to support fanout without having
+to use the [`fanout`](@ref) operator.
 """
 abstract type AbstractBus <: Signal end
 
+fanout(b :: AbstractBus) = b
 
 mutable struct Bus{Clk<:Signal} <: AbstractBus
     const clock::Clk
@@ -48,6 +52,7 @@ mutable struct Bus{Clk<:Signal} <: AbstractBus
     last_t::Float64
     last_val::Float32
 end
+
 
 function proc(g :: Gen, s :: AbstractBus, t)
     @assert false "Unimplemented proc for $(typeof(g))"
