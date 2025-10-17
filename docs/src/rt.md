@@ -10,6 +10,7 @@ see [`control`](@ref) (for UI to signal) and [`probe`](@ref) (for signal to UI).
 ```@docs
 Synth.startaudio
 Synth.play
+Synth.mic
 Synth.control
 Synth.stop
 Synth.probe

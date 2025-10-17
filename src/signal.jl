@@ -1,5 +1,4 @@
 using Random
-import PortAudio
 
 const Time = Float64
 const SampleVal = Float32

@@ -7,7 +7,7 @@ export konst, krate, clip, sigfun, fanout, feedback, connect, clock, clock_bpm, 
 export sinosc, phasor, saw, tri, sq, noise, sample
 export line, expon, adsr, decay, follow
 export render, write, read_rawaudio
-export startaudio, play, control, probe, waveprobe, bus, sched, now
+export startaudio, play, mic, control, probe, waveprobe, bus, sched, now
 export Gen, ping, tone, ch, seq, track, chord, dyn, rec, durn, loop, pause, isstop, iscont, Stop, Cont
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf, protect
 export waveshape, linearmap, delay, tap
@@ -54,6 +54,7 @@ include("level.jl")
 include("render.jl")
 include("io.jl")
 include("player.jl")
+include("mic.jl")
 
 include("fx.jl")
 
