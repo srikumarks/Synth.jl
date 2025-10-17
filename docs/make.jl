@@ -7,31 +7,33 @@ makedocs(
          modules=[Synth, Synth.Models],
          pages = [
                   "Home" => Any[
-                             "index.md",
-                             "start.md",
-                             "tutorial_basic.md",
-                             "tutorial_synth.md",
-                             "tutorial_gens.md",
-                             "tutorial_signals.md",
-                            ],
+                                "index.md",
+                                "start.md",
+                               ],
+                  "Tutorials" => Any[
+                                     "tutorial_basic.md",
+                                     "tutorial_synth.md",
+                                     "tutorial_gens.md",
+                                     "tutorial_signals.md",
+                                    ],
                   "Reference" => Any[
-                             "basic.md",
-                             "stereo.md",
-                             "gen.md",
-                             "music.md",
-                             "render.md",
-                             "rt.md",
-                             "filters.md",
-                             "fx.md",
-                             "tx.md",
-                             "wt.md",
-                             "gran.md",
-                             "utils.md"
-                            ],
+                                     "basic.md",
+                                     "stereo.md",
+                                     "gen.md",
+                                     "music.md",
+                                     "render.md",
+                                     "rt.md",
+                                     "filters.md",
+                                     "fx.md",
+                                     "tx.md",
+                                     "wt.md",
+                                     "gran.md",
+                                     "utils.md"
+                                    ],
                   "Other" => Any[
-                            "design.md",
-                            "faq.md"
-                           ]
+                                 "design.md",
+                                 "faq.md"
+                                ]
                  ]
         )
 

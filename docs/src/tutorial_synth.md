@@ -1,4 +1,4 @@
-# Sampling synthesis toold
+# Sampling synthesis
 
 The "Basic tutorial" showed how to construct and use simple
 oscillators and control them using other signals. Along similar
