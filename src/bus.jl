@@ -109,6 +109,7 @@ end
 
 """
     sched(sch :: Bus{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
+    sched(sch::Bus{Clk}, s::Signal) where {Clk<:Signal}
     sched(sch::Bus{Clk}, t::Float64, g::Gen) where {Clk<:Signal}
     sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
 
@@ -120,6 +121,11 @@ function sched(sch::Bus{Clk}, t::Float64, s::Signal) where {Clk<:Signal}
     put!(sch.vchan, (t, s))
     nothing
 end
+function sched(sch::Bus{Clk}, s::Signal) where {Clk<:Signal}
+    put!(sch.vchan, (now(sch), s))
+    nothing
+end
+
 function sched(sch::Bus{Clk}, t::Float64, g::Gen) where {Clk<:Signal}
     put!(sch.gchan, (t,g))
     nothing

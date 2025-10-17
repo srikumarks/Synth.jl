@@ -9,7 +9,9 @@ makedocs(
                   "Home" => Any[
                              "index.md",
                              "start.md",
-                             "tutorial.md",
+                             "tutorial_basic.md",
+                             "tutorial_synth.md",
+                             "tutorial_gens.md",
                             ],
                   "Reference" => Any[
                              "basic.md",
