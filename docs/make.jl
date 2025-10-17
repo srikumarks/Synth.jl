@@ -12,6 +12,7 @@ makedocs(
                              "tutorial_basic.md",
                              "tutorial_synth.md",
                              "tutorial_gens.md",
+                             "tutorial_signals.md",
                             ],
                   "Reference" => Any[
                              "basic.md",
