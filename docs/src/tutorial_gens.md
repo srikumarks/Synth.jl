@@ -166,7 +166,7 @@ semitones(n,i) = begin
         (Cont(), i+1)
     end
 end
-sched(b, rec(semitones end, 12, 0))
+sched(b, rec(semitones, 12, 0))
 ```
 
 Both [`rec`](@ref) and [`dyn`](@ref) are to be considered as "dynamic"
