@@ -36,9 +36,7 @@ An `AbstractBus` is expected to only support the two
 All buses are expected to support fanout without having
 to use the [`fanout`](@ref) operator.
 """
-abstract type AbstractBus <: Signal end
-
-fanout(b :: AbstractBus) = b
+abstract type AbstractBus <: SignalWithFanout end
 
 mutable struct Bus{Clk<:Signal} <: AbstractBus
     const clock::Clk

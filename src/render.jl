@@ -29,7 +29,7 @@ function render(s::Signal, dur_secs; samplingrate = 48000, normalize = false, ma
     end, samplingrate)
 end
 
-function render(s::Stereo{L,R}, dur_secs; samplingrate = 48000) where {L<:Signal,R<:Signal}
+function render(s::Stereo, dur_secs; samplingrate = 48000)
     dt = 1.0 / samplingrate
     N = floor(Int, dur_secs * samplingrate)
     tspan = dt .* (0:(N-1))

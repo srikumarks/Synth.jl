@@ -1,4 +1,4 @@
-mutable struct Delay{S<:Signal} <: Signal
+mutable struct Delay{S<:Signal} <: SignalWithFanout
     sig::S
     maxdelay::Float64
     line::Vector{Float32}

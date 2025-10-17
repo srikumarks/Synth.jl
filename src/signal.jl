@@ -167,7 +167,10 @@ Treats a simple function of time (in seconds) as a signal.
 """
 sigfun(f) = SigFun(f)
 
-mutable struct Fanout{S<:Signal} <: Signal
+abstract type SignalWithFanout <: Signal end
+
+
+mutable struct Fanout{S<:Signal} <: SignalWithFanout
     sig::S
     t::Float64
     v::Float32
@@ -197,7 +200,7 @@ if `s = fanout(sig)`, then `fanout(s) = s`).
     referenced in multiple data structures is said to be "aliased". It is in
     the latter sense that we use the word `fanout` in this case. 
 """
-fanout(sig::Fanout{S}) where {S<:Signal} = sig
+fanout(sig::SignalWithFanout) = sig
 fanout(sig::Signal) = Fanout(sig, -1.0, 0.0f0)
 done(s::Fanout, t, dt) = done(s.sig, t, dt)
 function value(s::Fanout, t, dt)
@@ -208,23 +211,22 @@ function value(s::Fanout, t, dt)
     return s.v
 end
 
-
-struct Stereo{L<:Signal,R<:Signal} <: Signal
-    left::Fanout{L}
-    right::Fanout{R}
+struct Stereo{L<:SignalWithFanout,R<:SignalWithFanout} <: SignalWithFanout
+    left::L
+    right::R
     t::Float64
     leftchan::Float32
     rightchan::Float32
     mixed::Float32
 end
 
-function done(s::Stereo{L,R}, t, dt) where {L<:Signal,R<:Signal}
+function done(s::Stereo{L,R}, t, dt) where {L<:SignalWithFanout,R<:SignalWithFanout}
     done(s.left, t, dt) && done(s.right, t, dt)
 end
 
-value(s::Stereo{L,R}, t, dt) where {L<:Signal,R<:Signal} = value(s, 0, t, dt)
+value(s::Stereo{L,R}, t, dt) where {L<:SignalWithFanout,R<:SignalWithFanout} = value(s, 0, t, dt)
 
-function value(s::Stereo{L,R}, chan::Int, t, dt) where {L<:Signal,R<:Signal}
+function value(s::Stereo{L,R}, chan::Int, t, dt) where {L<:SignalWithFanout,R<:SignalWithFanout}
     if t > s.t
         s.t = t
         s.leftchan = value(s.left, t, dt)
@@ -244,7 +246,7 @@ end
 
 
 """
-    stereo(left :: Fanout{L}, right :: Fanout{R}) where {L <: Signal, R <: Signal}
+    stereo(left :: SignalWithFanout, right :: SignalWithFanout)
     stereo(left :: Signal, right :: Signal)
 
 Makes a "stereo signal" with the given left and right channel signals.
@@ -277,7 +279,7 @@ stereo signals.
 
 $(see_also("left,right,mono"))
 """
-function stereo(left::Fanout{L}, right::Fanout{R}) where {L<:Signal,R<:Signal}
+function stereo(left::SignalWithFanout, right::SignalWithFanout)
     Stereo(left, right, 0.0, 0.0f0, 0.0f0, 0.0f0)
 end
 function stereo(left::Signal, right::Signal)
@@ -285,7 +287,7 @@ function stereo(left::Signal, right::Signal)
 end
 
 """
-    left(s :: Stereo{L,R}) where {L <: Signal, R <: Signal}
+    left(s :: Stereo)
     left(s :: Signal)
 
 Picks the left channel of a stereo signal. Evaluates to the signal
@@ -293,11 +295,11 @@ itself if passed a non-stereo signal (which is considered mono).
 
 $(see_also("right,mono,stereo"))
 """
-left(s::Stereo{L,R}) where {L<:Signal,R<:Signal} = s.left
+left(s::Stereo) = s.left
 left(s::Signal) = s
 
 """
-    right(s :: Stereo{L,R}) where {L <: Signal, R <: Signal}
+    right(s :: Stereo)
     right(s :: Signal)
 
 Picks the right channel of a stereo signal. Evaluates to the signal
@@ -305,12 +307,12 @@ itself if passed a non-stereo signal (which is considered mono).
 
 $(see_also("left,mono,stereo"))
 """
-right(s::Stereo{L,R}) where {L<:Signal,R<:Signal} = s.right
+right(s::Stereo) = s.right
 right(s::Signal) = s
 
 """
-    mono(s :: Stereo{L,R}) where {L <: Signal, R <: Signal} 
-    mono(s :: Stereo{L,R}, panval :: Union{Realm,Signal}) where {L <: Signal, R <: Signal}
+    mono(s :: Stereo)
+    mono(s :: Stereo, panval :: Union{Real,Signal})
     mono(s :: Signal)
 
 Converts a stereo signal into a mono signal by mixing the left and right
@@ -326,10 +328,10 @@ and if you direct it to the left, you hear the left channel sound.
 
 $(see_also("left,right,stereo"))
 """
-mono(s::Stereo{L,R}) where {L<:Signal,R<:Signal} = konst(sqrt(0.5f0)) * (s.left + s.right)
+mono(s::Stereo) = konst(sqrt(0.5f0)) * (s.left + s.right)
 mono(s::Signal) = s
-mono(s::Stereo{L,R}, panval::Real) where {L,R} = mono(s, konst(panval))
-mono(s::Stereo{L,R}, panval::Signal) where {L,R} =
+mono(s::Stereo, panval::Real) = mono(s, konst(panval))
+mono(s::Stereo, panval::Signal) =
     0.5f0 * ((panval + 1.0f0) * right(s) + (1.0f0 - panval) * left(s))
 
 """
@@ -354,11 +356,11 @@ function pan(s::Signal, lr::Real)
     pan(s, konst(lr))
 end
 
-function pan(s::Stereo{L,R}, lr::Real) where {L,R}
+function pan(s::Stereo, lr::Real)
     pan(s, konst(lr))
 end
 
-function pan(s::Stereo{L,R}, lr::Signal) where {L,R}
+function pan(s::Stereo, lr::Signal)
     if lr < 0.0
         stereo(s.left - lr * s.right, (1.0f0 + lr) * s.right)
     else

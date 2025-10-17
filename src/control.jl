@@ -1,5 +1,5 @@
 
-mutable struct Control <: Signal
+mutable struct Control <: SignalWithFanout
     chan::Channel{Float32}
     wv::Float64
     ws::Float64
@@ -33,12 +33,6 @@ function Base.setindex!(c::Control, val::Real)
     put!(c.chan, Float32(val))
     val
 end
-
-"""
-A `Control` automatically supports fanout without needing to be
-wrapped.
-"""
-fanout(sig::Control) = sig
 
 """
     control(chan :: Channel{Float32}, dezipper_interval = 0.04; initial = 0.0f0, samplingrate=48000) :: Control

@@ -164,4 +164,41 @@ to fanout under the assumption that time always moves monotonically forward.
 The operator ends up being a no-op for those processes that support fanout on
 their own.
 
+Signal processes which support fanout natively (including `Fanout`) implement
+the abstract type `SignalWithFanout` which is itself a `Signal`.
+
+## Stereo signals
+
+`Synth.jl` is centered around monophonic signals. However, there is some basic
+support for stereo signals through [`pan`](@ref) and [`stereo`](@ref). 
+
+**Note**: An arbitrary number of channels is seen as a complexity that defeats
+the pedagogical purpose of this package and will perhaps be added in the future
+if an appropriate design that maintains the simplicity of the rest of the
+system is made possible.
+
+1. Stereo signal processes are represented by the `Stereo{L,R}` type. You turn
+   two mono signal processes into a stereo signal process using [`stereo`](@ref).
+   It is important that the two mono processes support "fanout" or are not used
+   anywhere else. This is reflected in the `<: SignalWithFanout` type constraint.
+   The stereo signal itself is therefore fanout-capable and is a subtype of
+   `SignalWithFanout`.
+
+2. The usual mono operations of `+`, `*` and `-` are supported on stereo signals
+   directly as well. So you can modulate them and mix them without much fanfare.
+
+3. If you have a stereo signal, you can get at its left and right channels as
+   mono signals using [`left`](@ref) and [`right`](@ref).
+
+4. You can mix down a stereo to a mono signal using [`mono`](@ref) which will
+   add the left and right channels in the simplest case, but also accepts a "panner"
+   signal for more complex mixing.
+
+5. [`render`](@ref) supports rendering stereo signals.
+
+6. A `Stereo` signal is itself a `Signal` which when used as a mono signal will
+   result in the mix down of the left and right channels.
+
+
+
 
