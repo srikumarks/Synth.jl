@@ -19,7 +19,7 @@ function value(p::Probe{S}, t, dt) where {S<:Signal}
         # TODO: There is perhaps room for some improvement here
         # to keep the probe value fresh in case it is taking
         # time to draw out already probed values.
-        if p.chan.n_avail_items < p.chan.sz_max
+        if canput(p.chan)
             put!(p.chan, p.v)
         end
         p.t += p.interval
@@ -91,7 +91,10 @@ function value(p::WaveProbe{S}, t, dt) where {S<:Signal}
         @assert length(p.samples) == p.Nduration
         @assert p.Nduration >= p.Ninterval
         @assert length(span) <= p.Nduration
-        put!(p.chan, TimedSamples(span, copy(p.samples[1:length(span)])))
+        if canput(p.chan)
+            # If can't put now, just skip it.
+            put!(p.chan, TimedSamples(span, copy(p.samples[1:length(span)])))
+        end
         if p.i_from + p.Ninterval > p.Nduration
             @assert p.i_from + p.Ninterval == p.Nduration + 1
             p.samples[1:p.i_from-1] = p.samples[p.i_from:end]
@@ -135,5 +138,5 @@ function waveprobe(
               1)
 end
 function waveprobe(s::Signal, duration::Real = 0.25, interval::Real = 0.04; samplingrate = 48000)
-    probe(s, Channel{TimedSamples}(2), duration, interval; samplingrate)
+    waveprobe(s, Channel{TimedSamples}(2), duration, interval; samplingrate)
 end
