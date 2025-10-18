@@ -1,4 +1,3 @@
-using Synth
 
 mutable struct AdiTala <: Synth.BeatGen
     a0::Float32

@@ -1,5 +1,5 @@
-using Synth
 using StaticArrays
+using ..Synth: Signal
 
 mutable struct Ising2{F,Z1,Z2,X1,X2,W12} <: Signal
     const f :: F
