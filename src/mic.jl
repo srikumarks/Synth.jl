@@ -1,11 +1,10 @@
-
 import PortAudio
 using SampledSignals: SampleBuf
 
 mutable struct Mic <: SignalWithFanout
     const inq :: Channel{Matrix{Float32}}
     const outq :: Channel{Matrix{Float32}}
-    buf :: PortAudio.Buffer # The currently playing buffer.
+    buf :: Matrix{Float32} # The currently playing buffer.
     i :: Int # The index into the currently playing buffer for the next sample.
     t :: Float64 # The last time for which value was taken.
     v :: Float32
@@ -27,7 +26,7 @@ function value(m :: Mic, t, dt)
             end
         end
         m.t = t
-        m.v = Float32(m.buf.data[m.i,1])
+        m.v = Float32(m.buf[m.i,1])
         m.i += 1
     end
     if m.done
@@ -63,8 +62,8 @@ function mic(; blocksize :: Int = 128, samplingrate :: Float64 = 48000.0)
     put!(outq, buf2)
 
     Threads.@spawn begin
-        stream = PortAudioStream(1,0; samplerate = samplingrate, warn_xruns = false)
         try 
+            stream = PortAudio.PortAudioStream(1,0; samplerate = samplingrate, warn_xruns = false)
             while isopen(stream) && isopen(inq)
                 buf = take!(outq)
                 read!(stream, buf)
