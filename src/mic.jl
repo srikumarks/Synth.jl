@@ -40,7 +40,7 @@ function value(m :: Mic, t, dt)
 end
 
 """
-    mic(; blocksize :: Int = 128, samplingrate :: Float64 = 48000.0)
+    mic(dev :: AbstractString = "mic"; blocksize :: Int = 128, samplingrate :: Float64 = 48000.0)
 
 Opens input from the default mono mic source. You shouldn't need to fiddle with
 the blocksize and samplingrate, but they're available for configuration.
@@ -51,7 +51,7 @@ multiple mic instances on the same audio interface.
 **Todo:** At some point, support selecting named audio sources and also stereo
 sources.
 """
-function mic(; blocksize :: Int = 128, samplingrate :: Float64 = 48000.0)
+function mic(dev :: AbstractString = "mic"; blocksize :: Int = 128, samplingrate :: Float64 = 48000.0)
     inq = Channel{Matrix{Float32}}(2)
     outq = Channel{Matrix{Float32}}(2)
     buf1 = zeros(Float32, blocksize, 1)
@@ -61,9 +61,20 @@ function mic(; blocksize :: Int = 128, samplingrate :: Float64 = 48000.0)
     m = Mic(inq, outq, buf1, blocksize+1, 0.0, 0.0f0, 1.0f0/32768.0f0, false)
     put!(outq, buf2)
 
+    function choose_device(name :: AbstractString)
+        for d in PortAudio.devices()
+            if occursin(Regex(name,"i"), d.name) && d.input_bounds.max_channels >= 1
+                @info "Chose audio input device" device=d
+                return d
+            end
+        end
+        throw(ArgumentError("Invalid device name '$name' or not an audio input device."))
+    end
+
     Threads.@spawn begin
         try 
-            stream = PortAudio.PortAudioStream(1,0; samplerate = samplingrate, warn_xruns = false)
+            stream = PortAudio.PortAudioStream(choose_device(dev), 1,0; samplerate = samplingrate, warn_xruns = false)
+            @info "Audio input stream" stream=stream
             while isopen(stream) && isopen(inq)
                 buf = take!(outq)
                 read!(stream, buf)
