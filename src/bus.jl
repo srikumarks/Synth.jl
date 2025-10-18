@@ -177,9 +177,11 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
     end
 
     sv = 0.0f0
+    active = length(s.voices)
 
     for (i, (tv, v)) in enumerate(s.voices)
         if ct < tv
+            active -= 1
             continue
         end
         if s.realtime[i] < dt
@@ -187,11 +189,15 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
         end
         # The dispatch here for v will be dynamic since
         # we don't know at this point what type of signal
-        # was received on the channel. Not sure of perf
-        # consequences at the moment.
+        # was received on the channel.
         sv += value(v, t - s.realtime[i], dt)
     end
 
-    s.last_val = sv
+    if active > 0
+        s.last_val = sv
+    else
+        # Hold the last value on the bus if the voices have stopped.
+        sv = s.last_val
+    end
     return sv
 end
