@@ -61,5 +61,8 @@ settings. In this case, the default scale of 0.5 is used.
 
 `v` will be a `Vector{Float32}`.
 
-You can also use the `load` function from `FileIO` / `LibSndFile`
-which will return a `SampleBuf` from supported audio file formats.
+You can also use the `load` function from `FileIO` / `LibSndFile` which will
+return a `SampleBuf` from supported audio file formats. To get support for
+audio file formats via `LibSndFile` and `MP3`, import those packages
+separately. This is done so that if you don't need those, then there are fewer
+dependencies to deal with.
