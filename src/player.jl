@@ -121,7 +121,7 @@ function play(signal::Signal, duration_secs = Inf; chans = 1, blocksize = 64)
             end
         catch e
             cb = catch_backtrace()
-            show(stderr, "player.jl: ", e, cb)
+            @error "Player error" error=e backtrack=cb
         end
         put!(wq, endmarker)
         #println("Audio generator done!")

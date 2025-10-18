@@ -1,11 +1,11 @@
 
-struct Level{S<:Signal} <: Signal
-    s::S
+mutable struct Level{S<:Signal} <: Signal
+    const s::S
     x²::Float32
-    wx::Float32
-    ws::Float32
-    refmin::Float32
-    floor::Float32
+    const wx::Float32
+    const ws::Float32
+    const refmin::Float32
+    const floor::Float32
 end
 
 done(s::Level{S}, t, dt) where {S<:Signal} = done(s.s, t, dt)
@@ -13,7 +13,7 @@ function value(s::Level{S}, t, dt) where {S<:Signal}
     v = value(s.s, t, dt)
     v² = v * v
     s.x² = s.wx * s.x² + s.ws * v²
-    floor + 10.0f0*log10(s.x² + refmin)
+    s.floor + 10.0f0*log10(s.x² + s.refmin)
 end
 
 """
