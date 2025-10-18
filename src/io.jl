@@ -1,5 +1,6 @@
 using FileIO: load, save
 using LibSndFile
+using MP3
 
 """
     write(filename :: AbstractString, model::Signal, duration_secs :: AbstractFloat; samplingrate=48000, maxamp=0.5)
