@@ -72,8 +72,16 @@ function durn(d :: Real, gen :: Gen)
 end
 
 function proc(g :: Durn{G}, s :: AbstractBus, t) where {G <: Gen}
+    tend = t + g.dur
     (t2, g2) = proc(g.gen, s, t)
-    (t + g.dur, Dur(g.dur, g2))
+    if isactive(g2)
+        # This lets the gen continue on its way,
+        # with whatever composition the Durn is part of
+        # only getting exactly g.dur of time before whatever
+        # follows it.
+        sched(s, t2, g2)
+    end
+    (t + g.dur, Cont())
 end
 
 struct Chord{V <: AbstractVector} <: Gen
@@ -114,6 +122,36 @@ function proc(g :: Chord, s :: AbstractBus, t)
     else
         (tmax, Chord(gens))
     end
+end
+
+struct Par{V <: AbstractVector} <: Gen
+    gens :: V
+end
+
+function proc(g::Par, b::Bus, t)
+    gens = []
+    for gg in g.gens
+        (t2, g2) = proc(gi, b, t)
+        if iscont(g2)
+            continue
+        end
+        sched(b, t2, g2)
+    end
+    (t, Cont())
+end
+
+"""
+    par(gens :: AbstractVector) :: Par
+
+For parallel composition of gens given as a vector. The `Par`
+itself has effectively zero duration and when sequenced as
+part of a track will result in the following gen being
+immediately processed without delay. The individual gens
+part of each of the "threads" will continue to be processed
+by the bus over time until they finish.
+"""
+function par(gens :: AbstractVector)
+    Par(gens)
 end
 
 struct Loop{G <: Gen} <: Gen

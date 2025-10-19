@@ -24,13 +24,21 @@ isstop(g::Gen) = false
 isstop(g::Stop) = true
 iscont(g::Gen) = false
 iscont(g::Cont) = true
+isactive(g::Gen) = true
+isactive(g::Stop) = false
+isactive(g::Cont) = false
+
+struct Beat
+    n :: Int
+    offset :: Float64
+end
 
 """
 An `AbstractBus` is expected to only support the two
 `sched` methods - 
 
- - `sched(sch::AbstractBus, t::Float64, s::Signal)`
- - `sched(sch::AbstractBus, t::Float64, g::Gen)`
+ - `sched(sch::AbstractBus, t::Union{Beat,Float64}, s::Signal)`
+ - `sched(sch::AbstractBus, t::Union{Beat,Float64}, g::Gen)`
  - `sched(sch::AbstractBus, g::Gen)`
 
 All buses are expected to support fanout without having
@@ -67,8 +75,24 @@ function proc(g :: Cont, s :: AbstractBus, t)
 end
 
 
+"""
+    now(s::Bus{Clk})::Float64 where {Clk<:Signal}
+    now(s::Bus{Clk}, b::Type{Beat})::Float64 where {Clk<:Signal}
+    now(s::Bus{Clk}, b::Beat)::Float64 where {Clk<:Signal}
+
+Returns the bus' "current time". If a beat is passed or asked for,
+the time is quantized to beats according to the clock's tempo.
+"""
 function now(s::Bus{Clk})::Float64 where {Clk<:Signal}
     return s.next_t
+end
+
+function now(s::Bus{Clk}, b::Type{Beat})::Float64 where {Clk<:Signal}
+    return ceil(s.next_t)
+end
+
+function now(s::Bus{Clk}, b::Beat)::Float64 where {Clk<:Signal}
+    return ceil(s.next_t) + b.n + b.offset
 end
 
 """
@@ -108,9 +132,9 @@ function bus(tempo_bpm::Real = 60.0)
 end
 
 """
-    sched(sch :: Bus{Clk}, t::Float64, s::Signal) where {Clk <: Signal}
+    sched(sch :: Bus{Clk}, t::Union{Beat,Float64}, s::Signal) where {Clk <: Signal}
     sched(sch::Bus{Clk}, s::Signal) where {Clk<:Signal}
-    sched(sch::Bus{Clk}, t::Float64, g::Gen) where {Clk<:Signal}
+    sched(sch::Bus{Clk}, t::Union{Beat,Float64}, g::Gen) where {Clk<:Signal}
     sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
 
 Schedules a signal to start at time `t` according to the clock of the
@@ -121,13 +145,20 @@ function sched(sch::Bus{Clk}, t::Float64, s::Signal) where {Clk<:Signal}
     put!(sch.vchan, (t, s))
     nothing
 end
+function sched(sch::Bus{Clk}, t::Beat, s::Signal) where {Clk<:Signal}
+    put!(sch.vchan, (t.n + t.offset, s))
+    nothing
+end
 function sched(sch::Bus{Clk}, s::Signal) where {Clk<:Signal}
     put!(sch.vchan, (now(sch), s))
     nothing
 end
-
 function sched(sch::Bus{Clk}, t::Float64, g::Gen) where {Clk<:Signal}
     put!(sch.gchan, (t,g))
+    nothing
+end
+function sched(sch::Bus{Clk}, t::Beat, g::Gen) where {Clk<:Signal}
+    put!(sch.gchan, (t.n + t.offset,g))
     nothing
 end
 function sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
@@ -160,18 +191,16 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
             sort!(s.gens; by=(tg) -> tg[1]) 
         end
         for i in eachindex(s.gens)
-            (gt,gg) = s.gens[i]
-            if gt < ct + dt
-                s.gens[i] = proc(gg, s, gt)
-            else
-                break
+            while isactive(s.gens[i][2]) && s.gens[i][1] < ct + s.dt
+                s.gens[i] = proc(s.gens[i][2], s, s.gens[i][1])
             end
         end
+        sort!(s.gens; by=(tg) -> tg[1]) 
         while isready(s.vchan)
             push!(s.voices, take!(s.vchan))
             push!(s.realtime, 0.0)
         end
-        infs = findall((e) -> isinf(e[1]) || isstop(e[2]) || iscont(e[2]), s.gens)
+        infs = findall((e) -> isinf(e[1]) || !isactive(e[2]), s.gens)
         deleteat!(s.gens, infs)
         s.next_t = ct + s.dt
     end
