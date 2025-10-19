@@ -95,6 +95,11 @@ A `Gen` which runs all the given heterogeneous `gens` in lock step. The
 duration of the chord is given by the maximum of the durations of all the gens
 every time they run. Whenever a gen produces a `Cont` or `Stop`, it is taken
 out of the set of gens and the other continue on.
+
+Broadly, `chord` is useful when all the gens have the same duration -
+very much like a chord in music. If you're thinking of whether you should
+use this to start off multiple musical processes in parallel with each determining
+its own duration, you probably want [`par`](@ref).
 """
 function chord(gens :: AbstractVector) 
     Chord(gens)
