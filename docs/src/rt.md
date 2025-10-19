@@ -40,6 +40,7 @@ Synth.seq
 Synth.track
 Synth.durn
 Synth.chord
+Synth.par
 Synth.loop
 Synth.dyn
 Synth.ping
