@@ -144,8 +144,8 @@ mutable struct BiquadCoeffs{Ty<:BiquadType}
     a2::Float32
 end
 
-function BiquadCoeffs()
-    BiquadCoeffs(0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0)
+function BiquadCoeffs{Ty}() where {Ty <: BiquadType}
+    BiquadCoeffs{Ty}(0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0)
 end
 
 mutable struct Biquad{Ty,S<:Signal,F<:Signal,Q<:Signal} <: Signal
@@ -160,26 +160,26 @@ mutable struct Biquad{Ty,S<:Signal,F<:Signal,Q<:Signal} <: Signal
 end
 
 
-function biquad(::Type{T}, sig::Signal, freq::Konst, q::Konst, dt) where {T<:BiquadType}
+function biquad(::Type{T}, sig::S, freq::Konst, q::Konst, dt) where {T<:BiquadType,S<:Signal}
     b = Biquad{T,S,Konst,Konst}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
     computebiquadcoeffs(b.c, value(freq, 0.0, 0.0), value(q, 0.0, 0.0), dt)
     return b
 end
 
 function biquad(::Type{T}, sig::Signal, freq::Konst, q::Real, dt) where {T<:BiquadType}
-    biquad{T}(sig, freq, konst(q), dt)
+    biquad(T,sig, freq, konst(q), dt)
 end
 
 function biquad(::Type{T}, sig::Signal, freq::Real, q::Konst, dt) where {T<:BiquadType}
-    biquad{T}(sig, konst(freq), q, dt)
+    biquad(T,sig, konst(freq), q, dt)
 end
 
 function biquad(::Type{T}, sig::Signal, freq::Real, q::Real, dt) where {T<:BiquadType}
-    biquad{T}(sig, konst(freq), konst(q), dt)
+    biquad(T,sig, konst(freq), konst(q), dt)
 end
 
 function biquad(::Type{T}, sig::Signal, freq::Signal, q::Signal, dt) where {T<:BiquadType}
-    Biquad{T,S,F,Q}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
+    Biquad{T}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
 end
 
 function computebiquadcoeffs(c::BiquadCoeffs{LowPassFilter}, f, q, dt)
@@ -261,7 +261,7 @@ end
 
 function computenextvalue(s::Biquad, t, dt)
     xn = value(s.sig, t, dt)
-    yn = (s.b0 * xn + s.b1 * s.xn_1 + s.b2 * s.xn_2 - s.a1 * s.yn_1 - s.a2 * s.yn_2) / s.a0
+    yn = (s.c.b0 * xn + s.c.b1 * s.xn_1 + s.c.b2 * s.xn_2 - s.c.a1 * s.yn_1 - s.c.a2 * s.yn_2) / s.c.a0
     s.xn_2 = s.xn_1
     s.xn_1 = xn
     s.yn_2 = s.yn_1
