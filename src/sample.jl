@@ -22,7 +22,7 @@ const sample_cache :: Dict{String,AudioSample} = Dict{String,AudioSample}()
 
 """
     sample(samples :: Vector{Float32}; looping = false, loopto = 1.0) 
-    sample(filename :: AbstractString; looping = false, loopto = 1.0, samplingrate=48000.0)
+    sample(filename :: AbstractString; looping = false, loopto = 1.0, samplingrate=48000.0, selstart=0.0, selend=Inf)
 
 Produces a sampled signal which samples from the given array as a source.
 It starts from the beginning and goes on until the end of the array,
@@ -31,9 +31,14 @@ but can be asked to loop back to a specified point after that.
 - The `loopto` argument is specified relative (i.e. scaled) to the length
   of the samples vector. So if you want to jump back to the middle, you give
   `0.5` as the `loopto` value.
+- The `selstart` and `selend` keyword arguments can be used to slice
+  into the sound sample, with the default covering the entire file.
 
 Currently sample rate conversion is not supported, though that is a feature
 that must be added at some point.
+
+To make slicing into large files efficient, files are loaded once and cached.
+This cache is looked up (based on the file name) every time a slice is needed.
 """
 function sample(
     samples::SV;
