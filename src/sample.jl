@@ -17,6 +17,7 @@ end
 
 # We keep a cache of samples loaded from files based on the file paths
 # so that we can slice into these files without having to reload them.
+# For now we only do mono sounds though.
 const sample_cache :: Dict{String,AudioSample} = Dict{String,AudioSample}()
 
 """
