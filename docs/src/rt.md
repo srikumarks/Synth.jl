@@ -43,8 +43,12 @@ Synth.chord
 Synth.par
 Synth.loop
 Synth.dyn
+Synth.rec
 Synth.ping
+Synth.tone
 Synth.ch
+Synth.wavetone
+Synth.snippet
 ```
 
 

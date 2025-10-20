@@ -460,3 +460,39 @@ function tone(wt :: WaveTone, pitch, dur, vel = 0.5f0; release_secs = 0.05)
     tone(wt.wave_table, pitch, dur, vel; release_secs)
 end
 
+struct Snippet <: Gen
+    filename :: String
+    selstart :: Float64
+    selend :: Float64
+end
+
+function proc(g::Snippet, b::Bus, t)
+    s = sample(g.filename; selstart=g.selstart, selend=g.selend)
+    # Note that the above will be efficient only after the first
+    # call to load the sample due to caching.
+    sched(b, t, s)
+    (g.selend - g.selstart, Cont())
+end
+
+"""
+    snippet(filename::AbstractString, selstart :: Float64 = 0.0, selend :: Float64 = Inf) :: Gen
+
+A Gen that plays a fragment of the given audio file. It uses [`sample`](@ref)
+under the hood and therefore relies on its caching mechanism for speedy
+schedule of sample fragment playback.
+
+Note that both `snippet` and `sample` do not support resampling or playing back
+to clocks that vary their speeds from real time. So you need to be careful with
+duration computation. For example, when scheduling on to a bus running at a tempo
+of 120bpm, you'll need to double your durations using [`durn`](@ref) in order
+to synchronize with the end of the snippet. Otherwise, the next Gen will start
+playing half way through the snippet.
+"""
+function snippet(filename::AbstractString, selstart :: Float64 = 0.0, selend :: Float64 = Inf)
+    s = sample(filename)
+    buf = sample_cache[filename]
+    selstart = max(0.0, selstart)
+    selend = min(length(buf.data) / buf.samplingrate, selend)
+    Snippet(filename, selstart, selend)
+end
+
