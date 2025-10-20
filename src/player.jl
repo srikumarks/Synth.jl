@@ -120,7 +120,7 @@ function play(signal::Signal, duration_secs = Inf; chans = 1, blocksize = 64)
                 end
             end
         catch e
-            cb = catch_backtrace()
+            cb = stacktrace(catch_backtrace())
             @error "Player error" error=e backtrack=cb
         end
         put!(wq, endmarker)
