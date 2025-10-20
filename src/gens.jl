@@ -109,8 +109,8 @@ function proc(g :: Chord, s :: AbstractBus, t)
     gens = []
     tmax = t
     conts = 0
-    for gi in g.gens
-        (t2,g2) = proc(gi, s, t)
+    for gg in g.gens
+        (t2,g2) = proc(gg, s, t)
         tmax = max(tmax, t2)
         if iscont(g2)
             conts += 1
@@ -136,7 +136,7 @@ end
 function proc(g::Par, b::Bus, t)
     gens = []
     for gg in g.gens
-        (t2, g2) = proc(gi, b, t)
+        (t2, g2) = proc(gg, b, t)
         if iscont(g2)
             continue
         end
