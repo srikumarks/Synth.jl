@@ -99,6 +99,6 @@ Stops the mic signal, which will eventually result in the associated audio
 stream resources being released. It will mark the signal as "done" so that
 further value computations don't occur.
 """
-close(m :: Mic) = close(m.inq)
+Base.close(m :: Mic) = Base.close(m.inq)
 
 

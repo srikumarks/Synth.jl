@@ -22,7 +22,7 @@ function audiothread(chans, samplingrate, rq, wq)
     drain(wq)
     close(wq)
     close(rq)
-    #println("Audio thread done!")
+    @info "Audio player thread finished"
 end
 
 
@@ -57,10 +57,18 @@ function startaudio(callback; samplingrate :: Float64 = 48000.0, chans::Int = 1,
 
     #println("Starting threads...")
     Threads.@spawn begin
-        callback(samplingrate, wq, rq)
+        try
+            callback(samplingrate, wq, rq)
+        catch e
+            @error "Audio generator thread error" error=(e, catch_backtrace())
+        end
     end
     Threads.@spawn begin
-        audiothread(chans, samplingrate, rq, wq)
+        try
+            audiothread(chans, samplingrate, rq, wq)
+        catch e
+            @error "Audio thread error" error=(e, catch_backtrace())
+        end
     end
 
     return () -> put!(wq, Val(:done))
@@ -124,7 +132,7 @@ function play(signal::Signal, duration_secs = Inf; chans = 1, blocksize = 64)
             @error "Player error" error=e backtrack=cb
         end
         put!(wq, endmarker)
-        #println("Audio generator done!")
+        @info "Audio generator done!"
     end
     startaudio(callback; chans, blocksize)
 end

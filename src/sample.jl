@@ -1,14 +1,23 @@
 import SampledSignals
 using SampledSignals: SampleBuf
 
-mutable struct Sample <: Signal
-    const samples::Vector{Float32}
+mutable struct Sample{SV <: AbstractVector{Float32}} <: Signal
+    const samples::SV
     const N::Int
     i::Int
     const looping::Bool
     const loop_i::Int
     const samplingrate::Float64
 end
+
+struct AudioSample
+    data :: Vector{Float32}
+    samplingrate :: Float64
+end
+
+# We keep a cache of samples loaded from files based on the file paths
+# so that we can slice into these files without having to reload them.
+const sample_cache :: Dict{String,AudioSample} = Dict{String,AudioSample}()
 
 """
     sample(samples :: Vector{Float32}; looping = false, loopto = 1.0) 
@@ -26,11 +35,11 @@ Currently sample rate conversion is not supported, though that is a feature
 that must be added at some point.
 """
 function sample(
-    samples::Vector{Float32};
-    looping = false,
-    loopto = 1.0,
-    samplingrate = 48000.0,
-)
+    samples::SV;
+    looping :: Bool = false,
+    loopto :: Real = 1.0,
+    samplingrate :: Float64 = 48000.0,
+) where {SV <: AbstractVector{Float32}}
     Sample(
         samples,
         length(samples),
@@ -42,21 +51,35 @@ function sample(
 end
 function sample(
     samples::SampleBuf;
-    looping = false,
-    loopto = 1.0,
-    samplingrate = SampledSignals.samplerate(samples),
+    looping :: Bool = false,
+    loopto :: Real = 1.0,
+    samplingrate :: Float64 = SampledSignals.samplerate(samples)
 )
     sample(Float32.(samples[:, 1].data); looping, loopto, samplingrate)
 end
+
 function sample(
     filename::AbstractString;
-    looping = false,
-    loopto = 1.0,
-    samplingrate = 48000.0,
+    looping :: Bool = false,
+    loopto :: Float64 = 1.0,
+    samplingrate ::Float64 = 48000.0,
+    selstart :: Real = 0.0,
+    selend :: Real = Inf,
+    usecache :: Bool = true
 )
-    buf = load(filename)
-    @assert abs(samplingrate - SampledSignals.samplerate(buf)) < 0.5 / samplingrate
-    sample(Float32.(buf[:, 1].data); looping, loopto, samplingrate)
+    # Avoid reloading file from disk if it was already loaded and cached.
+    if haskey(sample_cache, filename)
+        buf = sample_cache[filename]
+    else
+        sb = load(filename)
+        buf = AudioSample(Float32.(sb.data[:,1]), SampledSignals.samplerate(sb))
+        sample_cache[filename] = buf
+    end
+    @assert abs(samplingrate - buf.samplingrate) < 0.5 / samplingrate "samplingrate=$samplingrate, SR=$(buf.samplingrate)"
+    N = length(buf.data)
+    startIx = max(1, floor(Int, selstart * samplingrate))
+    endIx = floor(Int, min(N / samplingrate, selend) * samplingrate)
+    sample(view(buf.data, startIx:endIx); looping, loopto, samplingrate)
 end
 
 const named_samples = Dict{Symbol,Sample}()
