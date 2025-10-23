@@ -58,7 +58,7 @@ function probe(s::Fanout{S}, interval::Float64 = 0.04; samplingrate = 48000) whe
 end
 
 
-const TimeSpan = StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, Int64}
+const TimeSpan = StepRangeLen{Float64}
 const TimedSamples = @NamedTuple{span :: TimeSpan, samples :: Vector{Float32}}
 
 mutable struct WaveProbe{S<:Signal} <: Signal
@@ -97,7 +97,7 @@ function value(p::WaveProbe{S}, t, dt) where {S<:Signal}
         end
         if p.i_from + p.Ninterval > p.Nduration
             @assert p.i_from + p.Ninterval == p.Nduration + 1
-            p.samples[1:p.i_from-1] = p.samples[p.i_from:end]
+            p.samples[1:p.i_from-1] = view(p.samples, p.Ninterval+1:p.Nduration)
         end
     end
     return sv

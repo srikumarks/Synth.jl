@@ -23,16 +23,6 @@ struct Key
     key::String
 end
 
-struct HGroup
-    label::String
-    children::Vector{Any}
-end
-
-struct VGroup
-    label::String
-    children::Vector{Any}
-end
-
 struct Panel
     app::GtkApplication
     window::GtkWindow
@@ -119,7 +109,7 @@ function render(k::Key, panel::Panel)
         nothing
     end)
 
-    shortcut_controller = Gtk4.ShortcutController(parent.window)
+    shortcut_controller = Gtk4.ShortcutController(panel.window)
     shortcut_controller.scope = Gtk4.ShortcutController.GLOBAL
     push!(shortcut_controller.shortcuts, action)
 
@@ -129,42 +119,6 @@ function render(k::Key, panel::Panel)
 
     panel.widgetof[k] = btn
     return btn
-end
-
-function render(g::HGroup, panel::Panel)
-    frame = GtkFrame(g.label)
-    box = GtkBox(:h)
-    box.margin_top = 10
-    box.margin_bottom = 10
-    box.margin_start = 10
-    box.margin_end = 10
-
-    for child in g.children
-        widget = render(child, panel)
-        push!(box, widget)
-    end
-
-    frame.child = box
-    panel.widgetof[box] = frame
-    return frame
-end
-
-function render(g::VGroup, panel::Panel)
-    frame = GtkFrame(g.label)
-    box = GtkBox(:v)
-    box.margin_top = 10
-    box.margin_bottom = 10
-    box.margin_start = 10
-    box.margin_end = 10
-
-    for child in g.children
-        widget = render(child, panel)
-        push!(box, widget)
-    end
-
-    frame.child = box
-    panel.widgetof[box] = frame
-    return frame
 end
 
 function makepanel(app::GtkApplication)
@@ -178,5 +132,6 @@ end
 include("slider.jl")
 include("led.jl")
 include("level.jl")
-
+include("grouping.jl")
+include("waveform.jl")
 end
