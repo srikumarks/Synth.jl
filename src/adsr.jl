@@ -63,7 +63,7 @@ function adsr(
     samplingrate = 48000,
 )
     adsr(
-        konst(suslevel),
+         clip(sus_secs, konst(suslevel)),
         sus_secs;
         attack_factor,
         attack_secs,
@@ -151,6 +151,8 @@ function value(s::ADSR, t, dt)
             # to be 1.0
             s.ddlogv_release =
                 (-15 + release_factor - log2(v)) / (0.5f0 * (release_factor * relsecs)^2)
+        else
+            s.t3 = max(s.t3, t + dt) # Extend the sustain period because the level signal is still alive.
         end
     else
         s.stage = 3
