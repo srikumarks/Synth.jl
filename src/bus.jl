@@ -28,17 +28,13 @@ isactive(g::Gen) = true
 isactive(g::Stop) = false
 isactive(g::Cont) = false
 
-struct Beat
-    n :: Int
-    offset :: Float64
-end
-
 """
 An `AbstractBus` is expected to only support the two
 `sched` methods - 
 
- - `sched(sch::AbstractBus, t::Union{Beat,Float64}, s::Signal)`
- - `sched(sch::AbstractBus, t::Union{Beat,Float64}, g::Gen)`
+ - `sched(sch::AbstractBus, t::Real, s::Signal)`
+ - `sched(sch::AbstractBus, t::Real, g::Gen)`
+ - `sched(sch::AbstractBus, s::Signal)`
  - `sched(sch::AbstractBus, g::Gen)`
 
 All buses are expected to support fanout without having
@@ -76,9 +72,10 @@ end
 
 
 """
-    now(s::Bus{Clk})::Float64 where {Clk<:Signal}
-    now(s::Bus{Clk}, b::Type{Beat})::Float64 where {Clk<:Signal}
-    now(s::Bus{Clk}, b::Beat)::Float64 where {Clk<:Signal}
+    now(s::Bus{<:Signal})::Float64
+    now(s::Bus{<:Signal}, b::Type{<:Integer})::Float64
+    now(s::Bus{<:Signal}, b::Rational)::Float64
+    now(s::Bus{<:Signal}, b::Integer)::Float64
 
 Returns the bus' "current time". If a beat is passed or asked for,
 the time is quantized to beats according to the clock's tempo.
@@ -87,12 +84,16 @@ function now(s::Bus{Clk})::Float64 where {Clk<:Signal}
     return s.next_t
 end
 
-function now(s::Bus{Clk}, b::Type{Beat})::Float64 where {Clk<:Signal}
+function now(s::Bus{Clk}, b::Type{T})::Float64 where {Clk<:Signal,T<:Integer}
     return ceil(s.next_t)
 end
 
-function now(s::Bus{Clk}, b::Beat)::Float64 where {Clk<:Signal}
-    return ceil(s.next_t) + b.n + b.offset
+function now(s::Bus{Clk}, b::Rational)::Float64 where {Clk<:Signal}
+    return ceil(s.next_t) + Float64(b)
+end
+
+function now(s::Bus{Clk}, b::Integer)::Float64 where {Clk<:Signal}
+    return ceil(s.next_t) + Float64(b)
 end
 
 """
@@ -132,33 +133,25 @@ function bus(tempo_bpm::Real = 60.0)
 end
 
 """
-    sched(sch :: Bus{Clk}, t::Union{Beat,Float64}, s::Signal) where {Clk <: Signal}
+    sched(sch :: Bus{Clk}, t::Real, s::Signal) where {Clk <: Signal}
     sched(sch::Bus{Clk}, s::Signal) where {Clk<:Signal}
-    sched(sch::Bus{Clk}, t::Union{Beat,Float64}, g::Gen) where {Clk<:Signal}
+    sched(sch::Bus{Clk}, t::Real, g::Gen) where {Clk<:Signal}
     sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
 
 Schedules a signal to start at time `t` according to the clock of the
 given bus. In the third variant without a `t`, the scheduling happens
 at an ill-specified "now" - which basically means "asap".
 """
-function sched(sch::Bus{Clk}, t::Float64, s::Signal) where {Clk<:Signal}
-    put!(sch.vchan, (t, s))
-    nothing
-end
-function sched(sch::Bus{Clk}, t::Beat, s::Signal) where {Clk<:Signal}
-    put!(sch.vchan, (t.n + t.offset, s))
+function sched(sch::Bus{Clk}, t::Real, s::Signal) where {Clk<:Signal}
+    put!(sch.vchan, (Float64(t), s))
     nothing
 end
 function sched(sch::Bus{Clk}, s::Signal) where {Clk<:Signal}
     put!(sch.vchan, (now(sch), s))
     nothing
 end
-function sched(sch::Bus{Clk}, t::Float64, g::Gen) where {Clk<:Signal}
-    put!(sch.gchan, (t,g))
-    nothing
-end
-function sched(sch::Bus{Clk}, t::Beat, g::Gen) where {Clk<:Signal}
-    put!(sch.gchan, (t.n + t.offset,g))
+function sched(sch::Bus{Clk}, t::Real, g::Gen) where {Clk<:Signal}
+    put!(sch.gchan, (Float64(t),g))
     nothing
 end
 function sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
