@@ -37,7 +37,7 @@ function rescale(maxamp::Real, samples::AbstractArray)
 end
 
 
-struct Clamp{S<:Signal}
+struct Clamp{S<:Signal} <: Signal
     sig::S
     minval::Float32
     maxval::Float32
