@@ -496,3 +496,17 @@ function snippet(filename::AbstractString, selstart :: Float64 = 0.0, selend :: 
     Snippet(filename, selstart, selend)
 end
 
+"""
+    play(m::Gen, duration_secs = Inf)
+
+To play a Gen, it needs to be scheduled on a bus. This overloaded
+version of play automatically does that for you. Similar to the
+overload for playing a signal, it returns a stop function that can be
+called to terminate playback at any time.
+"""
+function play(m::Gen, duration_secs = Inf)
+    b = bus()
+    stop = play(b, duration_secs; chans, blocksize)
+    sched(b, m)
+    return stop
+end
