@@ -3,16 +3,24 @@ struct Noise{RNG<:AbstractRNG,Amp<:Signal} <: Signal
     amp::Amp
 end
 
+defaultRNG = MersenneTwister(31415)
+
 """
     noise(rng :: AbstractRNG, amp :: Signal)
-    noise(rng :: AbstractRNG, amp :: Real)
+    noise(rng :: AbstractRNG, amp :: Real = 1.0f0)
+    noise(amp :: Signal)
+    noise(amp :: Real = 1.0f0)
 
 Amplitude modulatable white noise generator.
 """
 function noise(rng::AbstractRNG, amp::Signal)
     Noise(rng, amp)
-end, function noise(rng::AbstractRNG, amp::Real)
+end, function noise(rng::AbstractRNG, amp::Real = 1.0f0)
     Noise(rng, konst(amp))
+end, function noise(amp::Real = 1.0f0)
+    Noise(defaultRNG, konst(amp))
+end, function noise(amp::Signal)
+    Noise(defaultRNG, amp)
 end
 
 done(s::Noise, t, dt) = done(s.amp, t, dt)
