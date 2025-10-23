@@ -1,16 +1,19 @@
 
 mutable struct Line <: Signal
-    v1::Float32
-    duration_secs::Float32
-    v2::Float32
+    const v1::Float32
+    const duration_secs::Float32
+    const v2::Float32
+    t::Float64
 end
 
 done(s::Line, t, dt) = false
 function value(s::Line, t, dt)
-    if t <= 0.0f0
+    st = s.t
+    s.t += dt
+    if st <= 0.0
         s.v1
-    elseif t <= s.duration_secs
-        (s.v1 + (s.v2 - s.v1) * t / s.duration_secs)
+    elseif st <= s.duration_secs
+        s.v1 + (s.v2 - s.v1) * st / s.duration_secs
     else
         s.v2
     end
@@ -25,15 +28,16 @@ between `v1` and `v2`. This signal is infinite in extent. Use [`clip`](@ref) to
 limit its extent.
 """
 line(v1::Real, duration_secs::Real, v2::Real) =
-    Line(Float32(v1), Float32(duration_secs), Float32(v2))
+    Line(Float32(v1), Float32(duration_secs), Float32(v2), 0.0)
 
 mutable struct Expon <: Signal
-    v1::Float32
-    duration_secs::Float32
-    v2::Float32
-    lv1::Float32
-    lv2::Float32
-    dlv::Float32
+    const v1::Float32
+    const duration_secs::Float32
+    const v2::Float32
+    const lv1::Float32
+    const lv2::Float32
+    const dlv::Float32
+    t::Float64
 end
 
 """
@@ -55,15 +59,18 @@ function expon(v1::Real, duration_secs::Real, v2::Real)
         log(Float32(v1)),
         log(Float32(v2)),
         log(Float32(v2/v1)),
+        0.0
     )
 end
 
 done(s::Expon, t, dt) = false
 function value(s::Expon, t, dt)
-    if t <= 0.0f0
+    st = s.t
+    s.t += dt
+    if st <= 0.0f0
         s.v1
-    elseif t <= s.duration_secs
-        exp(s.lv1 + s.dlv * t / s.duration_secs)
+    elseif st <= s.duration_secs
+        exp(s.lv1 + s.dlv * st / s.duration_secs)
     else
         s.v2
     end
