@@ -168,9 +168,14 @@ end
     sched(sch::Bus{Clk}, t::Real, g::Gen) where {Clk<:Signal}
     sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
 
-Schedules a signal to start at time `t` according to the clock of the
-given bus. In the third variant without a `t`, the scheduling happens
-at an ill-specified "now" - which basically means "asap".
+Schedules a signal to start at time `t` according to the clock of the given
+bus. In the third variant without a `t`, the scheduling happens at an
+ill-specified "now" - which basically means "asap". 
+
+**Note:** When scheduling signals and gens within a proc() call, a maximum of
+16 is supported. You usually won't need so many since any co-scheduled gens and
+signals usually have a temporal relationship that is better captured using
+available composition operators.
 """
 function sched(sch::Bus{Clk}, t::Real, s::Signal) where {Clk<:Signal}
     @assert !isfull(sch.vchan) "Too many signals scheduled to bus too quickly. Max 16."
