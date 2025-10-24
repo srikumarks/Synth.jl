@@ -43,15 +43,44 @@ to use the [`fanout`](@ref) operator.
 abstract type AbstractBus <: SignalWithFanout end
 
 mutable struct Bus{Clk<:Signal} <: AbstractBus
-    const clock::Clk
+    # The clock drives the pace at which time passes when rendering events on
+    # the bus. You can consider integer valued time to be "beats" and the
+    # clock's tempo is given in "beats per minute".
+    const clock::Clk 
+
+    # The last time step for checking for events. Events (Gens) are checked for
+    # roughly 60 times a second - i.e. are considered "near real time".
     t::Float64
+
+    # The next time step at which Gens will get a hearing.
     next_t::Float64
-    dt::Float64
+
+    # The time step between two checks for Gens.
+    const dt::Float64
+
+    # The bus receives time stamped Gens on this channel and calls proc on
+    # them to determine signals to mix into the bus. The time stamp is taken
+    # to be in clock time. Therefore if the clock is running at 120bpm, then
+    # a time stamp of 2.0 will happen in 1.0 seconds.
     const gchan::Channel{Tuple{Float64,Gen}}
+
+    # A time sorted list of gens yet to be processed. Gens return the
+    # next gen to be processed and these can be scheduled for later.
     const gens::Vector{Tuple{Float64,Gen}}
+
+    # Gens can schedule signals on this channel.
     const vchan::Channel{Tuple{Float64,Signal}}
+
+    # Voices scheduled by gens will accumulate (time sorted) into this
+    # vector and will be rendered by the bus as time progresses.
     const voices::Vector{Tuple{Float64,Signal}}
+
+    # The actual time at which a signal starts, so its t argument to the
+    # value can be determined relative to this.
     const realtime::Vector{Float64}
+
+    # The last time step that was run (for a sample), and the last
+    # value generated.
     last_t::Float64
     last_val::Float32
 end
@@ -119,7 +148,8 @@ function bus(clk::Signal)
         Vector{Tuple{Float64,Signal}}(),
         Vector{Float64}(),
         0.0,
-        0.0f0
+        0.0f0,
+        0
        )
 end
 
@@ -143,20 +173,20 @@ given bus. In the third variant without a `t`, the scheduling happens
 at an ill-specified "now" - which basically means "asap".
 """
 function sched(sch::Bus{Clk}, t::Real, s::Signal) where {Clk<:Signal}
+    @assert !isfull(sch.vchan) "Too many signals scheduled to bus too quickly. Max 16."
     put!(sch.vchan, (Float64(t), s))
     nothing
 end
 function sched(sch::Bus{Clk}, s::Signal) where {Clk<:Signal}
-    put!(sch.vchan, (now(sch), s))
-    nothing
+    sched(sch, now(sch), s)
 end
 function sched(sch::Bus{Clk}, t::Real, g::Gen) where {Clk<:Signal}
+    @assert !isfull(sch.gchan) "Too many gens scheduled to bus too quickly. Max 16."
     put!(sch.gchan, (Float64(t),g))
     nothing
 end
 function sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
-    put!(sch.gchan, (now(sch),g))
-    nothing
+    sched(sch, now(sch), g)
 end
 
 function done(s::Bus{Clk}, t, dt) where {Clk<:Signal}
@@ -176,26 +206,31 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
     s.t = ct
     if ct >= s.next_t
         count = 0
-        while isready(s.gchan)
-            push!(s.gens, take!(s.gchan))
-            count += 1
-        end
-        if count > 0
-            sort!(s.gens; by=(tg) -> tg[1]) 
-        end
-        for i in eachindex(s.gens)
-            while isactive(s.gens[i][2]) && s.gens[i][1] < ct + s.dt
-                s.gens[i] = proc(s.gens[i][2], s, s.gens[i][1])
+        try
+            while isready(s.gchan)
+                push!(s.gens, take!(s.gchan))
+                count += 1
             end
+            if count > 0
+                sort!(s.gens; by=first)
+            end
+            for i in eachindex(s.gens)
+                while isactive(s.gens[i][2]) && s.gens[i][1] < ct + s.dt
+                    s.gens[i] = proc(s.gens[i][2], s, s.gens[i][1])
+                end
+            end
+            sort!(s.gens; by=first) 
+            while isready(s.vchan)
+                push!(s.voices, take!(s.vchan))
+                push!(s.realtime, 0.0)
+            end
+            sort!(s.voices; by=first)
+            infs = findall((e) -> isinf(e[1]) || !isactive(e[2]), s.gens)
+            deleteat!(s.gens, infs)
+            s.next_t = ct + s.dt
+        catch e
+            @error "Bus error" error=(e, catch_backtrace())
         end
-        sort!(s.gens; by=(tg) -> tg[1]) 
-        while isready(s.vchan)
-            push!(s.voices, take!(s.vchan))
-            push!(s.realtime, 0.0)
-        end
-        infs = findall((e) -> isinf(e[1]) || !isactive(e[2]), s.gens)
-        deleteat!(s.gens, infs)
-        s.next_t = ct + s.dt
     end
 
     sv = 0.0f0

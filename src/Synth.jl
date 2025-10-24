@@ -21,8 +21,6 @@ export simplegrains, chorusgrains, write, rescale, expmap
 see_also(meths) =
     "**See also**: " * join(["[`$m`](@ref)" for m in split(meths, ",")], ", ", " and ")
 
-canput(c::Channel) = c.n_avail_items < c.sz_max
-
 include("signal.jl")
 include("basics.jl")
 
