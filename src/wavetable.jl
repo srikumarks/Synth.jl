@@ -8,7 +8,7 @@ end
 done(s::Wavetable, t, dt) = done(s.amp, t, dt) || done(s.phase, t, dt)
 
 function value(s::Wavetable, t, dt)
-    p = value(s.phase, t, dt)
+    @fastmath p = mod(value(s.phase, t, dt), 1.0f0)
     pos = 1 + p * s.N
     i = floor(Int, pos)
     frac = pos - i
