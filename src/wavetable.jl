@@ -73,7 +73,7 @@ amplitude modulator signal are completed.
     [`lpf`](@ref)), but it is even better to do the alignment *and* filter the
     result.
 """
-function wavetable(table::Vector{Float32}, amp::Signal, phase::Signal)
+function wavetable(table::AbstractVector{Float32}, amp::Signal, phase::Signal)
     N = length(table)
     @assert N >= 4
     table2 = zeros(Float32, N+4)
