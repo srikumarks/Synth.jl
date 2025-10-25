@@ -59,17 +59,18 @@ function render(wf::Waveform, panel::Panel)
                 maxs[i+1] = Float32(dy * mx)
                 mins[i+1] = Float32(dy * mn)
             end
+            @debug "Extrema" diff=sum(maxs .>= mins) total=length(maxs)
 
             # We treat the drawn waveform as a path that runs along all
-            # the maxima and turns around and runs back along all the minima
+            # the minima and turns around and runs back along all the maxima
             # and then we fill out the whole polygon.
             Cairo.new_path(ctx)
-            Cairo.move_to(ctx, x0, y0 - maxs[1])
+            Cairo.move_to(ctx, x0, y0 - mins[1])
             for i in 2:w
-                Cairo.line_to(ctx, x0 + i-1, y0 - maxs[i])
+                Cairo.line_to(ctx, x0 + i-1, y0 - mins[i])
             end
             for i in w:-1:1
-                Cairo.line_to(ctx, x0 + i-1, y0 - mins[i])
+                Cairo.line_to(ctx, x0 + i-1, y0 - maxs[i])
             end
             Cairo.close_path(ctx)
             Cairo.set_source_rgb(ctx, wf.wavecolour.r, wf.wavecolour.g, wf.wavecolour.b)
