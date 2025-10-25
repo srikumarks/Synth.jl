@@ -1,3 +1,5 @@
+using Random
+
 struct Noise{RNG<:AbstractRNG,Amp<:Signal} <: Signal
     rng::RNG
     amp::Amp
@@ -16,11 +18,11 @@ Amplitude modulatable white noise generator.
 function noise(rng::AbstractRNG, amp::Signal)
     Noise(rng, amp)
 end, function noise(rng::AbstractRNG, amp::Real = 1.0f0)
-    Noise(rng, konst(amp))
+    noise(rng, konst(amp))
 end, function noise(amp::Real = 1.0f0)
-    Noise(defaultRNG, konst(amp))
+    noise(defaultRNG, konst(amp))
 end, function noise(amp::Signal)
-    Noise(defaultRNG, amp)
+    noise(defaultRNG, amp)
 end
 
 done(s::Noise, t, dt) = done(s.amp, t, dt)
