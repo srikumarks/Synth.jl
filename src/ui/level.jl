@@ -1,3 +1,7 @@
+
+using Observables
+using ..Synth: Probe, source
+
 struct Level
     label::String
     angle::Int
@@ -8,7 +12,19 @@ struct Level
     colours::Vector{Tuple{Float32,RGBA}}
     canvas::Ref{Union{Nothing,GtkCanvas}}
     valdisp::Ref{Union{Nothing,GtkLabel}}
-    value::Ref{Float32}
+    value::Observable{Float32}
+    conn::Ref{Union{Nothing,ObserverFunction}}
+end
+
+function Observables.connect!(w::Level, p::Probe{Float32})
+    if !isnothing(w.conn[])
+        off(w.conn[])
+        w.conn[] = nothing
+    end
+    obs = source(p)
+    w.conn[] = on(obs) do v
+        w.value[] = v
+    end
 end
 
 function render(level::Level, panel::Panel)
@@ -69,36 +85,23 @@ function Level(
     length_::Int,
     breadth::Int,
     colours::Vector{Tuple{Float32,RGBA}},
-    source::Channel{Float32},
 )
     @assert angle == 0 || angle == 90
     N = length(colours)
-    val = Ref(0.0f0)
-    w = Level(label, angle, length_, breadth, 0.0f0, 1.0f0, colours, nothing, nothing, val)
-    @async begin
-        try
-            while true
-                v = take!(source)
-                val[] = v
-                #println("Level[$label] value ", v)
-                if !isnothing(w.valdisp[])
-                    #println("\t setting label")
-                    w.valdisp[].label = @sprintf("%0.2f", v)
-                end
-                if !isnothing(w.canvas[])
-                    #println("\t drawing canvas")
-                    draw(w.canvas[])
-                end
-            end
-        catch e
-            # Channel closed
-            nothing
+    val = Observable{Float32}(0.0f0)
+    w = Level(label, angle, length_, breadth, 0.0f0, 1.0f0, colours, nothing, nothing, val, nothing)
+    on(val) do v
+        if !isnothing(w.valdisp[])
+            w.valdisp[].label = @sprintf("%0.2f", v)
+        end
+        if !isnothing(w.canvas[])
+            draw(w.canvas[])
         end
     end
     return w
 end
 
-Level(label::String, angle::Int, length_::Int, source::Channel{Float32}) =
-    Level(label, angle, length_, div(length_, 5), stdlevelcolours(), source)
+Level(label::String, angle::Int, length_::Int) =
+    Level(label, angle, length_, div(length_, 5), stdlevelcolours())
 
 

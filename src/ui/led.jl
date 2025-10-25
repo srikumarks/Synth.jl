@@ -1,3 +1,7 @@
+
+using Observables
+using ..Synth: Probe, source
+
 struct LED
     label::String
     angle::Int
@@ -9,7 +13,19 @@ struct LED
     gamma::Float32
     canvas::Ref{Union{Nothing,GtkCanvas}}
     valdisp::Ref{Union{Nothing,GtkLabel}}
-    value::Ref{Float32}
+    value::Observable{Float32}
+    conn::Ref{Union{Nothing,ObserverFunction}}
+end
+
+function Observables.connect!(w::LED, p::Probe{Float32})
+    if !isnothing(w.conn[])
+        off(w.conn[])
+        w.conn[] = nothing
+    end
+    obs = source(p)
+    w.conn[] = on(obs) do v
+        w.value[] = v
+    end
 end
 
 function render(led::LED, panel::Panel)
@@ -77,7 +93,7 @@ function LED(
 )
     @assert angle == 0 || angle == 90
     N = length(colours)
-    val = Ref(0.0f0)
+    val = Observable{Float32}(0.0f0)
     w = LED(
         label,
         angle,
@@ -90,25 +106,14 @@ function LED(
         nothing,
         nothing,
         val,
+        nothing
     )
-    @async begin
-        try
-            while true
-                v = take!(source)
-                val[] = v
-                #println("LED[$label] value ", v)
-                if !isnothing(w.valdisp[])
-                    #println("\t setting label")
-                    w.valdisp[].label = @sprintf("%0.2f", v)
-                end
-                if !isnothing(w.canvas[])
-                    #println("\t drawing canvas")
-                    draw(w.canvas[])
-                end
-            end
-        catch e
-            # Channel closed
-            nothing
+    on(val) do v
+        if !isnothing(w.valdisp[])
+            w.valdisp[].label = @sprintf("%0.2f", v)
+        end
+        if !isnothing(w.canvas[])
+            draw(w.canvas[])
         end
     end
     return w
