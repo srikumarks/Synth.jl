@@ -17,6 +17,14 @@ function value(s::Wavetable, t, dt)
 end
 
 """
+    fundamental(::Wavetable, samplingrate::Real = 48000) :: Float32
+
+Gives the fundamental frequency if the wavetable is looped at the given sampling
+rate without any stretching ... which defaults to 48KHz.
+"""
+fundamental(w::Wavetable, samplingrate::Real = 48000) = Float32(samplingrate / w.N)
+
+"""
     wavetable(table :: AbstractVector{Float32}, amp :: Signal, phase :: Signal)
     wavetable(s :: Sample, amp :: Signal, phase :: Signal)
     wavetable(s :: Sample, amp :: Signal, freq :: Real)
