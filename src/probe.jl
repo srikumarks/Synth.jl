@@ -93,7 +93,9 @@ function value(p::WaveProbe{S}, t, dt) where {S<:Signal}
         @assert length(span) <= p.Nduration
         if !isfull(p.chan)
             # If can't put now, just skip it.
-            put!(p.chan, TimedSamples(span, copy(p.samples[1:length(span)])))
+            ts = TimedSamples(span, copy(p.samples[1:length(span)]))
+            @debug "Sending probe wave" span=length(ts.span) samples=length(ts.samples) min=minimum(ts.samples) max=maximum(ts.samples)
+            put!(p.chan, ts)
         end
         if p.i_from + p.Ninterval > p.Nduration
             @assert p.i_from + p.Ninterval == p.Nduration + 1
@@ -107,12 +109,11 @@ end
     waveprobe(s :: Signal, chan :: Channel{TimedSamples}, duration :: Float64 = 0.25, interval :: Float64 = 0.04; samplingrate = 48000) :: Probe
     waveprobe(s :: Signal, duration :: Float64 = 0.25, interval :: Float64 = 0.04; samplingrate = 48000) :: Probe
 
-A probe is a "pass through" signal transformer which periodically reports a
-reading of the signal to a channel. The channel may either be given or a new
-one can be created by the second variant. Since it is a pass-through, you can
-insert a probe at any signal point. A probe low-pass-filters the signal before
-sending it out the channel, so it won't be useful for signals that vary very
-fast. The default value has it sampling the signal every 40ms.
+A waveprobe, like [`probe`](@ref) is a "pass through" signal transformer which
+periodically reports a reading of the signal to a channel. The channel may
+either be given or a new one can be created by the second variant. Since it is
+a pass-through, you can insert a probe at any signal point. The default value
+has it sampling the signal every 40ms.
 
 The channel can then be connected to a UI display widget that shows values
 as they come in on the channel.
@@ -137,6 +138,6 @@ function waveprobe(
               1,
               1)
 end
-function waveprobe(s::Signal, duration::Real = 0.25, interval::Real = 0.04; samplingrate = 48000)
-    waveprobe(s, Channel{TimedSamples}(2), duration, interval; samplingrate)
+function waveprobe(s::Signal, duration::Real = 0.25; interval::Real = 0.04, samplingrate = 48000)
+    waveprobe(s, Channel{TimedSamples}(2), duration; interval, samplingrate)
 end
