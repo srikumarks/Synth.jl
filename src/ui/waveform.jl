@@ -1,6 +1,5 @@
-
-const TimeSpan = StepRangeLen{Float64}
-const TimedSamples = @NamedTuple{span :: TimeSpan, samples :: Vector{Float32}}
+using Observables
+using ..Synth: TimedSamples, Probe, source
 
 struct Waveform
     label::String
@@ -9,7 +8,20 @@ struct Waveform
     bkgcolour::RGBA
     wavecolour::RGBA
     canvas::Ref{Union{Nothing,GtkCanvas}}
-    val::Ref{Union{Nothing,TimedSamples}}
+    val::Observable{TimedSamples}
+    conn::Ref{Union{Nothing,ObserverFunction}}
+end
+
+function Observables.connect!(wf::Waveform, p::Probe{TimedSamples})
+    obs = source(p)
+    # Only one source may send to the waveform.
+    if !isnothing(wf.conn[])
+        off(wf.conn[])
+        wf.conn[] = nothing
+    end
+    wf.conn[] = on(obs; weak=true) do val
+        wf.val[] = val
+    end
 end
 
 function render(wf::Waveform, panel::Panel)
@@ -26,22 +38,19 @@ function render(wf::Waveform, panel::Panel)
     @debug "Waveform box dimensions" width=wf.width height=wf.height
 
     @guarded draw(canvas) do widget
-        if isnothing(wf.val[])
-            return
-        end
-
         @debug "Drawing..."
         ctx = Gtk4.getgc(widget)
         w ::Int = round(Int, Gtk4.width(widget))
         h ::Int = round(Int, Gtk4.height(widget))
-        t = wf.val[].span
-        v = wf.val[].samples
+        tv = wf.val[]
+        t = tv.span
+        v = tv.samples
+        @debug "Received timed samples" len=length(t)
 
         label.label = @sprintf("[%s] %f : %f == %d : %d", wf.label, t[1], t[end], floor(Int, t[1] / Float64(t.step)), ceil(Int, t[end]/Float64(t.step)))
         Cairo.rectangle(ctx, 0, 0, w, h)
         Cairo.set_source_rgb(ctx, wf.bkgcolour.r, wf.bkgcolour.g, wf.bkgcolour.b)
         Cairo.fill(ctx)
-
 
         N = length(v)
         x0 = 0.0f0
@@ -106,10 +115,10 @@ function Waveform(
         label::String,
         width::Int,
         height::Int,
-        source::Channel{TimedSamples} = Channel{TimedSamples}(2);
         bkgcolour::RGBA = RGBA(0.0f0, 0.0f0, 0.0f0, 1.0f0),
         wavecolour::RGBA = RGBA(0.4196f0, 0.7961f0, 0.4588f0, 1.0f0)
     )
+    obs = Observable{TimedSamples}(TimedSamples())
     wf = Waveform(
                   label,
                   width,
@@ -117,20 +126,17 @@ function Waveform(
                   bkgcolour,
                   wavecolour,
                   nothing,
+                  obs,
                   nothing
                  )
-    @async begin
+    on(obs) do tv
         try
-            while true
-                wf.val[] = take!(source)
-                @debug "TimedSamples received by waveform box" len=(length(wf.val[].span), length(wf.val[].samples))
-                if !isnothing(wf.canvas[])
-                    draw(wf.canvas[])
-                end
+            @debug "TimedSamples received by waveform box" len=(length(tv.span), length(tv.samples)) min=minimum(tv.samples) max=maximum(tv.samples)
+            if !isnothing(wf.canvas[])
+                draw(wf.canvas[])
             end
         catch e
-            # Channel closed
-            nothing
+            @error "WaveProbe draw error" error=(e, catch_backtrace())
         end
     end
     return wf
