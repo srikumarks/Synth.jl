@@ -17,7 +17,7 @@ function value(s::Wavetable, t, dt)
 end
 
 """
-    wavetable(table :: Vector{Float32}, amp :: Signal, phase :: Signal)
+    wavetable(table :: AbstractVector{Float32}, amp :: Signal, phase :: Signal)
     wavetable(s :: Sample, amp :: Signal, phase :: Signal)
     wavetable(s :: Sample, amp :: Signal, freq :: Real)
     wavetable(s :: Sample, amp :: Real, freq :: Real)
