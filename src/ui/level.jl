@@ -16,7 +16,14 @@ struct Level
     conn::Ref{Union{Nothing,ObserverFunction}}
 end
 
-function Observables.connect!(w::Level, p::Probe{Float32})
+"""
+    connectui(w::Level, p::Probe{Float32})
+
+Connects the given Float32 probe to a Level UI element.
+Only one such source can be connected at a time.
+See [`probe`](@ref)
+"""
+function connectui(w::Level, p::Probe{Float32})
     if !isnothing(w.conn[])
         off(w.conn[])
         w.conn[] = nothing

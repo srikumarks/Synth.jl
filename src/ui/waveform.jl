@@ -12,7 +12,14 @@ struct Waveform
     conn::Ref{Union{Nothing,ObserverFunction}}
 end
 
-function Observables.connect!(wf::Waveform, p::Probe{TimedSamples})
+"""
+    connectui(wf::Waveform, p::Probe{TimedSamples})
+
+Connects a probe that sends timed samples to the given 
+waveform display element. Only one such source can be
+connected at a time. See [`waveprobe`](@ref).
+"""
+function connectui(wf::Waveform, p::Probe{TimedSamples})
     obs = source(p)
     # Only one source may send to the waveform.
     if !isnothing(wf.conn[])

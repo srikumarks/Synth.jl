@@ -5,6 +5,8 @@ using Observables
     abstract type Probe{T} <: Signal end
 
 Needs to support the method `source(probe::Probe{T}) :: Observable{T}`
+To connect a probe to an appropriate UI element, use [`connectui`](@ref)
+(`connectui(::Union{LED,Level,Waveform},::Probe{T})`).
 """
 abstract type Probe{T} <: Signal end
 
@@ -124,19 +126,14 @@ function value(p::WaveProbe{S}, t, dt) where {S<:Signal}
 end
 
 """
-    waveprobe(s :: Signal, chan :: Channel{TimedSamples}, duration :: Float64 = 0.25, interval :: Float64 = 0.04; samplingrate = 48000) :: Probe
     waveprobe(s :: Signal, duration :: Float64 = 0.25, interval :: Float64 = 0.04; samplingrate = 48000) :: Probe
 
 A waveprobe, like [`probe`](@ref) is a "pass through" signal transformer which
-periodically reports a reading of the signal to a channel. The channel may
-either be given or a new one can be created by the second variant. Since it is
-a pass-through, you can insert a probe at any signal point. The default value
-has it sampling the signal every 40ms.
+periodically reports a reading of the signal to an `Observable`. Since it is a
+pass-through, you can insert a probe at any signal point. The default value has
+it sampling the signal every 40ms.
 
-The channel can then be connected to a UI display widget that shows values
-as they come in on the channel.
-
-*STATUS*: Needs testing. Also needs a corresponding UI element to test its utility.
+[`connectui`](@ref) can be used to connect a `Probe{TimedSamples}` to a `WaveProbe`.
 """
 function waveprobe(
     s::Signal,

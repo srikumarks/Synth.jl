@@ -17,7 +17,13 @@ struct LED
     conn::Ref{Union{Nothing,ObserverFunction}}
 end
 
-function Observables.connect!(w::LED, p::Probe{Float32})
+"""
+    connectui(w::LED, p::Probe{Float32})
+
+Connects the probe that sends Float32 values to the LED UI element.
+Only one such probe can be connected at a time. See [`probe`](@ref)
+"""
+function connectui(w::LED, p::Probe{Float32})
     if !isnothing(w.conn[])
         off(w.conn[])
         w.conn[] = nothing
@@ -86,10 +92,9 @@ function LED(
     angle::Int,
     length_::Int,
     breadth::Int,
-    colours::Vector{RGBA},
-    source::Channel{Float32};
-    fillratio = 0.5,
-    gamma = 0.5,
+    colours::Vector{RGBA};
+    fillratio::Real = 0.5,
+    gamma::Real = 0.5,
 )
     @assert angle == 0 || angle == 90
     N = length(colours)
@@ -119,8 +124,8 @@ function LED(
     return w
 end
 
-LED(label::String, angle::Int, length_::Int, source::Channel{Float32}) =
-    LED(label, angle, length_, div(length_, 5), stdleds(), source)
+LED(label::String, angle::Int, length_::Int; fillratio::Real = 0.5, gamma::Real = 0.5) =
+    LED(label, angle, length_, div(length_, 5), stdleds(); fillratio, gamma)
 
 function stdleds(ny::Integer, y::RGBA, no::Integer, o::RGBA, nr::Integer, r::RGBA)
     vcat(repeat([y], ny), repeat([o], no), repeat([r], nr))
