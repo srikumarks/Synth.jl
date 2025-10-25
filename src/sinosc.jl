@@ -40,11 +40,11 @@ in the unit range as well, but is not limited to that.
     So essentially `sinosc(m, f)` is equivalent to `sinosc_v1(m, phasor(f))`
     where `sinosc_v1` was the previous version.
 """
-sinosc(m::Signal, f::Signal, p::Signal = konst(0.0); phase::Real = 0.0) = SinOsc(m, f, p, Float32(phase))
-sinosc(m::Real, f::Real, p::Real; phase::Real = 0.0) = sinosc(konst(m), konst(f), konst(p); phase)
+sinosc(m::Signal, f::Signal, p::Signal; phase::Real = 0.0) = SinOsc(m, f, p, Float32(phase))
+sinosc(m::Real, f::Real, p::Real = 0.0; phase::Real = 0.0) = sinosc(konst(m), konst(f), konst(p); phase)
 sinosc(m::Real, f::Real, p::Signal; phase::Real = 0.0) = sinosc(konst(m), konst(f), p; phase)
-sinosc(m::Real, f::Signal, p::Real; phase::Real = 0.0) = sinosc(konst(m), f, konst(p); phase)
+sinosc(m::Real, f::Signal, p::Real = 0.0; phase::Real = 0.0) = sinosc(konst(m), f, konst(p); phase)
 sinosc(m::Real, f::Signal, p::Signal; phase::Real = 0.0) = sinosc(konst(m), f, p; phase)
-sinosc(m::Signal, f::Real, p::Real; phase::Real = 0.0) = sinosc(m, konst(f), konst(p); phase)
+sinosc(m::Signal, f::Real, p::Real = 0.0; phase::Real = 0.0) = sinosc(m, konst(f), konst(p); phase)
 sinosc(m::Signal, f::Real, p::Signal; phase::Real = 0.0) = sinosc(m, konst(f), p; phase)
-sinosc(m::Signal, f::Signal, p::Real; phase::Real = 0.0) = sinosc(m, f, konst(p); phase)
+sinosc(m::Signal, f::Signal, p::Real = 0.0; phase::Real = 0.0) = sinosc(m, f, konst(p); phase)
