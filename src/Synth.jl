@@ -13,7 +13,8 @@ export filter1, filter2, fir, lpf, bpf, bpf0, hpf, protect
 export waveshape, linearmap, delay, tap
 export wavetable, maketable, register!
 export granulate, simplegrains, chorusgrains, Grain
-export dBscale, interp4, raisedcos, midi2hz, hz2midi, easeinout, curve, Seg, circular
+export dBscale, interp4, raisedcos, midi2hz, hz2midi, circular
+export easeinout, curve, seg, LinSeg, ExpSeg, HarSeg, EaseSeg, stretch, concat
 export compress
 export stereo, left, right, pan
 export simplegrains, chorusgrains, write, rescale, expmap
