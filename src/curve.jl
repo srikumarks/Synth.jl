@@ -225,11 +225,3 @@ function concat(c1::Curve, c2::Curve; stop::Bool=c2.stop_at_end)
          )
 end
 
-(Base.:+)(dv::Real, c::Curve) = map(v -> v + dv, c)
-(Base.:+)(c::Curve, dv::Real) = map(v -> v + dv, c)
-(Base.:-)(dv::Real, c::Curve) = map(v -> dv - v, c)
-(Base.:-)(c::Curve, dv::Real) = map(v -> v - dv, c)
-(Base.:*)(f::Real, c::Curve) = map(v -> f * v, c)
-(Base.:*)(c::Curve, f::Real) = map(v -> f * v, c)
-(Base.:/)(f::Real, c::Curve) = map(v -> f / v, c)
-(Base.:/)(c::Curve, f::Real) = map(v -> v / f, c)
