@@ -114,6 +114,9 @@ a curve out of it using a common interpolation mechanism. The `Vector{Seg}`
 is the most general since it can accommodate a combination of linear,
 exponential, etc., but these are convenient for use when a common
 interpolation type is required.
+
+Curves support `map` and basic arithmetic combinations with real numbers.
+See also [`stretch`](@ref) and [`concat`](@ref)
 """
 function curve(segments::Vector{Seg}; stop = false)
     times = vcat(0.0, accumulate(+, [v.dur for v in segments]))
@@ -189,6 +192,11 @@ stretch(factor::Real, seg::HarSeg) =
     HarSeg(seg.v1, seg.v1inv, Float64(factor * seg.dur), seg.v2, seg.v2inv, Float32(seg.dvinvdt / factor))
 
 
+"""
+    stretch(factor::Real, c::Curve) :: Curve
+
+Stretches the times of the curve segments by the given factor.
+"""
 function stretch(factor::Real, c::Curve)
     f = Float64(factor)
     Curve(
@@ -201,6 +209,11 @@ function stretch(factor::Real, c::Curve)
          )
 end
 
+"""
+    concat(c1::Curve, c2::Curve; stop::Bool=c2.stop_at_end) :: Curve
+
+Concatenates the two curves in time.
+"""
 function concat(c1::Curve, c2::Curve; stop::Bool=c2.stop_at_end)
     Curve(
           vcat(c1.segments, c2.segments),
