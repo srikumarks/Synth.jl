@@ -1,8 +1,11 @@
-mutable struct ADSR{Sus<:Signal} <: Signal
+
+using Observables
+
+mutable struct ADSR <: Signal
     attack_level::Float32
     attack_secs::Float32
     decay_secs::Float32
-    sustain_level::Sus
+    sustain_level::Float32
     sustain_secs::Float32
     release_secs::Float32
     v::Float32
@@ -11,14 +14,13 @@ mutable struct ADSR{Sus<:Signal} <: Signal
     dlogv_decay::Float32
     dlogv_release::Float32
     ddlogv_release::Float32
-    relaccelfn::Function
     vfloor::Float32
     t1::Float32
     t2::Float32
     t3::Float32
     t4::Float32
-    stage::Int # 0 for attack, 1 for decay, 2 for sustain and 3 for release.
-    susval::Float32
+    stage::Int
+    t::Float64
 end
 
 """
@@ -61,51 +63,29 @@ function adsr(
     attack_secs = 0.002,
     decay_secs = 0.01,
     release_secs = 0.2,
-    release_factor = 4.0,
-    samplingrate = 48000,
-)
-    adsr(
-         clip(sus_secs, konst(suslevel)),
-        sus_secs;
-        attack_factor,
-        attack_secs,
-        decay_secs,
-        release_secs,
-        release_factor,
-        samplingrate,
-    )
-end
-
-function adsr(
-    suslevel::Signal,
-    sus_secs::Real;
-    attack_factor = 2.0,
-    attack_secs = 0.002,
-    decay_secs = 0.01,
-    release_secs = 0.2,
-    release_factor = 4.0,
-    samplingrate = 48000,
+    release_factor = 4.0
 )
     @assert attack_factor >= 1.0
     @assert attack_secs > 0.0
     @assert release_factor > 0.0
     @assert release_secs > 0.0
+    vfloor = Float32(1/32768)
+    @assert suslevel > vfloor
+    @assert sus_secs >= 0.0
 
-    vfloor = Float32(1/32767)
-    susval = max(vfloor, value(suslevel, 0.0, 1/samplingrate))
+    susval = max(vfloor, suslevel)
     alevel = max(1.0, attack_factor) * susval
     asecs = max(0.0005, attack_secs)
     dsecs = max(0.01, decay_secs)
     relsecs = max(0.01, release_secs)
     relvel = -1.0/relsecs
     dtrel = release_factor * relsecs
-    relaccelfn = (v) -> (-15 + release_factor - log2(v)) / (0.5f0 * dtrel * dtrel)
-    relaccel = relaccelfn(1.0)
+    relaccel = (-15 + release_factor - log2(susval)) / (0.5f0 * dtrel * dtrel)
     ADSR(
         Float32(alevel),
         Float32(asecs),
         Float32(dsecs),
-        suslevel,
+        susval,
         Float32(sus_secs),
         Float32(relsecs),
         0.0f0,
@@ -114,14 +94,13 @@ function adsr(
         Float32(log2(susval/alevel)/dsecs),
         Float32(relvel),
         Float32(relaccel),
-        relaccelfn,
         vfloor,
         Float32(asecs),
         Float32(asecs + dsecs),
         Float32(asecs + dsecs + sus_secs),
         Float32(asecs + dsecs + sus_secs + relsecs),
         0,
-        susval,
+        0.0
     )
 end
 
@@ -130,31 +109,23 @@ function done(s::ADSR, t, dt)
 end
 
 function value(s::ADSR, t, dt)
+    t = s.t
+    s.t += dt
     v = 0.0
-    if s.stage == 0 && t < s.t1
+    if t < s.t1
         v = s.v
         s.v += s.dv_attack * dt
-    elseif s.stage <= 1 && t < s.t2
-        suslevel = value(s.sustain_level, t, dt)
-        s.dlogv_decay = (log2(suslevel) - s.logv)/max(dt, s.t2 - t - dt)
+        s.stage = 0
+    elseif t < s.t2
         v = s.v = 2 ^ s.logv
         s.logv += s.dlogv_decay * dt
         s.stage = 1
-    elseif s.stage <= 2 && t < s.t3
-        if s.stage <= 1
-            # We were in decay/attack in the previous sample
-            # and are just entering the sustain period.
-            s.stage = 2
-        end
-        v = s.v = 2 ^ s.logv
-        if done(s.sustain_level, t, dt)
-            s.stage = 3
-            # Correct for the release phase once we know the
-            # actual sustain level instead of assuming it 
-            # to be 1.0
-            s.ddlogv_release = s.relaccelfn(v)
+    elseif t < s.t3
+        if s.stage < 2
+            v = s.v = 2 ^ s.logv
         else
-            s.t3 = max(s.t3, t + dt) # Extend the sustain period because the level signal is still alive.
+            v = s.v
+            s.stage = 2
         end
     else
         s.stage = 3
