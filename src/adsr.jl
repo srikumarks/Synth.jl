@@ -11,6 +11,7 @@ mutable struct ADSR{Sus<:Signal} <: Signal
     dlogv_decay::Float32
     dlogv_release::Float32
     ddlogv_release::Float32
+    relaccelfn::Function
     vfloor::Float32
     t1::Float32
     t2::Float32
@@ -23,7 +24,8 @@ end
 """
     adsr(suslevel :: Real, sus_secs :: Real;
          attack_factor = 2.0, attack_secs = 0.002,
-         decay_secs = 0.01, release_secs = 0.2)
+         decay_secs = 0.01, release_secs = 0.2,
+         release_factor = 4.0, samplingrate=48000)
 
 Makes an "attack-decay-sustain-release" envelope.
 The decay and release phases are treated as exponential
@@ -96,7 +98,9 @@ function adsr(
     dsecs = max(0.01, decay_secs)
     relsecs = max(0.01, release_secs)
     relvel = -1.0/relsecs
-    relaccel = (-15 + release_factor) / (0.5f0 * (release_factor * relsecs)^2)
+    dtrel = release_factor * relsecs
+    relaccelfn = (v) -> (-15 + release_factor - log2(v)) / (0.5f0 * dtrel * dtrel)
+    relaccel = relaccelfn(1.0)
     ADSR(
         Float32(alevel),
         Float32(asecs),
@@ -110,6 +114,7 @@ function adsr(
         Float32(log2(susval/alevel)/dsecs),
         Float32(relvel),
         Float32(relaccel),
+        relaccelfn,
         vfloor,
         Float32(asecs),
         Float32(asecs + dsecs),
@@ -132,7 +137,7 @@ function value(s::ADSR, t, dt)
     elseif s.stage <= 1 && t < s.t2
         suslevel = value(s.sustain_level, t, dt)
         s.dlogv_decay = (log2(suslevel) - s.logv)/max(dt, s.t2 - t - dt)
-        v = 2 ^ s.logv
+        v = s.v = 2 ^ s.logv
         s.logv += s.dlogv_decay * dt
         s.stage = 1
     elseif s.stage <= 2 && t < s.t3
@@ -141,22 +146,19 @@ function value(s::ADSR, t, dt)
             # and are just entering the sustain period.
             s.stage = 2
         end
-        v = max(s.vfloor, value(s.sustain_level, t, dt))
-        #s.logv = 0.8f0 * s.logv + 0.2f0 * log2(v)
-        #v = 2 ^ s.logv
+        v = s.v = 2 ^ s.logv
         if done(s.sustain_level, t, dt)
             s.stage = 3
             # Correct for the release phase once we know the
             # actual sustain level instead of assuming it 
             # to be 1.0
-            s.ddlogv_release =
-                (-15 + release_factor - log2(v)) / (0.5f0 * (release_factor * relsecs)^2)
+            s.ddlogv_release = s.relaccelfn(v)
         else
             s.t3 = max(s.t3, t + dt) # Extend the sustain period because the level signal is still alive.
         end
     else
         s.stage = 3
-        v = 2 ^ s.logv
+        v = s.v = 2 ^ s.logv
         dlogvdt = s.ddlogv_release * dt
         s.logv += dt * (s.dlogv_release + 0.5f0 * dlogvdt)
         s.dlogv_release += dlogvdt
