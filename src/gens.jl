@@ -506,7 +506,7 @@ called to terminate playback at any time.
 """
 function play(m::Gen, duration_secs = Inf)
     b = bus()
-    stop = play(b, duration_secs; chans, blocksize)
+    stop = play(b, duration_secs)
     sched(b, m)
     return stop
 end
