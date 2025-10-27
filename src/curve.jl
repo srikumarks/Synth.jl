@@ -1,11 +1,13 @@
-struct LinSeg
+abstract type Seg end
+
+struct LinSeg <: Seg
     v1::Float32
     dur::Float64
     v2::Float32
     dvdt::Float32
 end
 
-struct ExpSeg
+struct ExpSeg <: Seg
     v1::Float32
     logv1::Float32
     dur::Float64
@@ -14,13 +16,13 @@ struct ExpSeg
     dlogvdt::Float32
 end
 
-struct EaseSeg
+struct EaseSeg <: Seg
     v1::Float32
     dur::Float64
     v2::Float32
 end
 
-struct HarSeg
+struct HarSeg <: Seg
     v1::Float32
     v1inv::Float32
     dur::Float64
@@ -29,7 +31,6 @@ struct HarSeg
     dvinvdt::Float32
 end
 
-const Seg = Union{LinSeg, ExpSeg, EaseSeg, HarSeg}
 
 function interp(seg::LinSeg, t::Float64)
     seg.v1 + t * seg.dvdt
@@ -64,13 +65,16 @@ easeinout(t::Float64) = 0.5*(1.0+cos(π*(t - 1.0)))
     seg(::Type{ExpSeg}, v1::Real, dur::Real, v2::Real)
     seg(::Type{EaseSeg}, v1::Real, dur::Real, v2::Real)
     seg(::Type{HarSeg}, v1::Real, dur::Real, v2::Real)
+    seg(::Union{:line,:exp,:har,:ease}, v1::Real, dur::Real, v2::Real)
 
 Makes a single interpolated segment for use with [`curve`](@ref).
+For the last variant, use an appropriate symbol as the first argument
+to determine the type of the segment, such as `seg(:exp, 0.1, 1.0, 0.5)`.
 """
 seg(v::Real, dur::Real) = 
     LinSeg(Float32(v), Float64(dur), Float32(v), 0.0f0)
 seg(v1::Real, dur::Real, v2::Real) = 
-    LinSeg(Float32(v2), Float64(dur), Float32(v2), Float32((v2 - v1) / dur))
+    LinSeg(Float32(v1), Float64(dur), Float32(v2), Float32((v2 - v1) / dur))
 seg(::Type{LinSeg}, v1::Real, dur::Real, v2::Real) = seg(v1, dur, v2)
 seg(::Type{ExpSeg}, v1::Real, dur::Real, v2::Real) = begin
     logv1 = log(v1)
@@ -86,11 +90,16 @@ seg(::Type{HarSeg}, v1::Real, dur::Real, v2::Real) = begin
     dvinvdt = (v2inv - v1inv) / dur
     HarSeg(Float32(v1), v1inv, Float64(dur), Float32(v2), v2inv, Float32(dvinvdt))
 end
+segtype(::Val{:line}) = LinSeg
+segtype(::Val{:exp}) = ExpSeg
+segtype(::Val{:har}) = HarSeg
+segtype(::Val{:ease}) = EaseSeg
+seg(tyv::Symbol, v1::Real, dur::Real, v2::Real) = seg(segtype(Val(tyv)), v1, dur, v2)
 
 mutable struct Curve <: Signal
     segments::Vector{Seg}
     i::Int
-    ti::Float64
+    t::Float64
     times::Vector{Float64}
     tend::Float64
     stop_at_end::Bool
@@ -118,7 +127,7 @@ interpolation type is required.
 Curves support `map` and basic arithmetic combinations with real numbers.
 See also [`stretch`](@ref) and [`concat`](@ref)
 """
-function curve(segments::Vector{Seg}; stop = false)
+function curve(segments::Vector{<:Seg}; stop = false)
     times = vcat(0.0, accumulate(+, [v.dur for v in segments]))
     Curve(segments, 1, 0.0, times, times[end], stop)
 end
@@ -133,17 +142,17 @@ function curve(v::AbstractVector{<:Tuple{Real,Real}}; stop = false)
     curve(segs; stop)
 end
 
-done(s::Curve, t, dt) = s.stop_at_end ? s.ti >= s.tend : false
+done(s::Curve, t, dt) = s.stop_at_end ? s.t >= s.tend : false
 
 function value(s::Curve, t, dt)
-    t = s.ti
-    s.ti += dt
+    t = s.t
+    s.t += dt
     while true
         if t >= s.tend || s.i > length(s.segments)
             return interp(s.segments[end], s.tend - s.times[end-1])
-        elseif t < s.times[s.i+1]
+        elseif t >= s.times[s.i] && t < s.times[s.i+1]
             return interp(s.segments[s.i], t - s.times[s.i])
-        else
+        elseif t >= s.times[s.i+1]
             s.i += 1
         end
     end
