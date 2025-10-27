@@ -149,7 +149,6 @@ function bus(clk::Signal)
         Vector{Float64}(),
         0.0,
         0.0f0,
-        0
        )
 end
 
