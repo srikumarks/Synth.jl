@@ -35,8 +35,8 @@ but can be asked to loop back to a specified point after that.
 - The `selstart` and `selend` keyword arguments can be used to slice
   into the sound sample, with the default covering the entire file.
 
-Currently sample rate conversion is not supported, though that is a feature
-that must be added at some point.
+If the sample rate of the file is different from the selected `samplingrate`,
+the loaded samples will be converted to the given rate (uses [`DSP.resample`](@ref)).
 
 To make slicing into large files efficient, files are loaded once and cached.
 This cache is looked up (based on the file name) every time a slice is needed.
