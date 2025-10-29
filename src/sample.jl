@@ -1,5 +1,6 @@
 import SampledSignals
 using SampledSignals: SampleBuf
+import DSP
 
 mutable struct Sample{SV <: AbstractVector{Float32}} <: Signal
     const samples::SV
@@ -64,6 +65,15 @@ function sample(
     sample(Float32.(samples[:, 1].data); looping, loopto, samplingrate)
 end
 
+function resample(buffer::Vector{Float32}, fromSR::Float64, toSR::Float64)
+    if abs(fromSR - toSR) < 0.5
+        return buffer
+    end
+
+    @info "Converting from sample rate $(fromSR)Hz to $(toSR)Hz"
+    return DSP.resample(buffer, toSR/fromSR)
+end
+
 function sample(
     filename::AbstractString;
     looping :: Bool = false,
@@ -78,10 +88,10 @@ function sample(
         buf = sample_cache[filename]
     else
         sb = load(filename)
-        buf = AudioSample(Float32.(sb.data[:,1]), SampledSignals.samplerate(sb))
+        sampledata = resample(Float32.(sb.data[:,1]), SampledSignals.samplerate(sb), samplingrate)
+        buf = AudioSample(sampledata, samplingrate)
         sample_cache[filename] = buf
     end
-    @assert abs(samplingrate - buf.samplingrate) < 0.5 / samplingrate "samplingrate=$samplingrate, SR=$(buf.samplingrate)"
     N = length(buf.data)
     startIx = max(1, floor(Int, selstart * samplingrate))
     endIx = floor(Int, min(N / samplingrate, selend) * samplingrate)
