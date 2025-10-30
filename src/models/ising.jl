@@ -31,13 +31,8 @@ function value(m::Ising2, t, dt)
     x1 = value(m.x1, t, dt)
     x2 = value(m.x2, t, dt)
     w12 = value(m.w12, t, dt)
-    dph =
-        2 *
-        pi *
-        im *
-        f *
-        dt *
-        (b1 * m.sz1 + b2 * m.sz2 + x1 * m.sx1 + x2 * m.sx2 + w12 * m.sz12)
+    s = 2 * pi * f * dt
+    dph = im * s * (b1 * m.sz1 + b2 * m.sz2 + x1 * m.sx1 + x2 * m.sx2 + w12 * m.sz12)
     t1 = m.psi
     t2 = dph * t1
     t3 = 0.5f0 * dph * t2
