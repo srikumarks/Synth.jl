@@ -23,14 +23,12 @@ end
 
 A "oscil" is a sinusoidal oscillator whose frequency and amplitude can be
 varied ("modulated") over time. The `f` argument is expected to be a frequency
-in Hz units. `m` determines the amplitude and `f` the frequency in Hz. The
+in Hz units. `m` determines the amplitude and `p` the phase in unit range. The
 `phase` named argument is a number in the range `[0.0,1.0]` determining the
-starting phase within the cycle.
-
-Both a frequency and phase are supported as signals and the keyword argument
-`phase` is the initial phase offset. This lets us do both FM and PM using the
-same unit. The frequency is in Hz and the `p` phase signal is expected to be
-in the unit range as well, but is not limited to that.
+starting phase within the cycle. It is added to the overall phase evolution as
+a constant so that `oscil` can be used for a sine wave with 0.0 as the `phase`
+and as a cosine wave with 0.5 as the `phase`. This lets us do both FM and PM
+using the same unit. 
 
 !!! note "Design"
     An earlier approach was to have the second argument be a phasor. However,
