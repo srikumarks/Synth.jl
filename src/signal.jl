@@ -413,7 +413,7 @@ original CSound and in many audio synthesis kits.
 Produces a signal that will evaluate the given signal at a much lower sampling
 interval and linearly interpolate between the values to reduce computation.
 The given signal will effectively be "sampled" at the lower given interval.
-For example, `krate(100.0, sinosc(0.5f0, 10.0f0))` will construct a 10Hz sine
+For example, `krate(100.0, oscil(0.5f0, 10.0f0))` will construct a 10Hz sine
 that is sampled only 100 times a second and interpolated, instead of having to 
 calculate sines 48000 times a second.
 """

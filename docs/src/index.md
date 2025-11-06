@@ -5,10 +5,10 @@ compositional form suitable for musical applications. The [`Signal`](@ref
 "Synth.Signal") type is intended to model processes that evolve in time and
 which could be finite in extent. 
 
-For example `sinosc(0.5, 250.0)` is a sine wave oscillator that oscillates at
-250Hz with an amplitude of 0.5, forever, and `sinosc(0.5, 250.0 + sinosc(100.0,
+For example `oscil(0.5, 250.0)` is a sine wave oscillator that oscillates at
+250Hz with an amplitude of 0.5, forever, and `oscil(0.5, 250.0 + oscil(100.0,
 250.0))` gives you a frequency modulated sine oscillation and you can impose an
-envelope on it like this -- `sinosc(adsr(0.5, 1.0), 250.0 + sinosc(100.0,
+envelope on it like this -- `oscil(adsr(0.5, 1.0), 250.0 + oscil(100.0,
 250.0))` -- which makes it finite in duration. Most operators can be composed
 in this manner, usually resulting in fairly efficient code as well.
 See the [Models](@ref "Models") section for some other simple signal
@@ -18,7 +18,7 @@ The above constructed finite extent signal can be rendered to a
 `SampledSignals.SampleBuf` using [`render`](@ref) like this --
 
 ```julia
-v = render(sinosc(adsr(0.5, 1.0), 250.0 + sinosc(100.0, 250.0)))
+v = render(oscil(adsr(0.5, 1.0), 250.0 + oscil(100.0, 250.0)))
 ```
 
 (Pass an explicit duration if it's an infinite extent signal or use

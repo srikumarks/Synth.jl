@@ -49,7 +49,7 @@ small sample table and stretch it out using the interpolation by using a slowly
 varying phasor. This is how the "pitch" of the sample gets changed during
 synthesis.
 
-The amplitude modulation is just as with [`sinosc`](@ref).
+The amplitude modulation is just as with [`oscil`](@ref).
 
 The samples wave table is deemed to be completed when the phasor signal or the
 amplitude modulator signal are completed.

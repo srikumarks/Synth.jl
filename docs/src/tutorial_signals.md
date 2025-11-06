@@ -26,7 +26,7 @@ in `Synth.jl`.
 s = #... some signal
 maxdelay = 1.0 # in seconds
 d = delay(s, maxdelay)
-tapsig = sinosc(0.25, 100.0)
+tapsig = oscil(0.25, 100.0)
 tap1 = tap(d, tapsig + 0.25)
 tap2 = tap(d, tapsig + 0.3)
 play(tap1 * tap2, 2.0)

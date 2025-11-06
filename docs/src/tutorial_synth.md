@@ -39,7 +39,7 @@ amplitude and phase using [`wavetable`](@ref). A case of basic playback
 of a loop with a "sirening" of the frequency is shown below -
 
 ```julia
-> w = wavetable(sample("waveform.wav"), 0.25f0, phasor(440 + sinosc(50, 10)))
+> w = wavetable(sample("waveform.wav"), 0.25f0, phasor(440 + oscil(50, 10)))
 > play(w, 2.0)
 ```
 

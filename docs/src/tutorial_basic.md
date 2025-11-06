@@ -9,25 +9,25 @@ combine them.
 ## Phasors and sines
 
 Oscillators form the basic signals for composition purposes.
-The [`phasor`](@ref) and [`sinosc`](@ref) are two of the most
+The [`phasor`](@ref) and [`oscil`](@ref) are two of the most
 basic oscillators available for composition. The code below
 assumes `using Synth`.
 
 1. Play a 440Hz tone at 0.25 amplitude for 2.0 seconds.
 
    ```julia
-   > play(sinosc(0.25, 440.0), 2.0)
+   > play(oscil(0.25, 440.0), 2.0)
    ```
 2. Play a middle C note at 0.25 amplitude for 2.0 seconds.
 
    ```julia
-   > play(sinosc(0.25, midi2hz(60)), 2.0)
+   > play(oscil(0.25, midi2hz(60)), 2.0)
    ```
 
    Here, [`midi2hz`](@ref) is used to convert a MIDI note number
    to a Hz frequency value. This function also supports constructing
    signal processes and therefore you can add a vibrato like
-   using `midi2hz(60 + sinosc(0.3, 5.0))` for example.
+   using `midi2hz(60 + oscil(0.3, 5.0))` for example.
 
 3. Play a harsh sawtooth wave.
 
@@ -54,14 +54,14 @@ assumes `using Synth`.
    operations.
 
    ```julia
-   > play(0.2 * tri(330.0) + 0.4 * tri(440.0) + sinosc(0.2, 660.0), 2.0)
+   > play(0.2 * tri(330.0) + 0.4 * tri(440.0) + oscil(0.2, 660.0), 2.0)
    ```
 
 6. Yes the multipliers can themselves be signals, so the following works
    too.
 
    ```julia
-   > play(sinosc(1.0, 10.0) * sinosc(0.25, 440.0), 2.0)
+   > play(oscil(1.0, 10.0) * oscil(0.25, 440.0), 2.0)
    ```
 
 ## Filters
@@ -105,7 +105,7 @@ after it has started playing.
 ```julia
 > f = control()
 > f[] = 440.0
-> play(sinosc(0.25, f), 10.0)
+> play(oscil(0.25, f), 10.0)
 > sleep(1.0)
 > f[] = 880.0
 # Now the frequency of the tone should shift to 880Hz
@@ -126,7 +126,7 @@ signal parameters in real time on the REPL.
 Consider the following piece of code -
 
 ```julia
-> s1 = sinosc(0.3, 330.0)
+> s1 = oscil(0.3, 330.0)
 > play(s1 * s1, 2.0)
 ```
 
@@ -134,11 +134,11 @@ The above arrangement is not permitted as is because the signal `s1` can only
 be "used" in one place since it has state. So one of the following must be done
 instead -
 
-You can make a new `sinosc` ...
+You can make a new `oscil` ...
 
 ```julia
-> s1 = sinosc(0.3, 330.0)
-> s2 = sinosc(0.3, 330.0)
+> s1 = oscil(0.3, 330.0)
+> s2 = oscil(0.3, 330.0)
 > play(s1 * s2, 2.0)
 ```
 
@@ -147,7 +147,7 @@ expected to work, that is). Another approach if you don't really want to
 make another process like `s2`, is to wrap the first with the ability to "fanout" ...
 
 ```julia
-> s1 = fanout(sinosc(0.3, 330.0))
+> s1 = fanout(oscil(0.3, 330.0))
 > play(s1 * s1, 2.0)
 ```
 

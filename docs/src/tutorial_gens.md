@@ -21,7 +21,7 @@ capabilities like shown below --
 ```julia
 > b = bus()
 > play(b, 20)
-> sched(b, sinosc(adsr(0.25, 1.0), 440))
+> sched(b, oscil(adsr(0.25, 1.0), 440))
 ```
 
 A few things to note here -
@@ -100,7 +100,7 @@ function proc(g :: AllToneAccel, b :: Bus, t)
                     # to follow, ex: if this is placed in a track.
     else
         # Schedule a tone to be rendered on to the bus at time t.
-        sched(b, t, sinosc(adsr(0.25, g.dur), midi2hz(g.start)))
+        sched(b, t, oscil(adsr(0.25, g.dur), midi2hz(g.start)))
 
         # Return the next time and the next gen in the sequence.
         (t + g.dur, AllToneAccel(g.start + 1, g.finish, g.dur * 0.9))

@@ -28,30 +28,30 @@ many taps on a single delay line with their own individual controls as needed,
 even dynamically if necessary. In other systems, the number of tap points is
 usually specified up front for delay lines.
 
-## How to time limit an infinite extent signal like [`sinosc`](@ref)?
+## How to time limit an infinite extent signal like [`oscil`](@ref)?
 
-Several signals like [`sinosc`](@ref) are in principle infinitely extended
+Several signals like [`oscil`](@ref) are in principle infinitely extended
 in time. So when they're put to musical applications, various envelopes are
 applied to them to give the impression of musical "events" happening (such
 as "a note").
 
-A plain way to limit the duration of a `sinosc` is to use [`clip`](@ref) like
-this - `clip(0.4, sinosc(0.5f0, 330.0))`. This will sharply delimit the
-waveform (whatever it happens to be and not just `sinosc`) to a duration of
+A plain way to limit the duration of a `oscil` is to use [`clip`](@ref) like
+this - `clip(0.4, oscil(0.5f0, 330.0))`. This will sharply delimit the
+waveform (whatever it happens to be and not just `oscil`) to a duration of
 (in our example) 0.4 seconds.
 
 A sharp delineation like `clip` is useful in some circumstances as a guard, but
 with specific notes. However, it can produce a "click" -- i.e. a sudden change
 in signal level -- at the start and end and such clicks are quite unmusical, to
 say the least. Therefore you usually apply an "envelope" like a raised cosine
-or an [`adsr`](@ref) to the amplitude like this -- `sinosc(adsr(1.0f0, 0.4),
+or an [`adsr`](@ref) to the amplitude like this -- `oscil(adsr(1.0f0, 0.4),
 330.0)`. Now, the lifetime of the signal will be determined by the duration of
 the ADSR envelope since there are no other facets that determine the duration.
 
 Most signals and signal transformers use their dependent signals to determine
-their duration and an "in principle infinite" signal like `sinosc` is one of
+their duration and an "in principle infinite" signal like `oscil` is one of
 them. So you could clip the time extent of the frequency component as well,
-like this -- `sinosc(0.5f0, clip(0.4, konst(330.0)))`. This will get rid of
+like this -- `oscil(0.5f0, clip(0.4, konst(330.0)))`. This will get rid of
 "first order clicks" in the output due to phase continuity, since the phase is
 determined by integrating the frequency. However, you'll hear a second order
 click since the rate at which the signal is changing suddenly changes and our

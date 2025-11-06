@@ -15,17 +15,17 @@ pkg> add https://github.com/srikumarks/Synth.jl
 ```
 # julia -t 4,1
 > using Synth
-> play(sinosc(0.25, 440.0), 2.0)
+> play(oscil(0.25, 440.0), 2.0)
 ```
 
 The above plays a 440Hz tone with an amplitude of 0.25 for 2.0 seconds.
-Here, `sinosc` computes a "process" that, over time, will produce
+Here, `oscil` computes a "process" that, over time, will produce
 samples that constitute a sine tone. The argument `0.25` and `440.0` are
 also to be interpreted as such processes. This means they can also
 potentially vary over time, for example, like this - 
 
 ```julia
-> play(sinosc(0.25, 440.0 + sinosc(100.0, 10.0)), 2.0)
+> play(oscil(0.25, 440.0 + oscil(100.0, 10.0)), 2.0)
 ```
 
 ... which will give you an FM siren. The usual `*`, `+`, `-`
@@ -38,7 +38,7 @@ this "getting started" applies to all such processes, called
 To render the same 440Hz sine tone to a `Float32` buffer,
 
 ```julia
-> v = render(sinosc(0.25, 440.0), 2.0)
+> v = render(oscil(0.25, 440.0), 2.0)
 96000-frame, 1-channel SampleBuf{Float32, 1}
 2.0s sampled at 48000.0Hz
 ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆
@@ -47,7 +47,7 @@ To render the same 440Hz sine tone to a `Float32` buffer,
 ## Saving audio to a raw float32 file
 
 ```julia
-> write("rawfile.float32", sinosc(0.25, 440.0), 2.0)
+> write("rawfile.float32", oscil(0.25, 440.0), 2.0)
 ```
 
 The written data will be rescaled according to the passed rescaling

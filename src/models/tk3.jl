@@ -26,7 +26,7 @@ function Synth.proc(g::Bell, b::Bus, t)
         release_secs = g.halfLife,
         release_factor = 8.0,
     )
-    s = sinosc(env, g.freq)
+    s = oscil(env, g.freq)
     sched(b, t + g.delay, s)
     (t, Cont())
 end

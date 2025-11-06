@@ -346,7 +346,7 @@ function proc(g :: Ping, s :: AbstractBus, t)
                release_factor=1.1,
                attack_secs=0.1,
                decay_secs=0.1)
-    sched(s, t, sinosc(amp, midi2hz(g.pitch)))
+    sched(s, t, oscil(amp, midi2hz(g.pitch)))
     return (t + g.dur, Cont())
 end
 
@@ -395,7 +395,7 @@ function proc(g :: Tone, s :: AbstractBus, t)
                attack_secs=0.05,
                attack_factor=1.0,
                decay_secs=0.05)
-    sched(s, t, sinosc(amp, midi2hz(g.pitch)))
+    sched(s, t, oscil(amp, midi2hz(g.pitch)))
     return (t + g.dur, Cont())
 end
 
