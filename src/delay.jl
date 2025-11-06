@@ -90,14 +90,15 @@ function tap(d::Delay, t::Real)
     Tap(d, konst(t))
 end
 
-struct Later{S<:Signal} <: Signal
-    sig::S
+struct After{S<:Signal} <: Signal
     delay_secs::Float64
+    sig::S
 end
 
-done(s::Later{S}, t, dt) where {S<:Signal} =
+done(s::After{S}, t, dt) where {S<:Signal} =
     t > delay_secs && done(s, t - delay_secs, t, dt)
-function value(s::Later{S}, t, dt) where {S<:Signal}
+
+function value(s::After{S}, t, dt) where {S<:Signal}
     if t >= s.delay_secs
         value(s.sig, t - s.delay_secs, dt)
     else
@@ -106,7 +107,7 @@ function value(s::Later{S}, t, dt) where {S<:Signal}
 end
 
 """
-    later(delay_secs :: Float64, s :: Signal)
+    after(delay_secs :: Float64, s :: Signal)
 
 Postpones the signal by the given delay_secs. Note that this is not
 the same as a delay line where there is memory allocated to store
@@ -114,6 +115,6 @@ some of the samples. The signal is not touched until `delay_secs` has
 passed, and the time value that the signal ends up seeing also does
 not span the period up to the delay.
 """
-function later(delay_secs::Float64, s::Signal)
-    Later(s, delay_secs)
+function after(delay_secs::Float64, s::Signal)
+    After(delay_secs, s)
 end
