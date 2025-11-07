@@ -178,8 +178,12 @@ function biquad(::Type{T}, sig::Signal, freq::Real, q::Real, dt) where {T<:Biqua
     biquad(T,sig, konst(freq), konst(q), dt)
 end
 
-function biquad(::Type{T}, sig::Signal, freq::Signal, q::Signal, dt) where {T<:BiquadType}
-    Biquad{T}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
+function biquad(::Type{T}, sig::Signal, freq::Signal, q::Real, dt) where {T<:BiquadType}
+    biquad(T,sig, freq, konst(q), dt)
+end
+
+function biquad(::Type{T}, sig::S, freq::F, q::Q, dt) where {T<:BiquadType, S<:Signal, F<:Signal, Q<:Signal}
+    Biquad{T,S,F,Q}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
 end
 
 function computebiquadcoeffs(c::BiquadCoeffs{LowPassFilter}, f, q, dt)
@@ -255,7 +259,9 @@ function value(s::Biquad{T,S,Konst,Konst}, t, dt) where {T<:BiquadType,S<:Signal
 end
 
 function value(s::Biquad, t, dt)
-    computebiquadcoeffs(s.c, value(s.freq, t, dt), value(s.q, t, dt))
+    f = max(10.0, value(s.freq, t, dt))
+    q = max(0.01, min(1000.0, value(s.q, t, dt)))
+    computebiquadcoeffs(s.c, f, q, dt)
     computenextvalue(s, t, dt)
 end
 
