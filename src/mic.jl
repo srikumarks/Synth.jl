@@ -26,8 +26,12 @@ function value(m :: Mic, t, dt)
             end
         end
         m.t = t
-        m.v = Float32(m.buf[m.i,1])
-        m.i += 1
+        if m.i <= size(m.buf, 1)
+            m.v = Float32(m.buf[m.i,1])
+            m.i += 1
+        else
+            m.v = 0.0f0
+        end
     end
     if m.done
         if m.v < m.ϵ
@@ -64,7 +68,7 @@ function mic(dev :: AbstractString = "mic"; blocksize :: Int = 128, samplingrate
     function choose_device(name :: AbstractString)
         for d in PortAudio.devices()
             if occursin(Regex(name,"i"), d.name) && d.input_bounds.max_channels >= 1
-                @info "Chose audio input device" device=d
+                @info "Chosen audio input device" device=d
                 return d
             end
         end

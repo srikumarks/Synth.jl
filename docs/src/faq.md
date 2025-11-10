@@ -92,7 +92,9 @@ lower level operations are available.
 
 ## How do I use microphone input?
 
-TODO: As of this writing, there is no support for audio input. Will
-be added soon enough.
+See [`Synth.mic`]. It is functional but still needs improvement to work
+reliably. You can choose an audio input by giving a pattern to match
+against the name of the device. The interface used is `PortAudio` so 
+you can get info about the various devices from its methods.
 
 
