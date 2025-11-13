@@ -1,6 +1,7 @@
+using Observables
 
 mutable struct Control <: SignalWithFanout
-    chan::Channel{Float32}
+    chan::Observable{Float32}
     wv::Float64
     ws::Float64
     v::Float32
@@ -8,18 +9,10 @@ mutable struct Control <: SignalWithFanout
     last_t::Float64 # Automatically support fanning out controls.
 end
 
-done(c::Control, t, dt) = (c.chan.state == :closed)
+done(c::Control, t, dt) = false
 
 function value(c::Control, t, dt)
     if t > c.last_t
-        # `isready` won't error out even if the channel is closed. Doing this
-        # conforms to the expectation that value may end up being called for a few
-        # samples after the signal has actually ended and it must continue on for a
-        # little longer until done gets called to check the state.
-        while isready(c.chan)
-            c.latestval = take!(c.chan)
-        end
-
         # Dezipper the control signal.
         v = c.v * c.wv + c.latestval * c.ws
         c.v = v
@@ -30,12 +23,13 @@ function value(c::Control, t, dt)
 end
 
 function Base.setindex!(c::Control, val::Real)
-    put!(c.chan, Float32(val))
-    val
+    fv = Float32(val)
+    c.chan[] = fv
+    fv
 end
 
 """
-    control(chan :: Channel{Float32}, dezipper_interval = 0.04; initial = 0.0f0, samplingrate=48000) :: Control
+    control(chan :: Observable{Float32}, dezipper_interval = 0.04; initial = 0.0f0, samplingrate=48000) :: Control
     control(dezipper_interval = 0.04; initial = 0.0f0, samplingrate = 48000) :: Control
 
 A "control" is a signal that is driven by values received on a given or
@@ -44,45 +38,24 @@ and send it out as its value. The intention is to be able to bind a UI element
 that produces a numerical value as a signal that can be patched into the graph.
 
 If `c` is a `Control` struct, you can set the value of the control using `c[] = 0.5f0`.
-
-Close the channel to mark the control signal as "done".
-
-!!! note "Channels and memory"
-    A control signal uses a channel to receive its values. This raises a
-    question about the amount of memory that'll be consumed by using what looks
-    like a system resource. Julia's channels cost about 416 bytes each, meaning
-    a 1000 channels, which would be a pretty complex scenario to put it mildly,
-    will be well under 1MB. Even if you have 1000 voices with 10 channels controlling
-    each voice, the memory won't be significant (under 5MB) by 2025 standards.
 """
 function control(
-    chan::Channel{Float32},
+    chan::Observable{Float32},
     dezipper_interval = 0.0075;
     initial = 0.0f0,
     samplingrate = 48000,
 )::Control
     wv = 2 ^ (- 1.0 / (dezipper_interval * samplingrate))
-    Control(chan, wv, 1.0 - wv, initial, initial, 0.0)
+    on(chan) do v
+        c.latestval = v
+    end
+    Control(chan, wv, 1.0 - wv, initial, initial, 0.0, 0.01, 0.01)
 end
 function control(
     dezipper_interval = 0.0075;
-    bufferlength = 2,
     initial = 0.0f0,
     samplingrate = 48000,
 )::Control
-    control(Channel{Float32}(bufferlength), dezipper_interval; initial, samplingrate)
+    control(Observable{Float32}(0.0f0), dezipper_interval; initial, samplingrate)
 end
 
-"""
-    stop(c :: Control)
-
-Stops the control signal. From the renderer's perspective, the
-control signal will switch to the "done" state. The control
-channel will close, causing any further `put!` calls to raise
-an exception. If you control the sustain of an [`adsr`](@ref)
-using a control signal, then stopping the control will basically
-end the ADSR envelope by switching it into "release" phase.
-"""
-function stop(c::Control)
-    close(c.chan)
-end
