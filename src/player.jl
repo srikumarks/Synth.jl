@@ -98,11 +98,16 @@ function mixin!(
 end
 
 """
-    play(signal, duration_secs=Inf; blocksize=64)
+    play(signal::Signal, duration_secs=Inf; blocksize=64)
+    play(soundfile::AbstractString)
 
 Plays the given signal on the default audio output in realtime for the given
 duration or till the signal ends, whichever happens earlier. Be careful about
 the signal level since in this case the signal can't be globally normalized.
+
+The version that takes a string is a short hand for loading the file and
+playing it. The file is cached in memory, so it won't load it again if you call
+it again.
 
 Returns a stop function (like with [`startaudio`](@ref) and
 [`synthesizer`](@ref)) which when called with no arguments will stop playback.
@@ -135,4 +140,8 @@ function play(signal::Signal, duration_secs = Inf; chans = 1, blocksize = 64)
         @info "Audio generator done!"
     end
     startaudio(callback; chans, blocksize)
+end
+
+function play(soundfile::AbstractString)
+    play(sample(soundfile))
 end
