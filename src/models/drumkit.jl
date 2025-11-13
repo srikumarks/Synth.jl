@@ -88,3 +88,49 @@ function drumkit(kit::AbstractString, dir::AbstractString)
            )
 end
 drumkit(kit::AbstractString) = drumkit(kit, (@__DIR__) * "/drumkits")
+
+struct Riff <: Gen
+    kit::DrumKit
+    pattern::String
+    i::Int
+    speed::Rational
+    loop::Bool
+end
+
+function riff(kit::AbstractString, pattern::AbstractString; speed=1, loop=true)
+    Riff(drumkit(kit), pattern, 1, speed, loop)
+end
+
+namedhit(kit::DrumKit, c::Char) = if c == 'k'
+    kit.kick
+elseif c == 's'
+    kit.snare
+elseif c == 'h'
+    kit.hihat
+elseif c == '1'
+    kit.tom1
+elseif c == '2'
+    kit.tom2
+elseif c == '3'
+    kit.tom3
+else
+    kit.snare
+end
+
+function Synth.proc(g::Riff, b::Bus, t)
+    i = g.i
+    if i > length(g.pattern)
+        if g.loop
+            i = 1
+        else
+            return (t, Cont())
+        end
+    end
+    c = g.pattern[i]
+    step = 1.0/g.speed
+    t2 = t + step
+    if c != '_' && c != '-' && c != ',' && c != ' '
+        sched(b, t, namedhit(g.kit, c))
+    end
+    (t2, Riff(g.kit, g.pattern, i+1, g.speed, g.loop))
+end
