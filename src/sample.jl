@@ -148,3 +148,80 @@ end
 function convolve(s1::Sample, s2::Sample)::Sample
     sample(rescale(0.5f0, convolve(s1.samples, s2.samples)))
 end
+
+mutable struct VarSpeedSample{SV <: AbstractVector{Float32}, Clk <: Signal} <: Signal
+    const clk :: Clk
+    const samples::SV
+    const N::Int
+    i_real::Float64
+    i::Int
+    i_frac::Float32
+    const looping::Bool
+    const loop_i::Int
+    const samplingrate::Float64
+    const sdt::Float64
+end
+
+function done(s::VarSpeedSample, t, dt)
+    if s.looping
+        false
+    else
+        s.i > s.N
+    end
+end
+
+function value(s::VarSpeedSample, t, dt)
+    if s.i > s.N
+        return 0.0f0
+    end
+    ct = value(s.clk, t, dt)
+    v1 = s.samples[s.i]
+    v2 = 0.0f0
+    step = s.clk.dt / s.sdt
+    i_real0 = s.i_real
+    i_real = s.i_real + step
+    (i_fint, i_frac) = modf(i_real)
+    i = floor(Int, i_fint)
+
+    v_sum = 0.0f0
+    for k in s.i:i
+        if k <= s.N
+            v_sum += s.samples[k]
+        elseif s.looping
+            v_sum += s.samples[s.loop_i + mod(k, s.N - s.loop_i + 1)]
+        end
+    end
+    if s.i < s.N
+        v2 = s.samples[s.i+1]
+    elseif s.looping
+        v2 = s.samples[s.loop_i + mod(k, s.N - s.loop_i + 1)]
+    end
+    v_sum += (v1 - v2) * s.i_frac
+    if i < s.N
+        v2 = s.samples[i+1]
+    elseif s.looping
+        v2 = s.samples[s.loop_i + mod(i, s.N - s.loop_i + 1)]
+    else
+        v2 = 0.0f0
+    end
+    v_sum += (v2 - v1) * (1.0f0 - i_frac)
+
+    if i <= s.N
+        s.i_real = i_real
+        s.i = i
+        s.i_frac = i_frac
+    else
+        if s.looping
+            s.i = s.loop_i + mod(i, s.N - s.loop_i + 1)
+            s.i_frac = i_frac
+            s.i_real = s.i + s.i_frac
+        else
+            s.i = i
+            s.i_frac = i_frac
+            s.i_real = i_real
+        end
+    end
+    return v_sum / (i_real - i_real0)
+end
+
+
