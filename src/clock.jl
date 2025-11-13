@@ -15,6 +15,7 @@ mutable struct Clock{S<:Signal} <: Signal
     speed::S
     t::Float64
     t_end::Float64
+    dt::Float64 # You can read off the last delta time from this.
 end
 
 """
@@ -26,10 +27,10 @@ Clocks used for audio signals should be made using the `clock` constructor
 and those for scheduling purposes using [`clock_bpm`](@ref).
 """
 function clock(speed::Real, t_end::Real = Inf)
-    Clock(konst(speed), 0.0, t_end)
+    Clock(konst(speed), 0.0, t_end, 0.0)
 end
 function clock(speed::Signal, t_end::Real = Inf)
-    Clock(speed, 0.0, t_end)
+    Clock(speed, 0.0, t_end, 0.0)
 end
 
 """
@@ -41,16 +42,18 @@ Clocks used for audio signals should be made using the [`clock`](@ref) construct
 and those for scheduling purposes using `clock_bpm`.
 """
 function clock_bpm(tempo_bpm::Real = 60.0, t_end::Real = Inf)
-    Clock(konst(tempo_bpm/60.0), 0.0, t_end)
+    Clock(konst(tempo_bpm/60.0), 0.0, t_end, 0.0)
 end
 function clock_bpm(tempo_bpm::Signal, t_end::Real = Inf)
-    Clock((1.0/60.0) * tempo_bpm, 0.0, t_end)
+    Clock((1.0/60.0) * tempo_bpm, 0.0, t_end, 0.0)
 end
 
 done(c::Clock, t, dt) = t > c.t_end || done(c.speed, t, dt)
 
 function value(c::Clock, t, dt)
     v = c.t
-    c.t += value(c.speed, t, dt) * dt
+    step = value(c.speed, t, dt) * dt
+    c.t += step
+    c.dt = step
     return v
 end

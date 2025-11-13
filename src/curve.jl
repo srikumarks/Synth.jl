@@ -127,7 +127,7 @@ interpolation type is required.
 Curves support `map` and basic arithmetic combinations with real numbers.
 See also [`stretch`](@ref) and [`concat`](@ref)
 """
-function curve(segments::Vector{<:Seg}; stop = false)
+function curve(segments::AbstractVector{<:Seg}; stop = false)
     times = vcat(0.0, accumulate(+, [v.dur for v in segments]))
     Curve(segments, 1, 0.0, times, times[end], stop)
 end
