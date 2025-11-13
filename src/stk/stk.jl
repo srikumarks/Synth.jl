@@ -6,4 +6,5 @@ include("onezero.jl")
 include("polezero.jl")
 include("onepole.jl")
 include("composed.jl")
+include("utils.jl")
 end
