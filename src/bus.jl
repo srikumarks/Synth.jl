@@ -220,7 +220,7 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
             end
             for i in eachindex(s.gens)
                 while isactive(s.gens[i][2]) && s.gens[i][1] < ct + s.dt
-                    s.gens[i] = proc(s.gens[i][2], s, s.gens[i][1])
+                    s.gens[i] = invokelatest(proc, s.gens[i][2], s, s.gens[i][1])
                 end
             end
             sort!(s.gens; by=first) 
