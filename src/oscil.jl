@@ -46,3 +46,100 @@ oscil(m::Real, f::Signal, p::Signal; phase::Real = 0.0) = oscil(konst(m), f, p; 
 oscil(m::Signal, f::Real, p::Real = 0.0; phase::Real = 0.0) = oscil(m, konst(f), konst(p); phase)
 oscil(m::Signal, f::Real, p::Signal; phase::Real = 0.0) = oscil(m, konst(f), p; phase)
 oscil(m::Signal, f::Signal, p::Real = 0.0; phase::Real = 0.0) = oscil(m, f, konst(p); phase)
+
+mutable struct Rotor{Freq<:Signal} <: SignalWithFanout
+    freq::Freq
+    cos::Float32
+    sin::Float32
+    cdϕ::Float32
+    sdϕ::Float32
+    t::Float64
+end
+
+done(s::Rotor, t, dt) = done(s.freq, t, dt)
+
+function value(s::Rotor{Konst}, t, dt)
+    if t > s.t
+        c = s.cos * s.cdϕ - s.sin * s.sdϕ
+        s = s.cos * s.sdϕ + s.sin * s.cdϕ
+        @fastmath r = 1.0f0 / sqrt(c*c+s*s)
+        s.cos = c*r
+        s.sin = s*r
+        s.t = t
+    end
+    s.cos
+end
+
+function value(s::Rotor, t, dt)
+    if t > s.t
+        dϕ = 2 * pi * value(s.freq, t, dt) * dt
+        dϕ2 = dϕ * dϕ
+        dϕ3 = dϕ2 * dϕ
+        dϕ4 = dϕ2 * dϕ2
+
+        cdϕ = 1-dϕ2/2+dϕ4/24
+        sdϕ = dϕ-dϕ3/6
+        c = s.cos * cdϕ - s.sin * sdϕ
+        s = s.cos * sdϕ + s.sin * cdϕ
+        @fastmath r = 1.0f0/sqrt(c*c+s*s)
+        s.cos = c*r
+        s.sin = s*r
+        s.cdϕ = cdϕ
+        s.sdϕ = sdϕ
+        s.t = t
+    end
+    s.cos
+end
+
+struct RotorQ{S <: Signal} <: Signal
+    rotor::Rotor{S}
+end
+
+done(r::RotorQ, t, dt) = done(r.rotor, t, dt)
+value(r::RotorQ, t, dt) = begin
+    value(r.rotor, t, dt)
+    r.rotor.sin
+end
+
+"""
+    rotor(f::Freq; phase::Real=0.0f0) where {Freq <: Signal}
+    rotor(f::Konst; phase::Real=0.0f0, samplingrate::Real=48000)
+    rotor(f::Real; phase::Real=0.0f0, samplingrate::Real=48000)
+    rotorq(r::Rotor)
+    rotorq(r::RotorQ)
+    rotorq(f::Freq; phase::Real=0.0f0)
+    rotorq(f::Konst; phase::Real=0.0f0, samplingrate::Real=48000)
+    rotorq(f::Real; phase::Real=0.0f0, samplingrate::Real=48000)
+
+A "rotor" oscillates by rotating a complex phase using a controllable
+frequency (expressed in Hz). It does this in a numerically stable way
+by continuously normalizing the complex phase without having to invoke
+cos and sin in the constant frequency case.
+
+The rotor is included as an example of constructing such oscillators
+without running into the phase explosion issue. The current [`oscil`](@ref)
+implementation is already stable on that front and is more flexible.
+
+The `rotorq` variants construct a rotor that is phase shifted by
+90 degrees.
+"""
+function rotor(f::Freq; phase::Real=0.0f0) where {Freq <: Signal}
+    Rotor{Freq}(f, cos(phase), sin(phase), 1.0f0, 0.0f0) 
+end
+
+function rotor(f::Konst; phase::Real=0.0f0, samplingrate::Real=48000)
+    dphi = 2 * pi * value(f, 0.0, 1/samplingrate) / samplingrate * 
+    @assert dphi < 0.3
+    Rotor{Konst}(f, cos(phase), sin(phase), 1.0f0, 0.0f0, cos(dphi), sin(dphi))
+end
+
+rotor(f::Real; phase::Real=0.0f0, samplingrate::Real=48000) = rotor(konst(f); phase, samplingrate)
+
+rotorq(r::Rotor) = RotorQ(r)
+rotorq(r::RotorQ) = 0.0f0 - r.rotor
+rotorq(f::Freq; phase::Real=0.0f0) = RotorQ(rotor(f;phase))
+rotorq(f::Konst; phase::Real=0.0f0, samplingrate::Real=48000) = RotorQ(rotor(f;phase,samplingrate))
+rotorq(f::Real; phase::Real=0.0f0, samplingrate::Real=48000) = RotorQ(rotor(f;phase,samplingrate))
+
+
+

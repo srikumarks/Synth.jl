@@ -4,7 +4,7 @@ module Synth
 using FileIO: load
 export load
 export konst, krate, clip, sigfun, fanout, feedback, connect, clock, clock_bpm, convolve
-export oscil, phasor, saw, tri, sq, noise, sample
+export oscil, phasor, rotor, rotorq, saw, tri, sq, noise, sample
 export line, expon, adsr, decay, follow
 export render, write, read_rawaudio
 export startaudio, play, mic, control, level, probe, waveprobe, bus, sched, now
