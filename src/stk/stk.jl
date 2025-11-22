@@ -1,6 +1,7 @@
 module STK
 using ..Synth
 using ..Synth: done, value
+using SampledSignals
 
 include("onezero.jl")
 include("polezero.jl")

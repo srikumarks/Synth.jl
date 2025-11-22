@@ -137,7 +137,7 @@ rotor(f::Real; phase::Real=0.0f0, samplingrate::Real=48000) = rotor(konst(f); ph
 
 rotorq(r::Rotor) = RotorQ(r)
 rotorq(r::RotorQ) = 0.0f0 - r.rotor
-rotorq(f::Freq; phase::Real=0.0f0) = RotorQ(rotor(f;phase))
+rotorq(f::Freq; phase::Real=0.0f0) where {Freq <: Signal} = RotorQ(rotor(f;phase))
 rotorq(f::Konst; phase::Real=0.0f0, samplingrate::Real=48000) = RotorQ(rotor(f;phase,samplingrate))
 rotorq(f::Real; phase::Real=0.0f0, samplingrate::Real=48000) = RotorQ(rotor(f;phase,samplingrate))
 
