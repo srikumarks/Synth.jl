@@ -59,6 +59,7 @@ include("fx.jl")
 include("models/models.jl")
 include("gens.jl")
 include("stk/stk.jl")
-#include("ui/ui.jl")
+include("ui/ui.jl")
+include("ui/test_ui.jl")
 
 end # module Synth
