@@ -11,6 +11,7 @@ Synth.progchange
 Synth.ctrlchange
 Synth.keypressure
 Synth.aftertouch
+Synth.pitchbend
 ```
 
 
