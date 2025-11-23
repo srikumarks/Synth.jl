@@ -521,6 +521,15 @@ function proc(m::MidiMsgSend, b::Bus, t)
     (t, Cont())
 end
 
+"""
+    midimsg(dev::MIDIOutput, msg::MIDIMsg)
+
+Wraps sending an instantaneous MIDI short message to the
+given output device.
+"""
+function midimsg(dev::MIDIOutput, msg::MIDIMsg)
+    MidiMsgSend(dev, msg)
+end
 
 struct MidiNote{R <: Real} <: Gen
     dev :: MIDIOutput

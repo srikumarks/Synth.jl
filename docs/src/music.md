@@ -25,6 +25,7 @@ Synth.tone
 Synth.ch
 Synth.wavetone
 Synth.snippet
+Synth.midimsg
 Synth.midinote
 Synth.miditrigger
 ```
