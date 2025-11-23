@@ -21,6 +21,7 @@ makedocs(
                                      "stereo.md",
                                      "gen.md",
                                      "music.md",
+                                     "midi.md",
                                      "render.md",
                                      "rt.md",
                                      "filters.md",
