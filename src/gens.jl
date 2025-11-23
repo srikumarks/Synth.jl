@@ -510,3 +510,68 @@ function play(m::Gen, duration_secs = Inf)
     sched(b, m)
     return stop
 end
+
+struct MidiMsgSend <: Gen
+    dev :: MIDIOutput
+    msg :: MIDIMsg
+end
+
+function proc(m::MidiMsgSend, b::Bus, t)
+    send(m.dev, m.msg)
+    (t, Cont())
+end
+
+
+struct MidiNote{R <: Real} <: Gen
+    dev :: MIDIOutput
+    chan :: Int
+    note :: Int
+    vel :: R
+    dur :: Float64
+    logicaldur :: Float64
+end
+
+function proc(m::MidiNote, b::Bus, t)
+    send(m.dev, noteon(m.chan, m.note, m.vel))
+    sched(b, t + m.dur, MidiMsgSend(m.dev, noteoff(m.chan, m.note)))
+    (t + m.logicaldur, Cont())
+end
+
+"""
+    midinote(dev::MIDIOutput, chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real = dur)
+
+Produces a MIDI note of given duration. The note off will be scheduled
+appropriately and the note will be set to last the given duration.
+The `logicaldur` parameter gives the logical duration of the note
+which is taken to be the same as the time interval between noteon and noteoff
+by default.
+"""
+function midinote(dev::MIDIOutput, chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real = dur)
+    MidiNote(dev, chan, note, vel, Float64(dur), Float64(logicaldur))
+end
+
+struct MidiTrigger{R <: Real} <: Gen
+    dev :: MIDIOutput
+    chan :: Int
+    note :: Int
+    vel :: R
+    logicaldur :: Float64
+end
+
+function proc(m::MidiTrigger, b::Bus, t)
+    send(m.dev, noteon(m.chan, m.note, m.vel))
+    (t + m.logicaldur, Cont())
+end
+
+"""
+    miditrigger(dev::MIDIOutput, chan::Int, note::Int, vel::Real, logicaldur::Real)
+
+A triggered MIDI message only has a noteon - such as for a drum hit,
+which does not require a note off since the drum voices have a natural 
+cut off point.
+"""
+function miditrigger(dev::MIDIOutput, chan::Int, note::Int, vel::Real, logicaldur::Real)
+    MidiTrigger(dev, chan, note, vel, Float64(logicaldur))
+end
+
+
