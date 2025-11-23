@@ -10,6 +10,7 @@ export render, write, read_rawaudio
 export startaudio, play, mic, control, level, probe, waveprobe, bus, sched, now
 export MIDIOutput, midioutput, MIDIMsg, send, noteon, noteoff, keypressure, ctrlchange, progchange, aftertouch, pitchbend
 export Gen, ping, tone, ch, seq, track, chord, par, dyn, rec, durn, loop, pause, isstop, iscont, Stop, Cont
+export midinote, miditrigger, midimsg
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf, protect
 export waveshape, linearmap, delay, tap
 export wavetable, maketable, register!
