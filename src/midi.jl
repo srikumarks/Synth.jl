@@ -99,7 +99,6 @@ end
 
 Constructs a NoteOff message. See also [`Synth.noteon`](@ref)
 """
-
 function noteoff(chan::Int, note::Int, vel::Int = 0)
     @assert chan >= 0 && chan <= 15 "Invalid MIDI channel $chan"
     @assert note >= 0 && note <= 127 "Invalid MIDI note $note"
