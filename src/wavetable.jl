@@ -32,13 +32,13 @@ fundamental(w::Wavetable, samplingrate::Real = 48000) = Float32(samplingrate / w
 
 A simple wavetable synth that samples the given table using the given phasor
 and scales the table by the given amplitude modulator. A copy of the given
-table is stored. If you already have a [`Sample`](@ref), you can use its
+table is stored. If you already have a [`Synth.Sample`](@ref), you can use its
 samples by passing it in directly. The sample's loop settings are not used
 in this case.
 
 The wavetable is a simple array of samples, often in the same sampling rate as
 the output audio end point, but not necessarily so. The `phase` signal, which
-can be generated using [`phasor`](@ref), has values in the range ``[0,1]`` with
+can be generated using [`phasor`](@ref "Synth.phasor"), has values in the range ``[0,1]`` with
 ``0`` mapping to the start of the wave table and ``1`` to the end. To be
 precise, if the wave table has ``N`` samples, then the phase values in the
 range ``[0,1/N)`` will map to the first sample at index ``1`` and the sample at
@@ -49,14 +49,14 @@ small sample table and stretch it out using the interpolation by using a slowly
 varying phasor. This is how the "pitch" of the sample gets changed during
 synthesis.
 
-The amplitude modulation is just as with [`oscil`](@ref).
+The amplitude modulation is just as with [`oscil`](@ref "Synth.oscil").
 
 The samples wave table is deemed to be completed when the phasor signal or the
 amplitude modulator signal are completed.
 
 !!! note "Envelopes"
     It is common for the output of such a wavetable "voice" to be modulated
-    using an envelope like [`adsr`](@ref). You can therefore pass such an ADSR
+    using an envelope like [`adsr`](@ref "Synth.adsr"). You can therefore pass such an ADSR
     signal as the `amp` argument. If the phase signal is infinite in extent, then
     the lifetime of the wavetable voice will become determined by the lifetime
     of the ADRS envelope.
@@ -78,7 +78,7 @@ amplitude modulator signal are completed.
     value and slope at the start and end of the looping section will usually
     have to be matched. For some kinds of samples, this can be accomplished by
     putting the wavtable output through an appropriate low pass filter (using
-    [`lpf`](@ref)), but it is even better to do the alignment *and* filter the
+    [`lpf`](@ref "Synth.lpf")), but it is even better to do the alignment *and* filter the
     result.
 """
 function wavetable(table::AbstractVector{Float32}, amp::Signal, phase::Signal)
@@ -107,7 +107,7 @@ const named_wavetables = Dict{Symbol,Vector{Float32}}()
 """
     wavetable(name :: Symbol, amp, freq)
 
-Uses the named table. See [`register!`](@ref).
+Uses the named table. See [`Synth.register!`](@ref).
 """
 function wavetable(name :: Symbol, amp, freq)
     wavetable(named_wavetables[name], amp, freq)

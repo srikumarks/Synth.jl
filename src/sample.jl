@@ -2,6 +2,12 @@ import SampledSignals
 using SampledSignals: SampleBuf
 import DSP
 
+"""
+    mutable struct Sample{SV <: AbstractVector{Float32}} <: Signal
+
+Wraps a "sample" in the sense of a "snippet of sound intended for
+playing back directly".
+"""
 mutable struct Sample{SV <: AbstractVector{Float32}} <: Signal
     const samples::SV
     const N::Int

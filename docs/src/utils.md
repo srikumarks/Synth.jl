@@ -1,9 +1,9 @@
 # Utilities
 
-Misc functions needed in many applications. [`rescale`](@ref) scales an
-entire buffer, [`dBscale`](@ref) converts dB to amplitude, [`interp4`](@ref)
-does 4-point interpolation, [`raisedcos`](@ref) is a masking waveform,
-[`midi2hz`](@ref)/[`hz2midi`](@ref) convert MIDI note numbers <-> Hz.
+Misc functions needed in many applications. [`rescale`](@ref "Synth.rescale") scales an
+entire buffer, [`Synth.dBscale`](@ref) converts dB to amplitude, [`interp4`](@ref "Synth.interp4")
+does 4-point interpolation, [`raisedcos`](@ref "Synth.raisedcos") is a masking waveform,
+[`midi2hz`](@ref "Synth.midi2hz")/[`hz2midi`](@ref "Synth.hz2midi") convert MIDI note numbers <-> Hz.
 
 ```@docs
 Synth.rescale

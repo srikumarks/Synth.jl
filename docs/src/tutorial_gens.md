@@ -9,13 +9,13 @@ To do this, `Synth.jl` defines the `Gen` abstract type with the only method to
 implement being `proc(::Gen,::Bus,t) :: Tuple{Float64,Gen}`.
 
 Before we get to it, we need to understand the core "signal process" that makes
-this possible - the [`bus`](@ref). 
+this possible - the [`bus`](@ref "Synth.bus"). 
 
 ## The bus
 
 A "bus" is like a reusable (read "supports fanout") line to which various
 signal processes can write their values by being "scheduled" on to the bus
-using [`sched`](@ref). You can use a bus with signals alone for its scheduling
+using [`sched`](@ref "Synth.sched"). You can use a bus with signals alone for its scheduling
 capabilities like shown below --
 
 ```julia
@@ -29,14 +29,14 @@ A few things to note here -
 1. We can start playing a bus immediately after creation and it will
    produce silence until something is scheduled on to it.
 
-2. Signals can be scheduled on to the bus using [`sched`](@ref) to either
+2. Signals can be scheduled on to the bus using [`sched`](@ref "Synth.sched") to either
    be played immediately or at a later time. This "time" is relative to the
    start of playback of the bus.
 
 3. The intrinsic duration of a bus is infinite - i.e. if you start playing
    it without an explicit stop time, it will continue forever.
 
-Next, we'll see how to use the bus in conjunction with [`Gen`](@ref).
+Next, we'll see how to use the bus in conjunction with [`Synth.Gen`](@ref).
 
 ## Gens
 
@@ -49,11 +49,11 @@ second, compared to the 48000Hz sampling rate. This is fine grained enough for
 interactivity while the processes can schedule signals in a sample-accurate
 manner.
 
-Several simple noise making "musical processes" are available via the [`tone`](@ref)
-and [`ping`](@ref) and it is easy to make your own by defining a subtype of `Gen`
+Several simple noise making "musical processes" are available via the [`tone`](@ref "Synth.tone")
+and [`ping`](@ref "Synth.ping") and it is easy to make your own by defining a subtype of `Gen`
 and implementing the `proc(::Gen,::Bus,t) :: Tuple{Float64,Gen}` method.
 
-The [`tone`](@ref) provides a number of constructors that facilitate ease of
+The [`tone`](@ref "Synth.tone") provides a number of constructors that facilitate ease of
 scheduling notes on a timeline.
 
 ```julia
@@ -70,18 +70,18 @@ scheduling notes on a timeline.
 > sched(b, trk)
 ```
 
-The above sample illustrates the use of [`track`](@ref) to create sequences,
-[`tone`](@ref) to construct simple pitched tones, [`ch`](@ref) to specify
-chording, [`pause`](@ref) to insert pauses and [`loop`](@ref) to repeat
+The above sample illustrates the use of [`track`](@ref "Synth.track") to create sequences,
+[`tone`](@ref "Synth.tone") to construct simple pitched tones, [`ch`](@ref "Synth.ch") to specify
+chording, [`pause`](@ref "Synth.pause") to insert pauses and [`loop`](@ref "Synth.loop") to repeat
 a musical process a set number of times.
 
 "Chording" refers to playing multiple Gens simultaneously and waiting for all of
-them to complete before moving on. This is implemented using [`chord`](@ref),
-with overloads of [`tone`](@ref) supporting chording via [`ch`](@ref).
+them to complete before moving on. This is implemented using [`chord`](@ref "Synth.chord"),
+with overloads of [`tone`](@ref "Synth.tone") supporting chording via [`ch`](@ref "Synth.ch").
 
 ### Making your own musical process
 
-While some basic higher order processes like [`track`](@ref) and [`loop`](@ref)
+While some basic higher order processes like [`track`](@ref "Synth.track") and [`loop`](@ref "Synth.loop")
 are available, t is relatively simple to roll your own as you can find from the
 code. Below is an example of something that plays all the twelve tones of an
 octave once with an accelerando.
@@ -125,7 +125,7 @@ Some things to note --
    accelerando.
 
 3. Each bus can be given a clock whose tempo can be varied in real time using
-   another signal or a [`control`](@ref). This means the tempo of all the events
+   another signal or a [`control`](@ref "Synth.control"). This means the tempo of all the events
    scheduled on the bus can be influenced centrally.
 
 4. A musical process is welcome to return **any other** musical process to
@@ -137,11 +137,11 @@ It is common to make musical processes that appear to maintain a state and
 evolve it over time, much like ordinary signal processes. So there are 
 prebuilt "meta musical processes" that facilitate this.
 
-The simpler one of them is the [`dyn`](@ref) which can be given a function
+The simpler one of them is the [`dyn`](@ref "Synth.dyn") which can be given a function
 that will be called a number of times with an index, with the expectation
 to return a `Gen` to schedule. It's called a "dyn" short for "dynamic" because
 the specific Gen to use can be decided by the function dynamically. Such a
-[`dyn`](@ref) does not explicitly use state, though the function passed can be
+[`dyn`](@ref "Synth.dyn") does not explicitly use state, though the function passed can be
 a closure that modifies its state internally on every call (not recommended).
 
 ```julia
@@ -151,10 +151,10 @@ sched(b, dyn((n,i) -> tone(60+i,0.5), 12, 0))
 # Plays rising semitones, two per second.
 ```
 
-The more general recurrent process, called [`rec`](@ref) can be used with
+The more general recurrent process, called [`rec`](@ref "Synth.rec") can be used with
 functions that need to keep track of state, but without using mutation to
 do so, so that these Gens can be reused across tracks. Below is the same
-example above implemented using [`rec`](@ref)
+example above implemented using [`rec`](@ref "Synth.rec")
 
 ```julia
 b = bus()
@@ -169,7 +169,7 @@ end
 sched(b, rec(semitones, 12, 0))
 ```
 
-Both [`rec`](@ref) and [`dyn`](@ref) are to be considered as "dynamic"
+Both [`rec`](@ref "Synth.rec") and [`dyn`](@ref "Synth.dyn") are to be considered as "dynamic"
 because the decision on which Gen to use is made just in time. Hence
 there is no explicit mention of `t` in the recurrent function. If you
 wish to delay the returned Gen by, say, 0.1 seconds, you'll need to

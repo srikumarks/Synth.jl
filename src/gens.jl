@@ -65,7 +65,7 @@ end
     durn(d :: Real, gen :: Gen) :: Gen
 
 Forces the duration of the given `gen` to be the given `d`,
-even if it was something else. Possibly useful with [`chord`](@ref).
+even if it was something else. Possibly useful with [`chord`](@ref "Synth.chord").
 """
 function durn(d :: Real, gen :: Gen)
     return Durn(Float64(d), gen)
@@ -99,7 +99,7 @@ out of the set of gens and the other continue on.
 Broadly, `chord` is useful when all the gens have the same duration -
 very much like a chord in music. If you're thinking of whether you should
 use this to start off multiple musical processes in parallel with each determining
-its own duration, you probably want [`par`](@ref).
+its own duration, you probably want [`par`](@ref "Synth.par").
 """
 function chord(gens :: AbstractVector) 
     Chord(gens)
@@ -306,7 +306,7 @@ end
 """
     ch(pitches :: AbstractVector{R}) :: PitchChord where {R <: Real}
 
-Represents a set of chorded pitch values. Usable with [`ping`](@ref).
+Represents a set of chorded pitch values. Usable with [`ping`](@ref "Synth.ping").
 """
 function ch(pitches :: AbstractVector{R}) where {R <: Real}
     PitchChord(pitches)
@@ -364,13 +364,13 @@ end
     tone(pitch :: AbstractVector{R}, dur :: AbstractVector{RD}, vel :: Real = 0.5f0; release_secs :: Real = 0.05) :: Gen where {R <: Real, RD <: Real}
     tone(pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, release_secs :: Real = 0.05) :: Gen
 
-`tone` is related to [`ping`](@ref) in that it will sustain a tone for the given duration
+`tone` is related to [`ping`](@ref "Synth.ping") in that it will sustain a tone for the given duration
 as opposed to `ping` which will immediately start releasing the tone. In other
 words, a `ping` is a `note` with zero duration. However, the note is configured
 with a default short release time where the default release of a ping is determined
 by its duration.
 
-Note that you can force the duration of a gen to be whatever you want using [`durn`](@ref).
+Note that you can force the duration of a gen to be whatever you want using [`durn`](@ref "Synth.durn").
 """
 function tone(pitch :: Real, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05)
     Tone(Float32(pitch), Float32(vel), Float64(dur), Float32(release_secs))
@@ -477,14 +477,14 @@ end
 """
     snippet(filename::AbstractString, selstart :: Float64 = 0.0, selend :: Float64 = Inf) :: Gen
 
-A Gen that plays a fragment of the given audio file. It uses [`sample`](@ref)
+A Gen that plays a fragment of the given audio file. It uses [`sample`](@ref "Synth.sample")
 under the hood and therefore relies on its caching mechanism for speedy
 schedule of sample fragment playback.
 
 Note that both `snippet` and `sample` do not support resampling or playing back
 to clocks that vary their speeds from real time. So you need to be careful with
 duration computation. For example, when scheduling on to a bus running at a tempo
-of 120bpm, you'll need to double your durations using [`durn`](@ref) in order
+of 120bpm, you'll need to double your durations using [`durn`](@ref "Synth.durn") in order
 to synchronize with the end of the snippet. Otherwise, the next Gen will start
 playing half way through the snippet.
 """

@@ -15,20 +15,20 @@ See the [Models](@ref "Models") section for some other simple signal
 combinations such as [`Synth.Models.basicvocoder`](@ref).
 
 The above constructed finite extent signal can be rendered to a
-`SampledSignals.SampleBuf` using [`render`](@ref) like this --
+`SampledSignals.SampleBuf` using [`render`](@ref "Synth.render") like this --
 
 ```julia
 v = render(oscil(adsr(0.5, 1.0), 250.0 + oscil(100.0, 250.0)))
 ```
 
 (Pass an explicit duration if it's an infinite extent signal or use
-[`Synth.play`](@ref).)
+[`play`](@ref "Synth.play").)
 
 Signals can be rendered to `SampleBuf` buffers, to raw `Float32` files or in
-real time to the computer's sound output using [`play`](@ref). There is also
-some minimal support for [`stereo`](@ref) signals.
+real time to the computer's sound output using [`play`](@ref "Synth.play"). There is also
+some minimal support for [`stereo`](@ref "Synth.stereo") signals.
 
-Combined with the [`bus`](@ref) mechanism, the notion of a process for
+Combined with the [`bus`](@ref "Synth.bus") mechanism, the notion of a process for
 producing both sound and audio events can be expressed quite nicely using
 this API. An example below - 
 

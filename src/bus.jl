@@ -2,6 +2,8 @@
 import Base: Tuple
 
 """
+    abstract type Gen end
+
 A "Gen" is a process for producing signals.
 The `proc(::Gen,::AbstractBus,t)` which returns
 `Tuple{Float64,Gen}` needs to be defined for a

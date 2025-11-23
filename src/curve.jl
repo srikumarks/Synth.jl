@@ -1,3 +1,8 @@
+"""
+    abstract type Seg end
+
+Abstract type represents a "segment" of a curve.
+"""
 abstract type Seg end
 
 struct LinSeg <: Seg

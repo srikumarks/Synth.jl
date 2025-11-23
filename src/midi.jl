@@ -23,7 +23,7 @@ end
     midioutput(name::AbstractString = "") :: MIDIOutput
 
 Identifies a MIDI output device with the given name as a substring
-and opens a stream to write data to it. You can call [`Base.close`](@ref)
+and opens a stream to write data to it. You can call `Base.close`
 on the resultant `MIDIOutput` to close the stream.
 
 Throws `MIDIOutputDeviceNotFoundError` if such a device does not exist.
@@ -77,11 +77,11 @@ end
 Constructs a NoteOn message. The `AbstractFloat` version will take
 a velocity value in the range 0.0 to 1.0 and convert it to the MIDI
 range. Note that for sustained instruments like violin, you'll have
-to also send a [`Synth.noteoff`](@ref) at an appropriate time or else
+to also send a [`noteoff`](@ref "Synth.noteoff") at an appropriate time or else
 the voices will accumulate and result in your system being unable to
 keep up.
 
-See also [`Synth.noteoff`](@ref)
+See also [`noteoff`](@ref "Synth.noteoff")
 """
 function noteon(chan::Int, note::Int, vel::Int)
     @assert chan >= 0 && chan <= 15 "Invalid MIDI channel $chan"
@@ -97,7 +97,7 @@ end
 """
     noteoff(chan::Int, note::Int, vel::Int) :: MIDIMsg
 
-Constructs a NoteOff message. See also [`Synth.noteon`](@ref)
+Constructs a NoteOff message. See also [`noteon`](@ref "Synth.noteon")
 """
 function noteoff(chan::Int, note::Int, vel::Int = 0)
     @assert chan >= 0 && chan <= 15 "Invalid MIDI channel $chan"
@@ -111,7 +111,7 @@ end
     keypressure(chan::Int, note::Int, pressure::AbstractFloat) :: MIDIMsg
 
 The key pressure control after a note is turned on, before the
-note has conceptually ended. See also [`Synth.aftertouch`](@ref).
+note has conceptually ended. See also [`aftertouch`](@ref "Synth.aftertouch").
 The `AbstractFloat` version will rescale the pressure value from
 the 0.0-1.0 range to the MIDI range of 0-127.
 """
@@ -161,7 +161,7 @@ end
     aftertouch(chan::Int, note::Int, pressure::AbstractFloat) :: MIDIMsg
 
 The key pressure control after a note has conceptually ended. See also
-[`Synth.aftertouch`](@ref). The `AbstractFloat` version will rescale the
+[`aftertouch`](@ref "Synth.aftertouch"). The `AbstractFloat` version will rescale the
 pressure value from the 0.0-1.0 range to the MIDI range of 0-127.
 """
 function aftertouch(chan::Int, note::Int, pressure::Int)
