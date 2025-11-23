@@ -25,6 +25,11 @@ Synth.tone
 Synth.ch
 Synth.wavetone
 Synth.snippet
+```
+
+## MIDI specific
+
+```@docs
 Synth.midimsg
 Synth.midinote
 Synth.miditrigger
