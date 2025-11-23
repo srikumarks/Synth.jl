@@ -109,8 +109,8 @@ The version that takes a string is a short hand for loading the file and
 playing it. The file is cached in memory, so it won't load it again if you call
 it again.
 
-Returns a stop function (like with [`startaudio`](@ref) and
-[`synthesizer`](@ref)) which when called with no arguments will stop playback.
+Returns a stop function (like with [`startaudio`](@ref) which when called with
+no arguments will stop playback.
 """
 function play(signal::Signal, duration_secs = Inf; chans = 1, blocksize = 64)
     function callback(sample_rate, rq, wq)

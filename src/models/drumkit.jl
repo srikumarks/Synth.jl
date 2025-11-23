@@ -2,7 +2,7 @@ using ..Synth: Gen, Bus, sched, Cont
 
 """
 Represents a sampled drum sound to be played without
-a "duration". You can use the [`hit`])(@ref) function
+a "duration". You can use the [`hit`])(@ref "Synth.Models.hit") function
 with it to reuse it with a different velocity.
 
 - `samplefile` - file name of the sample containing the drum hit.
@@ -22,9 +22,9 @@ end
     hit(samplefile::AbstractString, vel::Real = 1.0f0) :: DrumHit
     hit(drum::DrumHit, vel::Real = 1.0f0) :: DrumHit
 
-Constructs a [`DrumHit`](@ref) that can be used in `Gen` compositions.
+Constructs a [`DrumHit`](@ref "Synth.Models.DrumHit") that can be used in `Gen` compositions.
 Drum hits have an inherent duration of 0.0. So if you want to put a 
-gap between two drum hits, you'll need to use [`pause`](@ref).
+gap between two drum hits, you'll need to use [`pause`](@ref "Synth.pause").
 `hit` will load the sample and cache it so the loading doesn't
 happen at actual play time.
 
@@ -73,7 +73,7 @@ k = drumkit("Techno")
 play(track([hit(k.kick, 0.5), pause(0.5), hit(k.snare, 0.5)]), 2.0)
 ```
 
-See also [`Synth.Models.hit`](@ref)
+See also [`hit`](@ref "Synth.Models.hit")
 """
 function drumkit(kit::AbstractString, dir::AbstractString)
     @assert isdir(dir) "Invalid drumkit directory $dir"

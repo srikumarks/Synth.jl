@@ -72,7 +72,7 @@ easeinout(t::Float64) = 0.5*(1.0+cos(π*(t - 1.0)))
     seg(::Type{HarSeg}, v1::Real, dur::Real, v2::Real)
     seg(::Union{:line,:exp,:har,:ease}, v1::Real, dur::Real, v2::Real)
 
-Makes a single interpolated segment for use with [`curve`](@ref).
+Makes a single interpolated segment for use with [`curve`](@ref "Synth.curve").
 For the last variant, use an appropriate symbol as the first argument
 to determine the type of the segment, such as `seg(:exp, 0.1, 1.0, 0.5)`.
 """
@@ -130,7 +130,7 @@ exponential, etc., but these are convenient for use when a common
 interpolation type is required.
 
 Curves support `map` and basic arithmetic combinations with real numbers.
-See also [`stretch`](@ref) and [`concat`](@ref)
+See also [`stretch`](@ref "Synth.stretch") and [`concat`](@ref "Synth.concat")
 """
 function curve(segments::AbstractVector{<:Seg}; stop = false)
     times = vcat(0.0, accumulate(+, [v.dur for v in segments]))

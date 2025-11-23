@@ -55,17 +55,6 @@ implementation on a type also provides a boundary at which to perform such
 optimizations. Mostly, you as a user don't need to think about these
 optimizations.
 
-!!! note "Dynamic signals"
-    Some signals such as [`Synth.scheduler`](@ref) compose signals that are
-    specified dynamically and therefore cannot completely produce inlined
-    `value` implementations. Therefore there will be one step of dynamic
-    dispatch happening within a scheduler's `value` implementation. However,
-    since the dispatch is to another `value` method invocation (or `done`), and
-    the type of the signal being dispatched for becomes known at that dynamic
-    point, a compiled version of that entire call sub-tree will be used. A
-    small number of such dynamic dispatched per `value` call therefore pose no
-    threat to performance.
-
 !!! note "Compilation cost"
     What this package relies on is Julia's type specializing just-ahead-of-time
     compiler. This compilation pass can take a noticeable amount of time for
