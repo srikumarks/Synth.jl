@@ -583,4 +583,32 @@ function miditrigger(dev::MIDIOutput, chan::Int, note::Int, vel::Real, logicaldu
     MidiTrigger(dev, chan, note, vel, Float64(logicaldur))
 end
 
+struct MidiSeq{V <: AbstractVector{Tuple{Float64, MIDIMsg}}} <: Gen
+    dev::MIDIOutput
+    seq::V
+end
 
+function proc(m::MidiSeq, b::Bus, t)
+    for (mt, mm) in m.seq
+        if !ismidinop(mm)
+            sched(b, t+mt, MidiMsgSend(m.dev, mm))
+        end
+    end
+    if length(m.seq) > 0
+        (t + m.seq[end][1], Cont())
+    else
+        (t, Cont())
+    end
+end
+
+"""
+    midiseq(dev::MIDIOutput, seq::AbstractVector{Tuple{Float64, MIDIMsg}}) :: MidiSeq
+
+A simple sequence of MIDI messages to be sent at given times relative
+to start of the Gen. This _could_ technically be constructed as a [`track`](@ref "Synth.track")
+as well, but permits a more general sequence of short messages to be sent.
+"""
+function midiseq(dev::MIDIOutput, seq::AbstractVector{Tuple{Float64, MIDIMsg}})
+    @assert length(seq) > 0
+    MidiSeq(dev, seq)
+end

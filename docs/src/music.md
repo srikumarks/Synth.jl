@@ -28,9 +28,13 @@ Synth.snippet
 
 ## MIDI specific
 
+Note that MIDI sequencing is unfinished. Particularly
+it requires accurate scheduling.
+
 ```@docs
 Synth.midimsg
 Synth.midinote
 Synth.miditrigger
+Synth.midiseq
 ```
 

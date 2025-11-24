@@ -61,6 +61,21 @@ struct MIDIMsg
 end
 
 """
+    midinop :: MIDIMsg
+
+A constant `MIDIMsg` that represents a "no-op" or
+"nothing to be sent out".
+"""
+const midinop = MIDIMsg(Int32(0))
+
+"""
+    ismidinop(m::MIDIMsg) :: Bool
+
+Returns true if the given message is a [`midinop`](@ref "Synth.midinop").
+"""
+ismidinop(m::MIDIMsg) = m.msg == 0
+
+"""
     send(dev::MIDIOutput, msg::MIDIMsg)
 
 Sends the `MIDIMsg` to the device immediately.
@@ -95,7 +110,7 @@ function noteon(chan::Int, note::Int, vel::AbstractFloat)
 end
 
 """
-    noteoff(chan::Int, note::Int, vel::Int) :: MIDIMsg
+    noteoff(chan::Int, note::Int, vel::Int = 0) :: MIDIMsg
 
 Constructs a NoteOff message. See also [`noteon`](@ref "Synth.noteon")
 """
