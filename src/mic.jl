@@ -75,7 +75,7 @@ function mic(dev :: AbstractString = "mic"; blocksize :: Int = 128, samplingrate
         throw(ArgumentError("Invalid device name '$name' or not an audio input device."))
     end
 
-    Threads.@spawn begin
+    Threads.@spawn :interactive begin
         try 
             stream = PortAudio.PortAudioStream(choose_device(dev), 1,0; samplerate = samplingrate, warn_xruns = false)
             @info "Audio input stream" stream=stream

@@ -6,7 +6,7 @@ parts. However, purely working at the signal level alone does not make for
 appropriate parameterization in order to make interesting noises.
 
 To do this, `Synth.jl` defines the `Gen` abstract type with the only method to
-implement being `proc(::Gen,::Bus,t) :: Tuple{Float64,Gen}`.
+implement being `genproc(::Gen,::Bus,t,rt) :: Tuple{Float64,Gen}`.
 
 Before we get to it, we need to understand the core "signal process" that makes
 this possible - the [`bus`](@ref "Synth.bus"). 
@@ -36,7 +36,7 @@ A few things to note here -
 3. The intrinsic duration of a bus is infinite - i.e. if you start playing
    it without an explicit stop time, it will continue forever.
 
-Next, we'll see how to use the bus in conjunction with [`Synth.Gen`](@ref).
+Next, we'll see how to use the bus in conjunction with [`Gen`](@ref "Synth.Gen").
 
 ## Gens
 
@@ -51,7 +51,7 @@ manner.
 
 Several simple noise making "musical processes" are available via the [`tone`](@ref "Synth.tone")
 and [`ping`](@ref "Synth.ping") and it is easy to make your own by defining a subtype of `Gen`
-and implementing the `proc(::Gen,::Bus,t) :: Tuple{Float64,Gen}` method.
+and implementing the `genproc(::Gen,::Bus,t,rt) :: Tuple{Float64,Gen}` method.
 
 The [`tone`](@ref "Synth.tone") provides a number of constructors that facilitate ease of
 scheduling notes on a timeline.
@@ -93,7 +93,7 @@ struct AllToneAccel <: Synth.Gen
     dur :: Float64
 end
 
-function proc(g :: AllToneAccel, b :: Bus, t)
+function genproc(g :: AllToneAccel, b :: Bus, t, rt)
     if g.start > g.finish
         (t, Cont()) # Indicates that the gen is done and
                     # the bus must continue with whatever is

@@ -1,5 +1,5 @@
 import ThreadPools
-using SampledSignals: SampleBuf
+using SampledSignals: SampleBuf, nframes, samplerate
 
 function drain(ch)
     while isready(ch)
@@ -43,7 +43,12 @@ It returns a function that can be called (without any arguments)
 to stop the audio processing thread. Make sure to start julia with
 a sufficient number of threads for this to work.
 """
-function startaudio(callback; samplingrate :: Float64 = 48000.0, chans::Int = 1, blocksize::Int = 64)
+function startaudio(callback;
+        samplingrate :: Float64 = 48000.0,
+        chans::Int = 1,
+        blocksize::Int = 64,
+        mididevice::AbstractString=""
+    )
     rq = Channel{Union{Val{:done},SampleBuf{Float32,2}}}(2)
     wq = Channel{Union{Val{:done},SampleBuf{Float32,2}}}(2)
     #println("Writing empty buffers...")
@@ -54,16 +59,20 @@ function startaudio(callback; samplingrate :: Float64 = 48000.0, chans::Int = 1,
     put!(wq, b1)
     put!(wq, b2)
 
-
     #println("Starting threads...")
-    Threads.@spawn begin
+    Threads.@spawn :interactive begin
+        midiout = midioutput(mididevice)
         try
-            callback(samplingrate, wq, rq)
+            with(current_midi_output => midiout) do
+                callback(samplingrate, wq, rq)
+            end
         catch e
             @error "Audio generator thread error" error=(e, catch_backtrace())
+        finally
+            close(midiout)
         end
     end
-    Threads.@spawn begin
+    Threads.@spawn :interactive begin
         try
             audiothread(chans, samplingrate, rq, wq)
         catch e
@@ -112,16 +121,30 @@ it again.
 Returns a stop function (like with [`startaudio`](@ref) which when called with
 no arguments will stop playback.
 """
-function play(signal::Signal, duration_secs = Inf; chans = 1, blocksize = 64)
+function play(
+        signal::Signal,
+        duration_secs = Inf;
+        chans = 1,
+        blocksize = 64,
+        mididevice::AbstractString=""
+    )
     function callback(sample_rate, rq, wq)
         #println("In callback $sample_rate, $rq, $wq")
         dt = 1.0 / sample_rate
         t = 0.0
         endmarker = Val(:done)
         try
+            for i in 1:4
+                buf = take!(rq)
+                fill!(buf, 0.0f0)
+                t += nframes(buf) / samplerate(buf)
+                sync!(current_midi_output[], t, true)
+                put!(wq, buf)
+            end
             while t < duration_secs && !done(signal, t, dt)
                 buf = take!(rq)
                 if buf != endmarker
+                    sync!(current_midi_output[], t + nframes(buf) / samplerate(buf))
                     fill!(buf, 0.0f0)
                     for i = 1:size(buf, 1)
                         mixin!(buf, i, signal, t, dt)
@@ -139,7 +162,7 @@ function play(signal::Signal, duration_secs = Inf; chans = 1, blocksize = 64)
         put!(wq, endmarker)
         @info "Audio generator done!"
     end
-    startaudio(callback; chans, blocksize)
+    startaudio(callback; chans, blocksize, mididevice)
 end
 
 function play(soundfile::AbstractString)

@@ -18,7 +18,7 @@ struct Bell <: Gen
     delay::Float32
 end
 
-function Synth.proc(g::Bell, b::Bus, t)
+function Synth.genproc(g::Bell, b::Bus, t, rt)
     env = adsr(
         g.amplitude,
         0.0;
@@ -231,7 +231,7 @@ function tala(url::AbstractString)
     )
 end
 
-function Synth.proc(tala::Tala, b::Bus, t)
+function Synth.genproc(tala::Tala, b::Bus, t, rt)
     (t, seq(composeTala(tala), tala))
 end
 
