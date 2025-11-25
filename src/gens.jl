@@ -14,8 +14,8 @@ function seq(ga :: GA, gb :: GB) where {GA <: Gen, GB <: Gen}
     Seq(ga, gb)
 end
 
-function proc(g :: Seq, s :: AbstractBus, t)
-    (t2, g2) = proc(g.ga, s, t)
+function genproc(g :: Seq, s :: AbstractBus, t, rt)
+    (t2, g2) = genproc(g.ga, s, t, rt)
     if iscont(g2)
         (t2, g.gb)
     elseif isstop(g2)
@@ -35,7 +35,7 @@ end
     track(gs :: AbstractVector) :: Gen
 
 A "track" is a heterogeneous sequence of Gens. When each gen finishes,
-its `proc` call will produce a `Cont` which indicates it is
+its `genproc` call will produce a `Cont` which indicates it is
 time to switch to the next Gen in the track. This is like a generalization
 of `seq` except that `seq` has types known at construction time.
 """
@@ -43,8 +43,8 @@ function track(gs :: AbstractVector)
     Track(gs, 1, gs[1])
 end
 
-function proc(g :: Track, s :: AbstractBus, t)
-    (t2,g2) = proc(g.g, s, t)
+function genproc(g :: Track, s :: AbstractBus, t, rt)
+    (t2,g2) = genproc(g.g, s, t, rt)
     if iscont(g2)
         if g.i < length(g.gens)
             return (t2, Track(g.gens, g.i+1, g.gens[g.i+1]))
@@ -71,9 +71,9 @@ function durn(d :: Real, gen :: Gen)
     return Durn(Float64(d), gen)
 end
 
-function proc(g :: Durn{G}, s :: AbstractBus, t) where {G <: Gen}
+function genproc(g :: Durn{G}, s :: AbstractBus, t, rt) where {G <: Gen}
     tend = t + g.dur
-    (t2, g2) = proc(g.gen, s, t)
+    (t2, g2) = genproc(g.gen, s, t, rt)
     if isactive(g2)
         # This lets the gen continue on its way,
         # with whatever composition the Durn is part of
@@ -105,12 +105,12 @@ function chord(gens :: AbstractVector)
     Chord(gens)
 end
 
-function proc(g :: Chord, s :: AbstractBus, t)
+function genproc(g :: Chord, s :: AbstractBus, t, rt)
     gens = []
     tmax = t
     conts = 0
     for gg in g.gens
-        (t2,g2) = proc(gg, s, t)
+        (t2,g2) = genproc(gg, s, t, rt)
         tmax = max(tmax, t2)
         if iscont(g2)
             conts += 1
@@ -133,10 +133,10 @@ struct Par{V <: AbstractVector} <: Gen
     gens :: V
 end
 
-function proc(g::Par, b::Bus, t)
+function genproc(g::Par, b::Bus, t, rt)
     gens = []
     for gg in g.gens
-        (t2, g2) = proc(gg, b, t)
+        (t2, g2) = genproc(gg, b, t, rt)
         if iscont(g2)
             continue
         end
@@ -173,12 +173,12 @@ function loop(n :: Int, g :: G) where {G <: Gen}
     n <= 0 ? Cont() : Loop(n, g)
 end
 
-function proc(g :: Loop{G}, s :: AbstractBus, t) where {G <: Gen}
+function genproc(g :: Loop{G}, s :: AbstractBus, t, rt) where {G <: Gen}
     if g.n <= 0
         return (t, Cont())
     end
 
-    (t2,g2) = proc(g.gen, s, t)
+    (t2,g2) = genproc(g.gen, s, t, rt)
     (t2, seq(g2, loop(g.n-1, g.gen)))
 end
 
@@ -196,7 +196,7 @@ function pause(dur :: Real)
     Pause(Float64(dur))
 end
 
-function proc(g :: Pause, s :: AbstractBus, t)
+function genproc(g :: Pause, s :: AbstractBus, t, rt)
     (t + g.dur, Cont())
 end
 
@@ -217,7 +217,7 @@ function dyn(fn :: Function, n :: Int, i :: Int)
     Dyn(fn, n, i)
 end
 
-function proc(g :: Dyn, s :: AbstractBus, t)
+function genproc(g :: Dyn, s :: AbstractBus, t, rt)
     g2 = g.fn(g.n, g.i)
     if iscont(g2)
         # Returning Cont will abort the sequence
@@ -230,7 +230,7 @@ function proc(g :: Dyn, s :: AbstractBus, t)
     elseif isstop(g2)
         (Inf, g2)
     else
-        (t3,g3) = proc(g2, s, t)
+        (t3,g3) = genproc(g2, s, t, rt)
         (t3, g.i < g.n ? seq(g3, dyn(fn, g.n, g.i+1)) : g3)
     end
 end
@@ -280,14 +280,14 @@ function rec(fn :: Function, c :: C, s :: S) where {C,S}
     Rec{C,S}(fn, c, s)
 end
 
-function proc(g :: Rec{S}, s :: AbstractBus, t) where {S}
+function genproc(g :: Rec{S}, s :: AbstractBus, t, rt) where {S}
     (g2, state2) = g.fn(g.conf, g.state)
     if iscont(g2)
         (t, g2)
     elseif isstop(g2)
         (Inf, g2)
     else
-        (t3, g3) = proc(g2, s, t)
+        (t3, g3) = genproc(g2, s, t, rt)
         (t3, seq(g3, rec(g.fn, g.conf, state2)))
     end
 end
@@ -340,7 +340,7 @@ function ping(pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, decay :: Real
     chord([ping(p,dur,vel,decay) for p in pch.pitches])
 end
 
-function proc(g :: Ping, s :: AbstractBus, t)
+function genproc(g :: Ping, s :: AbstractBus, t, rt)
     amp = adsr(g.vel, 0.0;
                release_secs=g.dur,
                release_factor=1.1,
@@ -388,7 +388,7 @@ function tone(pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, release_secs 
     chord([tone(p,dur,vel;release_secs) for p in pch.pitches])
 end
 
-function proc(g :: Tone, s :: AbstractBus, t)
+function genproc(g :: Tone, s :: AbstractBus, t, rt)
     amp = adsr(g.vel, g.dur;
                release_secs=g.release_secs,
                release_factor=1.0,
@@ -407,7 +407,7 @@ struct WaveTone <: Gen
     release_secs :: Float32
 end
 
-function proc(g :: WaveTone, s :: AbstractBus, t)
+function genproc(g :: WaveTone, s :: AbstractBus, t, rt)
     amp = adsr(g.vel, g.dur;
                release_secs=g.release_secs,
                release_factor=1.0,
@@ -466,7 +466,7 @@ struct Snippet <: Gen
     selend :: Float64
 end
 
-function proc(g::Snippet, b::Bus, t)
+function genproc(g::Snippet, b::Bus, t, rt)
     s = sample(g.filename; selstart=g.selstart, selend=g.selend)
     # Note that the above will be efficient only after the first
     # call to load the sample due to caching.
@@ -511,19 +511,22 @@ function play(m::Gen, duration_secs = Inf)
     return stop
 end
 
-struct MidiMsgSend <: Gen
-    dev :: MIDIOutput
+"""
+MidiGen s get scheduled by the MIDI Scheduler.
+"""
+abstract type MidiGen <: Gen end
+
+struct MidiMsgSend <: MidiGen
     msg :: MIDIMsg
 end
 
-function proc(m::MidiMsgSend, b::Bus, t)
-    send(m.dev, m.msg)
+function genproc(m::MidiMsgSend, b::Bus, t, rt)
+    sched(rt, m.msg)
     (t, Cont())
 end
 
 
-struct MidiNote{R <: Real} <: Gen
-    dev :: MIDIOutput
+struct MidiNote{R <: Real} <: MidiGen
     chan :: Int
     note :: Int
     vel :: R
@@ -531,9 +534,9 @@ struct MidiNote{R <: Real} <: Gen
     logicaldur :: Float64
 end
 
-function proc(m::MidiNote, b::Bus, t)
-    send(m.dev, noteon(m.chan, m.note, m.vel))
-    sched(b, t + m.dur, MidiMsgSend(m.dev, noteoff(m.chan, m.note)))
+function genproc(m::MidiNote, b::Bus, t, rt)
+    sched(rt, noteon(m.chan, m.note, m.vel))
+    sched(b, t + m.dur, MidiMsgSend(noteoff(m.chan, m.note)))
     (t + m.logicaldur, Cont())
 end
 
@@ -546,20 +549,19 @@ The `logicaldur` parameter gives the logical duration of the note
 which is taken to be the same as the time interval between noteon and noteoff
 by default.
 """
-function midinote(dev::MIDIOutput, chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real = dur)
-    MidiNote(dev, chan, note, vel, Float64(dur), Float64(logicaldur))
+function midinote(chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real = dur)
+    MidiNote(chan, note, vel, Float64(dur), Float64(logicaldur))
 end
 
-struct MidiTrigger{R <: Real} <: Gen
-    dev :: MIDIOutput
+struct MidiTrigger{R <: Real} <: MidiGen
     chan :: Int
     note :: Int
     vel :: R
     logicaldur :: Float64
 end
 
-function proc(m::MidiTrigger, b::Bus, t)
-    send(m.dev, noteon(m.chan, m.note, m.vel))
+function genproc(m::MidiTrigger, b::Bus, t, rt)
+    sched(rt, noteon(m.chan, m.note, m.vel))
     (t + m.logicaldur, Cont())
 end
 
@@ -570,8 +572,36 @@ A triggered MIDI message only has a noteon - such as for a drum hit,
 which does not require a note off since the drum voices have a natural 
 cut off point.
 """
-function miditrigger(dev::MIDIOutput, chan::Int, note::Int, vel::Real, logicaldur::Real)
-    MidiTrigger(dev, chan, note, vel, Float64(logicaldur))
+function miditrigger(chan::Int, note::Int, vel::Real, logicaldur::Real)
+    MidiTrigger(chan, note, vel, Float64(logicaldur))
 end
 
+struct MidiSeq{V <: AbstractVector{Tuple{Float64, MIDIMsg}}} <: MidiGen
+    seq::V
+    i::Int
+    t0::Float64
+    rt0::Float64
+end
 
+function genproc(m::MidiSeq, b::Bus, t, rt)
+    if m.i == 0
+        (t + m.seq[1][1], MidiSeq(m.seq, 1, t, rt))
+    elseif m.i <= length(m.seq)
+        sched(rt, m.seq[i][2])
+        (m.t0 + m.seq[i][1], MidiSeq(m.seq, i+1, m.t0, m.rt0))
+    else
+        (t, Cont())
+    end
+end
+
+"""
+    midiseq(seq::AbstractVector{Tuple{Float64, MIDIMsg}}) :: MidiSeq
+
+A simple sequence of MIDI messages to be sent at given times relative
+to start of the Gen. This _could_ technically be constructed as a [`track`](@ref "Synth.track")
+as well, but permits a more general sequence of short messages to be sent.
+"""
+function midiseq(seq::AbstractVector{Tuple{Float64, MIDIMsg}})
+    @assert length(seq) > 0
+    MidiSeq(seq, 0, 0.0, 0.0)
+end

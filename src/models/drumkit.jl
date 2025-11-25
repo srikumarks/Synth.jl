@@ -13,7 +13,7 @@ struct DrumHit <: Gen
     vel::Float32
 end
 
-function Synth.proc(g::DrumHit, b::Bus, t)
+function Synth.genproc(g::DrumHit, b::Bus, t, rt)
     sched(b, t, g.vel * sample(g.samplefile))
     (t, Cont())
 end

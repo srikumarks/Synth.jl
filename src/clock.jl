@@ -13,6 +13,8 @@ scheduling can happen on a different timeline than real time.
 """
 mutable struct Clock{S<:Signal} <: Signal
     speed::S
+    speedval::Float64
+    rt::Float64
     t::Float64
     t_end::Float64
     dt::Float64 # You can read off the last delta time from this.
@@ -27,10 +29,10 @@ Clocks used for audio signals should be made using the `clock` constructor
 and those for scheduling purposes using [`clock_bpm`](@ref).
 """
 function clock(speed::Real, t_end::Real = Inf)
-    Clock(konst(speed), 0.0, t_end, 0.0)
+    Clock(konst(speed), Float64(speed), 0.0, 0.0, t_end, 0.0)
 end
 function clock(speed::Signal, t_end::Real = Inf)
-    Clock(speed, 0.0, t_end, 0.0)
+    Clock(speed, 1.0, 0.0, 0.0, t_end, 0.0)
 end
 
 """
@@ -42,18 +44,30 @@ Clocks used for audio signals should be made using the [`clock`](@ref) construct
 and those for scheduling purposes using `clock_bpm`.
 """
 function clock_bpm(tempo_bpm::Real = 60.0, t_end::Real = Inf)
-    Clock(konst(tempo_bpm/60.0), 0.0, t_end, 0.0)
+    Clock(konst(tempo_bpm/60.0), tempo_bpm/60.0, 0.0, 0.0, t_end, 0.0)
 end
 function clock_bpm(tempo_bpm::Signal, t_end::Real = Inf)
-    Clock((1.0/60.0) * tempo_bpm, 0.0, t_end, 0.0)
+    Clock((1.0/60.0) * tempo_bpm, 1.0, 0.0, 0.0, t_end, 0.0)
 end
 
 done(c::Clock, t, dt) = t > c.t_end || done(c.speed, t, dt)
 
 function value(c::Clock, t, dt)
     v = c.t
-    step = value(c.speed, t, dt) * dt
+    c.speedval = value(c.speed, t, dt)
+    step = c.speedval * dt
+    c.rt = t
     c.t += step
     c.dt = step
     return v
+end
+
+"""
+    realtime(c::Clock, t::Real) :: Float64
+
+For the given clock in its current state, maps the given clock time
+in the vicinity of the current clock time, to real time.
+"""
+function realtime(c::Clock, t::Real)
+    Float64(c.rt + (t - c.t) / c.speedval)
 end

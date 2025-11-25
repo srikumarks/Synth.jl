@@ -1,4 +1,3 @@
-
 using PortMidi
 
 """
@@ -13,9 +12,14 @@ struct MIDIOutput
     interface :: String
     stream :: Ref{Ptr{PortMidi.PortMidiStream}}
     closed :: Ref{Bool}
+    sync::Ref{Tuple{Int,Float64}}
 end
 
 struct MIDIOutputDeviceNotFoundError
+    name::String
+end
+
+struct MIDIOutputOpenError
     name::String
 end
 
@@ -34,12 +38,22 @@ function midioutput(name::AbstractString = "")
         devicename = String(unsafe_string(info.name))
         if info.output > 0 && occursin(name, devicename)
             stream = Ref{Ptr{PortMidi.PortMidiStream}}(C_NULL)
-            Pm_OpenOutput(stream, id, C_NULL, 0, C_NULL, C_NULL, 0)
+            if PortMidi.Pt_Started() == 0
+                pterr = PortMidi.Pt_Start(1, C_NULL, C_NULL)
+                if pterr != PortMidi.ptNoError
+                    throw(MIDIOutputOpenError("PortTime start error $pterr"))
+                end
+            end
+            pmerr = PortMidi.Pm_OpenOutput(stream, id, C_NULL, 0, C_NULL, C_NULL, 2)
+            if pmerr != PortMidi.pmNoError
+                throw(MIDIOutputOpenError(String(unsafe_string(Pm_GetErrorText(pmerr)))))
+            end
             return MIDIOutput(id,
                               devicename,
                               String(unsafe_string(info.interf)),
                               stream,
-                              Ref(false))
+                              Ref(false),
+                              Ref((0,0.0)))
         end
     end
     @assert false "MIDI output device not found with name '$name'"
@@ -47,8 +61,9 @@ function midioutput(name::AbstractString = "")
 end
 
 function Base.close(d::MIDIOutput)
-    Pm_Close(d.stream[])
+    PortMidi.Pm_Close(d.stream[])
     d.closed[] = true
+    PortMidi.Pt_Stop()
 end
 
 """
@@ -197,4 +212,30 @@ function pitchbend(chan::Int, signedPB::AbstractFloat)
     pitchbend(chan, round(Int, signedPB * 128))
 end
 
+function maptime(dev::MIDIOutput, t_secs::Real)
+    (st_ms, st_secs) = dev.sync[]
+    round(Int, st_ms + (t_secs - st_secs) * 1000)
+end
+
+function sync!(dev::MIDIOutput, t::Float64, force::Bool = false)
+    t_ms = PortMidi.Pt_Time()
+    (pt_ms, pt_secs) = dev.sync[]
+    if force || pt_ms == 0
+        dev.sync[] = (t_ms, t)
+    end
+end
+
+function sched(dev::MIDIOutput, t::Real, msg::MIDIMsg)
+    rt = Int32(maptime(dev, t))
+    #println("$(round(Int, t * 1000)) \t $(PortMidi.Pt_Time() - rt) \t $rt \t $(msg.msg)")
+    Pm_WriteShort(dev.stream[], rt, msg.msg)
+end
+function sched(t::Real, msg::MIDIMsg)
+    sched(current_midi_output[], t, msg)
+end
+
+
+using Base.ScopedValues
+const OptMidiOut = Union{Nothing, MIDIOutput}
+const current_midi_output :: ScopedValue{OptMidiOut} = ScopedValue{OptMidiOut}(nothing)
 

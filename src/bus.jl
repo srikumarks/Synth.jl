@@ -3,7 +3,7 @@ import Base: Tuple
 
 """
 A "Gen" is a process for producing signals.
-The `proc(::Gen,::AbstractBus,t)` which returns
+The `proc(::Gen,::AbstractBus,t,rt)` which returns
 `Tuple{Float64,Gen}` needs to be defined for a
 gen to be usable by the `Bus`.
 
@@ -86,16 +86,16 @@ mutable struct Bus{Clk<:Signal} <: AbstractBus
 end
 
 
-function proc(g :: Gen, s :: AbstractBus, t)
+function genproc(g :: Gen, s :: AbstractBus, t, rt)
     @assert false "Unimplemented proc for $(typeof(g))"
     return (Inf,Stop())
 end
 
-function proc(g :: Stop, s :: AbstractBus, t)
+function genproc(g :: Stop, s :: AbstractBus, t, rt)
     (Inf, g)
 end
 
-function proc(g :: Cont, s :: AbstractBus, t)
+function genproc(g :: Cont, s :: AbstractBus, t, rt)
     (t, g)
 end
 
@@ -197,7 +197,7 @@ function done(s::Bus{Clk}, t, dt) where {Clk<:Signal}
     inactive = findall(tv -> done(tv[2], t, dt), s.voices)
     deleteat!(s.voices, inactive)
     deleteat!(s.realtime, inactive)
-    done(s.clock, t, dt)
+    done(s.clock, t, dt) || !isopen(s.gchan) || !isopen(s.vchan)
 end
 
 function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
@@ -211,6 +211,7 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
     if ct >= s.next_t
         count = 0
         try
+            clockspeed = s.clock.speedval
             while isready(s.gchan)
                 push!(s.gens, take!(s.gchan))
                 count += 1
@@ -218,9 +219,12 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
             if count > 0
                 sort!(s.gens; by=first)
             end
-            for i in eachindex(s.gens)
-                while isactive(s.gens[i][2]) && s.gens[i][1] < ct + s.dt
-                    s.gens[i] = invokelatest(proc, s.gens[i][2], s, s.gens[i][1])
+            for (i, (gt, gg)) in enumerate(s.gens)
+                while isactive(gg) && gt < ct + s.dt
+                    ng = invokelatest(genproc, gg, s, gt, t + (gt - ct) / clockspeed)
+                    gt = ng[1]
+                    gg = ng[2]
+                    s.gens[i] = ng
                 end
             end
             sort!(s.gens; by=first) 
@@ -229,9 +233,14 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
                 push!(s.realtime, 0.0)
             end
             sort!(s.voices; by=first)
-            infs = findall((e) -> isinf(e[1]) || !isactive(e[2]), s.gens)
-            deleteat!(s.gens, infs)
-            s.next_t = ct + s.dt
+            if length(s.gens) == 1 && isstop(s.gens[1][2])
+                close(s.gchan)
+                close(s.vchan)
+            else
+                infs = findall((e) -> isinf(e[1]) || !isactive(e[2]), s.gens)
+                deleteat!(s.gens, infs)
+                s.next_t = ct + s.dt
+            end
         catch e
             @error "Bus error" error=(e, catch_backtrace())
         end
