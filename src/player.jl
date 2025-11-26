@@ -9,7 +9,7 @@ end
 
 function audiothread(chans, samplingrate, rq, wq)
     #println("In audiothread $stream, $rq, $wq")
-    stream = PortAudio.PortAudioStream(0, chans; samplerate = samplingrate)
+    stream = PortAudio.PortAudioStream(0, chans; samplerate = samplingrate, latency=0.015)
     endmarker = Val(:done)
     buf = take!(rq)
     while buf != endmarker
@@ -134,21 +134,25 @@ function play(
         t = 0.0
         endmarker = Val(:done)
         try
-            for i in 1:4
+            for i in 1:100
                 buf = take!(rq)
                 fill!(buf, 0.0f0)
-                t += nframes(buf) / samplerate(buf)
-                sync!(current_midi_output[], t, true)
+                sync!(current_midi_output[], 0.0, true)
                 put!(wq, buf)
             end
+            synced = false
+            @info "Starting player"
             while t < duration_secs && !done(signal, t, dt)
                 buf = take!(rq)
                 if buf != endmarker
-                    sync!(current_midi_output[], t + nframes(buf) / samplerate(buf))
                     fill!(buf, 0.0f0)
                     for i = 1:size(buf, 1)
                         mixin!(buf, i, signal, t, dt)
                         t += dt
+                    end
+                    if !synced
+                        sync!(current_midi_output[], 0.0, true)
+                        synced = true
                     end
                     put!(wq, buf)
                 else

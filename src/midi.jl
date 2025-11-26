@@ -24,6 +24,31 @@ struct MIDIOutputOpenError
 end
 
 """
+    const MidiDeviceInfo = @NamedTuple{id::Int,name::String,interf::String,input::Bool,output::Bool}
+
+Represents info about a particular MIDI device.
+"""
+const MidiDeviceInfo = @NamedTuple{id::Int,name::String,interf::String,input::Bool,output::Bool}
+
+"""
+    mididevices() :: Vector{MidiDeviceInfo}
+
+Fetches the list of available MIDI devices as a pair of 
+"""
+function mididevices() :: Vector{MidiDeviceInfo}
+    devs :: Vector{MidiDeviceInfo} = []
+    for id in 0:Pm_CountDevices()-1
+        info = unsafe_load(Pm_GetDeviceInfo(id))
+        name = String(unsafe_string(info.name))
+        interf = String(unsafe_string(info.interf))
+        input = info.input > 0
+        output = info.output > 0
+        push!(devs, (;id, name, interf, input, output))
+    end
+    devs
+end
+
+"""
     midioutput(name::AbstractString = "") :: MIDIOutput
 
 Identifies a MIDI output device with the given name as a substring
@@ -33,24 +58,25 @@ on the resultant `MIDIOutput` to close the stream.
 Throws `MIDIOutputDeviceNotFoundError` if such a device does not exist.
 """
 function midioutput(name::AbstractString = "")
-    for id in 0:Pm_CountDevices()-1
-        info = unsafe_load(Pm_GetDeviceInfo(id))
-        devicename = String(unsafe_string(info.name))
-        if info.output > 0 && occursin(name, devicename)
+    for dev in mididevices()
+        @info "MIDI devices" devices=dev
+        if dev.output && occursin(name, dev.name)
             stream = Ref{Ptr{PortMidi.PortMidiStream}}(C_NULL)
             if PortMidi.Pt_Started() == 0
                 pterr = PortMidi.Pt_Start(1, C_NULL, C_NULL)
+                sleep(0.01)
+                PortMidi.Pt_Time()
                 if pterr != PortMidi.ptNoError
                     throw(MIDIOutputOpenError("PortTime start error $pterr"))
                 end
             end
-            pmerr = PortMidi.Pm_OpenOutput(stream, id, C_NULL, 0, C_NULL, C_NULL, 2)
+            pmerr = PortMidi.Pm_OpenOutput(stream, dev.id, C_NULL, 0, C_NULL, C_NULL, 1)
             if pmerr != PortMidi.pmNoError
                 throw(MIDIOutputOpenError(String(unsafe_string(Pm_GetErrorText(pmerr)))))
             end
-            return MIDIOutput(id,
-                              devicename,
-                              String(unsafe_string(info.interf)),
+            return MIDIOutput(dev.id,
+                              dev.name,
+                              dev.interf,
                               stream,
                               Ref(false),
                               Ref((0,0.0)))
@@ -234,7 +260,8 @@ end
 function sync!(dev::MIDIOutput, t::Float64, force::Bool = false)
     t_ms = PortMidi.Pt_Time()
     (pt_ms, pt_secs) = dev.sync[]
-    if force || pt_ms == 0
+    dt_ms = maptime(dev,t) - t_ms
+    if abs(dt_ms) > 1
         dev.sync[] = (t_ms, t)
     end
 end
@@ -242,6 +269,11 @@ end
 function sched(dev::MIDIOutput, t::Real, msg::MIDIMsg)
     rt = Int32(maptime(dev, t))
     #println("$(round(Int, t * 1000)) \t $(PortMidi.Pt_Time() - rt) \t $rt \t $(msg.msg)")
+    pmt = PortMidi.Pt_Time()
+    if rt + 1 < pmt
+        dev.sync[] = (pmt, t)
+        @debug "Adjusted for MIDI lag $(pmt-rt) ms"
+    end
     Pm_WriteShort(dev.stream[], rt, msg.msg)
 end
 function sched(t::Real, msg::MIDIMsg)
