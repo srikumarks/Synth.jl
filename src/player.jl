@@ -7,9 +7,14 @@ function drain(ch)
     end
 end
 
-function audiothread(chans, samplingrate, rq, wq)
-    #println("In audiothread $stream, $rq, $wq")
-    stream = PortAudio.PortAudioStream(0, chans; samplerate = samplingrate, latency=0.015)
+function audiothread(chans, samplingrate, rq, wq, reportLatency_ms)
+    recommended_latency = if Sys.isapple() 0.015 else nothing end
+    stream = PortAudio.PortAudioStream(0, chans; samplerate = samplingrate, latency=recommended_latency)
+    streaminfo = unsafe_load(PortAudio.LibPortAudio.Pa_GetStreamInfo(stream.pointer_to))
+    latency_secs = streaminfo.outputLatency
+    latency_ms = ceil(Int, latency_secs * 1000)
+    put!(reportLatency_ms, latency_ms)
+    @info "Audio output info" samplingrate=samplingrate latency_ms=latency_ms
     endmarker = Val(:done)
     buf = take!(rq)
     while buf != endmarker
@@ -59,9 +64,11 @@ function startaudio(callback;
     put!(wq, b1)
     put!(wq, b2)
 
+    latency_ms = Channel{Int}(1)
+
     #println("Starting threads...")
     Threads.@spawn :interactive begin
-        midiout = midioutput(mididevice)
+        midiout = midioutput(mididevice; outputDelay_ms = take!(latency_ms))
         try
             with(current_midi_output => midiout) do
                 callback(samplingrate, wq, rq)
@@ -74,7 +81,7 @@ function startaudio(callback;
     end
     Threads.@spawn :interactive begin
         try
-            audiothread(chans, samplingrate, rq, wq)
+            audiothread(chans, samplingrate, rq, wq, latency_ms)
         catch e
             @error "Audio thread error" error=(e, catch_backtrace())
         end
@@ -137,7 +144,7 @@ function play(
             for i in 1:100
                 buf = take!(rq)
                 fill!(buf, 0.0f0)
-                sync!(current_midi_output[], 0.0, true)
+                sync!(current_midi_output[], 0.0)
                 put!(wq, buf)
             end
             synced = false
@@ -150,11 +157,11 @@ function play(
                         mixin!(buf, i, signal, t, dt)
                         t += dt
                     end
+                    put!(wq, buf)
                     if !synced
-                        sync!(current_midi_output[], 0.0, true)
+                        sync!(current_midi_output[], 0.0)
                         synced = true
                     end
-                    put!(wq, buf)
                 else
                     break
                 end

@@ -13,6 +13,7 @@ struct MIDIOutput
     stream :: Ref{Ptr{PortMidi.PortMidiStream}}
     closed :: Ref{Bool}
     sync::Ref{Tuple{Int,Float64}}
+    outputDelay_ms::Int
 end
 
 struct MIDIOutputDeviceNotFoundError
@@ -57,7 +58,7 @@ on the resultant `MIDIOutput` to close the stream.
 
 Throws `MIDIOutputDeviceNotFoundError` if such a device does not exist.
 """
-function midioutput(name::AbstractString = "")
+function midioutput(name::AbstractString = ""; outputDelay_ms::Int = 0)
     for dev in mididevices()
         @info "MIDI devices" devices=dev
         if dev.output && occursin(name, dev.name)
@@ -79,7 +80,8 @@ function midioutput(name::AbstractString = "")
                               dev.interf,
                               stream,
                               Ref(false),
-                              Ref((0,0.0)))
+                              Ref((0,0.0)),
+                              outputDelay_ms)
         end
     end
     @assert false "MIDI output device not found with name '$name'"
@@ -257,7 +259,7 @@ function maptime(dev::MIDIOutput, t_secs::Real)
     round(Int, st_ms + (t_secs - st_secs) * 1000)
 end
 
-function sync!(dev::MIDIOutput, t::Float64, force::Bool = false)
+function sync!(dev::MIDIOutput, t::Float64)
     t_ms = PortMidi.Pt_Time()
     (pt_ms, pt_secs) = dev.sync[]
     dt_ms = maptime(dev,t) - t_ms
@@ -266,18 +268,38 @@ function sync!(dev::MIDIOutput, t::Float64, force::Bool = false)
     end
 end
 
+"""
+    sched(dev::MIDIOutput, t::Real, msg::MIDIMsg)
+    sched(t::Real, msg::MIDIMsg)
+    sched(dev::MIDIOutput, msg::MIDIMsg)
+    sched(msg::MIDIMsg)
+
+The first two schedule a MIDI message to be sent at the designated
+time. The last two will send it out immediately. If the MIDI output
+device is omitted, then the current midi output device active will
+be used.
+"""
 function sched(dev::MIDIOutput, t::Real, msg::MIDIMsg)
     rt = Int32(maptime(dev, t))
     #println("$(round(Int, t * 1000)) \t $(PortMidi.Pt_Time() - rt) \t $rt \t $(msg.msg)")
     pmt = PortMidi.Pt_Time()
-    if rt + 1 < pmt
+    if false && rt + 1 < pmt
         dev.sync[] = (pmt, t)
         @debug "Adjusted for MIDI lag $(pmt-rt) ms"
     end
-    Pm_WriteShort(dev.stream[], rt, msg.msg)
+    Pm_WriteShort(dev.stream[], rt + dev.outputDelay_ms, msg.msg)
 end
+
+function sched(dev::MIDIOutput, msg::MIDIMsg)
+    Pm_WriteShort(dev.stream[], 0, msg.msg)
+end
+
 function sched(t::Real, msg::MIDIMsg)
     sched(current_midi_output[], t, msg)
+end
+
+function sched(msg::MIDIMsg)
+    sched(current_midi_output[], msg)
 end
 
 
