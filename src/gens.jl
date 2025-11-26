@@ -137,7 +137,7 @@ function genproc(g::Par, b::Bus, t, rt)
     gens = []
     for gg in g.gens
         (t2, g2) = genproc(gg, b, t, rt)
-        if iscont(g2)
+        if iscont(g2) || isstop(g2)
             continue
         end
         sched(b, t2, g2)
