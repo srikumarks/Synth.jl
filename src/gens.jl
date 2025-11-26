@@ -342,10 +342,11 @@ end
 
 function genproc(g :: Ping, s :: AbstractBus, t, rt)
     amp = adsr(g.vel, 0.0;
+               attack_factor=1.0,
                release_secs=g.dur,
                release_factor=1.1,
-               attack_secs=0.1,
-               decay_secs=0.1)
+               attack_secs=0.01,
+               decay_secs=0.01)
     sched(s, t, oscil(amp, midi2hz(g.pitch)))
     return (t + g.dur, Cont())
 end
