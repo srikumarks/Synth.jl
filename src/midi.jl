@@ -283,10 +283,6 @@ function sched(dev::MIDIOutput, t::Real, msg::MIDIMsg)
     rt = Int32(maptime(dev, t))
     #println("$(round(Int, t * 1000)) \t $(PortMidi.Pt_Time() - rt) \t $rt \t $(msg.msg)")
     pmt = PortMidi.Pt_Time()
-    if false && rt + 1 < pmt
-        dev.sync[] = (pmt, t)
-        @debug "Adjusted for MIDI lag $(pmt-rt) ms"
-    end
     Pm_WriteShort(dev.stream[], rt + dev.outputDelay_ms, msg.msg)
 end
 
@@ -296,7 +292,7 @@ end
 
 function sched(t::Real, msg::MIDIMsg)
     dev = current_midi_output[]
-    sched(dev, t + dev.outputDelay_ms, msg)
+    sched(dev, t + 0.001 * dev.outputDelay_ms, msg)
 end
 
 function sched(msg::MIDIMsg)
