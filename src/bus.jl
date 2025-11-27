@@ -222,11 +222,18 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
                 sort!(s.gens; by=first)
             end
             for (i, (gt, gg)) in enumerate(s.gens)
-                while isactive(gg) && gt < ct + s.dt
-                    ng = invokelatest(genproc, gg, s, gt, t + (gt - ct) / clockspeed)
-                    gt = ng[1]
-                    gg = ng[2]
-                    s.gens[i] = ng
+                try
+                    while isactive(gg) && gt < ct + s.dt
+                        ng = invokelatest(genproc, gg, s, gt, t + (gt - ct) / clockspeed)
+                        gt = ng[1]
+                        gg = ng[2]
+                        s.gens[i] = ng
+                    end
+                catch e
+                    # We forgive the genproc for erroring out. THis helps
+                    # in interactive scenarios where we may temporarily have
+                    # a bug in the code that results in an exception.
+                    @error "genproc error" error=(e, catch_backtrace())
                 end
             end
             sort!(s.gens; by=first) 
