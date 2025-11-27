@@ -295,7 +295,7 @@ function sched(dev::MIDIOutput, msg::MIDIMsg)
 end
 
 function sched(t::Real, msg::MIDIMsg)
-    sched(current_midi_output[], t, msg)
+    sched(current_midi_output[], t + dev.outputDelay_ms, msg)
 end
 
 function sched(msg::MIDIMsg)
