@@ -295,11 +295,13 @@ function sched(dev::MIDIOutput, msg::MIDIMsg)
 end
 
 function sched(t::Real, msg::MIDIMsg)
-    sched(current_midi_output[], t + dev.outputDelay_ms, msg)
+    dev = current_midi_output[]
+    sched(dev, t + dev.outputDelay_ms, msg)
 end
 
 function sched(msg::MIDIMsg)
-    sched(current_midi_output[], msg)
+    dev = current_midi_output[]
+    sched(dev, msg)
 end
 
 
