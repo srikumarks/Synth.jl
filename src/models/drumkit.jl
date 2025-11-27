@@ -24,11 +24,11 @@ end
 
 Constructs a [`DrumHit`](@ref "Synth.Models.DrumHit") that can be used in `Gen` compositions.
 Drum hits have an inherent duration of 0.0. So if you want to put a 
-gap between two drum hits, you'll need to use [`pause`](@ref "Synth.pause").
+gap between two drum hits, you'll need to use [`rest`](@ref "Synth.rest").
 `hit` will load the sample and cache it so the loading doesn't
 happen at actual play time.
 
-Usage: `play(track([hit("kick.wav", 0.5), pause(0.5), hit("snare.wav", 0.5)]), 2.0)`
+Usage: `play(track([hit("kick.wav", 0.5), rest(0.5), hit("snare.wav", 0.5)]), 2.0)`
 
 See also [`Synth.Models.drumkit`](@ref)
 """
@@ -70,7 +70,7 @@ Usage:
 using Synth.Models: drumkit
 
 k = drumkit("Techno")
-play(track([hit(k.kick, 0.5), pause(0.5), hit(k.snare, 0.5)]), 2.0)
+play(track([hit(k.kick, 0.5), rest(0.5), hit(k.snare, 0.5)]), 2.0)
 ```
 
 See also [`hit`](@ref "Synth.Models.hit")

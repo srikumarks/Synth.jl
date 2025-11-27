@@ -182,21 +182,21 @@ function genproc(g :: Loop{G}, s :: AbstractBus, t, rt) where {G <: Gen}
     (t2, seq(g2, loop(g.n-1, g.gen)))
 end
 
-struct Pause <: Gen
+struct Rest <: Gen
     dur :: Float64
 end
 
 """
-    pause(dur :: Real) :: Gen
+    rest(dur :: Real) :: Gen
 
 Schedules no signals but just waits for the given duration
 before proceeding.
 """
-function pause(dur :: Real)
-    Pause(Float64(dur))
+function rest(dur :: Real)
+    Rest(Float64(dur))
 end
 
-function genproc(g :: Pause, s :: AbstractBus, t, rt)
+function genproc(g :: Rest, s :: AbstractBus, t, rt)
     (t + g.dur, Cont())
 end
 

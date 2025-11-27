@@ -63,7 +63,7 @@ scheduling notes on a timeline.
          tone(ch([60,64,67]), 1.0),
          tone(ch(12 .+ [60,62,65,69]), 1.0),
          ping(72, 1.0),
-         pause(0.5),
+         rest(0.5),
          loop(3, ping([67,72], 0.2)),
          tone(12 .+ [60, 62, 64, 65, 67, 69, 71, 72, 71, 69, 67, 65, 64, 62, 60], 1/16)
         ])
@@ -72,7 +72,7 @@ scheduling notes on a timeline.
 
 The above sample illustrates the use of [`track`](@ref "Synth.track") to create sequences,
 [`tone`](@ref "Synth.tone") to construct simple pitched tones, [`ch`](@ref "Synth.ch") to specify
-chording, [`pause`](@ref "Synth.pause") to insert pauses and [`loop`](@ref "Synth.loop") to repeat
+chording, [`rest`](@ref "Synth.rest") to insert rests and [`loop`](@ref "Synth.loop") to repeat
 a musical process a set number of times.
 
 "Chording" refers to playing multiple Gens simultaneously and waiting for all of
@@ -173,7 +173,7 @@ Both [`rec`](@ref "Synth.rec") and [`dyn`](@ref "Synth.dyn") are to be considere
 because the decision on which Gen to use is made just in time. Hence
 there is no explicit mention of `t` in the recurrent function. If you
 wish to delay the returned Gen by, say, 0.1 seconds, you'll need to
-sequence it with a pause like `seq(pause(0.1), ...the_gen...)`.
+sequence it with a rest like `seq(rest(0.1), ...the_gen...)`.
 
 
 

@@ -5,7 +5,7 @@ import Base: Tuple
     abstract type Gen end
 
 A "Gen" is a process for producing signals.
-The `proc(::Gen,::AbstractBus,t,rt)` which returns
+The `genproc(::Gen,::AbstractBus,t,rt)` which returns
 `Tuple{Float64,Gen}` needs to be defined for a
 gen to be usable by the `Bus`.
 
