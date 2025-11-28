@@ -15,7 +15,7 @@ Synth.tri
 Synth.sq
 Synth.noise
 Synth.sample
-Synth.register!
+Synth.register
 ```
 
 

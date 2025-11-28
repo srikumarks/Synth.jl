@@ -120,12 +120,12 @@ function sample(name::Symbol)
 end
 
 """
-    register!(name :: Symbol, s :: Sample)
+    register(name :: Symbol, s :: Sample)
 
 Associates the given name with the given sample so it can be retrieved
 using `sample(::String)`.
 """
-function register!(name::Symbol, s::Sample)
+function register(name::Symbol, s::Sample)
     named_samples[name] = s
     return s
 end

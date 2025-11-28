@@ -52,14 +52,14 @@ in the same way as any other "signal process".
 ## Registered sounds
 
 It is often convenient to load a bunch of sounds and refer to them by name. The
-[`register!`](@ref) method can store wavetables and samples associated with a
+[`register`](@ref) method can store wavetables and samples associated with a
 symbol and the symbol can then be used with [`wavetable`](@ref) and
 [`sample`](@ref) to retrieve them.
 
 ```julia
-> register!(:hh, sample("hihat.wav"))
+> register(:hh, sample("hihat.wav"))
 > play(sample(:hh))
-> register!(:horn, sample("horn_loop.wav"))
+> register(:horn, sample("horn_loop.wav"))
 > play(wavetable(:horn, 0.25, 440), 2.0)
 ```
 

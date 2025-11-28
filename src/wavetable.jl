@@ -107,24 +107,24 @@ const named_wavetables = Dict{Symbol,Vector{Float32}}()
 """
     wavetable(name :: Symbol, amp, freq)
 
-Uses the named table. See [`Synth.register!`](@ref).
+Uses the named table. See [`Synth.register`](@ref).
 """
 function wavetable(name::Symbol, amp, freq)
     wavetable(named_wavetables[name], amp, freq)
 end
 
 """
-    register!(name :: Symbol, wt :: Vector{Float32})
-    register!(name :: Symbol, wt :: Wavetable)
+    register(name :: Symbol, wt :: Vector{Float32})
+    register(name :: Symbol, wt :: Wavetable)
 
 Associates the given wave table with the given name so it can
 be retrieved using `wavetable(::String)`.
 """
-function register!(name::Symbol, wt::Vector{Float32})
+function register(name::Symbol, wt::Vector{Float32})
     named_wavetables[name] = wt
 end
 
-function register!(name::Symbol, wt::Wavetable)
+function register(name::Symbol, wt::Wavetable)
     named_wavetables[name] = wt.table[1:wt.N]
 end
 """
