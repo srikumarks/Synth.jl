@@ -2,13 +2,13 @@
 
 A "Gen" has a method to implement which has the signature - 
 
-`proc(::Gen, ::Bus, t::Float64) -> Tuple{Float64,Gen}`
+`genproc(::Gen, ::Bus, t::Float64, rt::Float64) -> Tuple{Float64,Gen}`
 
-The `proc` method is expected to schedule any signals to the bus
+The `genproc` method is expected to schedule any signals to the bus
 using `sched(::Bus,t,::Signal)` and return info about the next
-gen to trigger later. The `t` argument to `proc` is "clock time" and
+gen to trigger later. The `t` argument to `genproc` is "clock time" and
 not real time - i.e. it is determined by the clock which the bus
-runs.
+runs. The `rt` argument is the real time.
 
 ```@docs
 Synth.Gen
