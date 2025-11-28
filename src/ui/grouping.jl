@@ -43,5 +43,3 @@ function render(g::VGroup, panel::Panel)
     panel.widgetof[box] = frame
     return frame
 end
-
-

@@ -223,9 +223,15 @@ function done(s::Stereo{L,R}, t, dt) where {L<:SignalWithFanout,R<:SignalWithFan
     done(s.left, t, dt) && done(s.right, t, dt)
 end
 
-value(s::Stereo{L,R}, t, dt) where {L<:SignalWithFanout,R<:SignalWithFanout} = value(s, 0, t, dt)
+value(s::Stereo{L,R}, t, dt) where {L<:SignalWithFanout,R<:SignalWithFanout} =
+    value(s, 0, t, dt)
 
-function value(s::Stereo{L,R}, chan::Int, t, dt) where {L<:SignalWithFanout,R<:SignalWithFanout}
+function value(
+    s::Stereo{L,R},
+    chan::Int,
+    t,
+    dt,
+) where {L<:SignalWithFanout,R<:SignalWithFanout}
     if t > s.t
         s.t = t
         s.leftchan = value(s.left, t, dt)
@@ -394,7 +400,7 @@ value(c::Clip{S}, t, dt) where {S<:Signal} =
         value(c.s, t, dt)
     end
 
-mutable struct KRate{S <: Signal} <: Signal
+mutable struct KRate{S<:Signal} <: Signal
     const sig::S
     const interval_secs::Float64
     t::Float64
@@ -417,7 +423,7 @@ For example, `krate(100.0, oscil(0.5f0, 10.0f0))` will construct a 10Hz sine
 that is sampled only 100 times a second and interpolated, instead of having to 
 calculate sines 48000 times a second.
 """
-function krate(rate_hz :: Real, s :: Signal)
+function krate(rate_hz::Real, s::Signal)
     return KRate(s, Float64(1.0/rate_hz), 0.0, 0.0f0, 0.0f0, false)
 end
 
@@ -439,4 +445,3 @@ function value(s::KRate{S}, t, dt) where {S<:Signal}
     end
     Float32(s.v + s.dv * (t - s.t))
 end
-

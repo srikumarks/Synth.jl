@@ -59,7 +59,7 @@ function expon(v1::Real, duration_secs::Real, v2::Real)
         log(Float32(v1)),
         log(Float32(v2)),
         log(Float32(v2/v1)),
-        0.0
+        0.0,
     )
 end
 

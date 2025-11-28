@@ -17,11 +17,14 @@ Amplitude modulatable white noise generator.
 """
 function noise(rng::AbstractRNG, amp::Signal)
     Noise(rng, amp)
-end, function noise(rng::AbstractRNG, amp::Real = 1.0f0)
+end,
+function noise(rng::AbstractRNG, amp::Real = 1.0f0)
     noise(rng, konst(amp))
-end, function noise(amp::Real = 1.0f0)
+end,
+function noise(amp::Real = 1.0f0)
     noise(defaultRNG, konst(amp))
-end, function noise(amp::Signal)
+end,
+function noise(amp::Signal)
     noise(defaultRNG, amp)
 end
 

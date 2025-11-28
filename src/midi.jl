@@ -7,11 +7,11 @@ Encapsulates basic information about a MIDI output device
 and an open stream to which MIDI data can be sent.
 """
 struct MIDIOutput
-    deviceId :: Int
-    name :: String
-    interface :: String
-    stream :: Ref{Ptr{PortMidi.PortMidiStream}}
-    closed :: Ref{Bool}
+    deviceId::Int
+    name::String
+    interface::String
+    stream::Ref{Ptr{PortMidi.PortMidiStream}}
+    closed::Ref{Bool}
     sync::Ref{Tuple{Int,Float64}}
     outputDelay_ms::Int
 end
@@ -29,22 +29,23 @@ end
 
 Represents info about a particular MIDI device.
 """
-const MidiDeviceInfo = @NamedTuple{id::Int,name::String,interf::String,input::Bool,output::Bool}
+const MidiDeviceInfo =
+    @NamedTuple{id::Int, name::String, interf::String, input::Bool, output::Bool}
 
 """
     mididevices() :: Vector{MidiDeviceInfo}
 
 Fetches the list of available MIDI devices as a pair of 
 """
-function mididevices() :: Vector{MidiDeviceInfo}
-    devs :: Vector{MidiDeviceInfo} = []
-    for id in 0:Pm_CountDevices()-1
+function mididevices()::Vector{MidiDeviceInfo}
+    devs::Vector{MidiDeviceInfo} = []
+    for id = 0:(Pm_CountDevices()-1)
         info = unsafe_load(Pm_GetDeviceInfo(id))
         name = String(unsafe_string(info.name))
         interf = String(unsafe_string(info.interf))
         input = info.input > 0
         output = info.output > 0
-        push!(devs, (;id, name, interf, input, output))
+        push!(devs, (; id, name, interf, input, output))
     end
     devs
 end
@@ -75,13 +76,15 @@ function midioutput(name::AbstractString = ""; outputDelay_ms::Int = 0)
             if pmerr != PortMidi.pmNoError
                 throw(MIDIOutputOpenError(String(unsafe_string(Pm_GetErrorText(pmerr)))))
             end
-            return MIDIOutput(dev.id,
-                              dev.name,
-                              dev.interf,
-                              stream,
-                              Ref(false),
-                              Ref((0,0.0)),
-                              outputDelay_ms)
+            return MIDIOutput(
+                dev.id,
+                dev.name,
+                dev.interf,
+                stream,
+                Ref(false),
+                Ref((0, 0.0)),
+                outputDelay_ms,
+            )
         end
     end
     @assert false "MIDI output device not found with name '$name'"
@@ -100,7 +103,7 @@ end
 Encapsulates a "MIDI short message"
 """
 struct MIDIMsg
-    msg :: Int32
+    msg::Int32
 end
 
 """
@@ -262,7 +265,7 @@ end
 function sync!(dev::MIDIOutput, t::Float64)
     t_ms = PortMidi.Pt_Time()
     (pt_ms, pt_secs) = dev.sync[]
-    dt_ms = maptime(dev,t) - t_ms
+    dt_ms = maptime(dev, t) - t_ms
     if abs(dt_ms) > 1
         dev.sync[] = (t_ms, t)
     end
@@ -302,6 +305,5 @@ end
 
 
 using Base.ScopedValues
-const OptMidiOut = Union{Nothing, MIDIOutput}
-const current_midi_output :: ScopedValue{OptMidiOut} = ScopedValue{OptMidiOut}(nothing)
-
+const OptMidiOut = Union{Nothing,MIDIOutput}
+const current_midi_output::ScopedValue{OptMidiOut} = ScopedValue{OptMidiOut}(nothing)

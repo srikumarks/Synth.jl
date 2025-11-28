@@ -111,7 +111,7 @@ function LED(
         nothing,
         nothing,
         val,
-        nothing
+        nothing,
     )
     on(val) do v
         if !isnothing(w.valdisp[])
@@ -138,5 +138,3 @@ stdleds() = begin
     r = RGBA(1.0f0, 0.0f0, 0.0f0, 1.0f0)
     stdleds(y, o, r)
 end
-
-

@@ -7,9 +7,38 @@ export konst, krate, clip, sigfun, fanout, feedback, connect, clock, clock_bpm, 
 export oscil, phasor, saw, tri, sq, noise, sample
 export line, expon, adsr, decay, follow
 export render, write, read_rawaudio
-export startaudio, play, mic, control, level, probe, waveprobe, AbstractBus, bus, sched, now
-export MIDIOutput, mididevices, midioutput, MIDIMsg, midinop, ismidinop, send, noteon, noteoff, keypressure, ctrlchange, progchange, aftertouch, pitchbend
-export Gen, ping, tone, ch, seq, track, chord, par, dyn, rec, durn, loop, rest, isstop, iscont, Stop, Cont
+export startaudio, play, mic, control, level, probe, waveprobe, Bus, bus, sched, now
+export MIDIOutput,
+    mididevices,
+    midioutput,
+    MIDIMsg,
+    midinop,
+    ismidinop,
+    send,
+    noteon,
+    noteoff,
+    keypressure,
+    ctrlchange,
+    progchange,
+    aftertouch,
+    pitchbend
+export Gen,
+    ping,
+    tone,
+    ch,
+    seq,
+    track,
+    chord,
+    par,
+    dyn,
+    rec,
+    durn,
+    loop,
+    rest,
+    isstop,
+    iscont,
+    Stop,
+    Cont
 export midinote, miditrigger, midimsg, midiseq
 export filter1, filter2, fir, lpf, bpf, bpf0, hpf, protect
 export waveshape, linearmap, delay, tap

@@ -5,7 +5,7 @@ import Base: Tuple
     abstract type Gen end
 
 A "Gen" is a process for producing signals.
-The `genproc(::Gen,::AbstractBus,t,rt)` which returns
+The `genproc(::Gen,::Bus,t,rt)` which returns
 `Tuple{Float64,Gen}` needs to be defined for a
 gen to be usable by the `Bus`.
 
@@ -31,24 +31,26 @@ isactive(g::Stop) = false
 isactive(g::Cont) = false
 
 """
-An `AbstractBus` is expected to only support the two
+A `Bus` is expected to only support the two
 `sched` methods - 
 
- - `sched(sch::AbstractBus, t::Real, s::Signal)`
- - `sched(sch::AbstractBus, t::Real, g::Gen)`
- - `sched(sch::AbstractBus, s::Signal)`
- - `sched(sch::AbstractBus, g::Gen)`
+ - `sched(sch::Bus, t::Real, s::Signal)`
+ - `sched(sch::Bus, t::Real, g::Gen)`
+ - `sched(sch::Bus, s::Signal)`
+ - `sched(sch::Bus, g::Gen)`
+
+(The implementation must use the concrete type and not the abstract `Bus`)
 
 All buses are expected to support fanout without having
 to use the [`fanout`](@ref) operator.
 """
-abstract type AbstractBus <: SignalWithFanout end
+abstract type Bus <: SignalWithFanout end
 
-mutable struct Bus{Clk<:Signal} <: AbstractBus
+mutable struct AudioGenBus{Clk<:Signal} <: Bus
     # The clock drives the pace at which time passes when rendering events on
     # the bus. You can consider integer valued time to be "beats" and the
     # clock's tempo is given in "beats per minute".
-    const clock::Clk 
+    const clock::Clk
 
     # The last time step for checking for events. Events (Gens) are checked for
     # roughly 60 times a second - i.e. are considered "near real time".
@@ -88,42 +90,42 @@ mutable struct Bus{Clk<:Signal} <: AbstractBus
 end
 
 
-function genproc(g :: Gen, s :: AbstractBus, t, rt)
+function genproc(g::Gen, s::Bus, t, rt)
     @assert false "Unimplemented proc for $(typeof(g))"
-    return (Inf,Stop())
+    return (Inf, Stop())
 end
 
-function genproc(g :: Stop, s :: AbstractBus, t, rt)
+function genproc(g::Stop, s::Bus, t, rt)
     (Inf, g)
 end
 
-function genproc(g :: Cont, s :: AbstractBus, t, rt)
+function genproc(g::Cont, s::Bus, t, rt)
     (t, g)
 end
 
 
 """
-    now(s::Bus{<:Signal})::Float64
-    now(s::Bus{<:Signal}, b::Type{<:Integer})::Float64
-    now(s::Bus{<:Signal}, b::Rational)::Float64
-    now(s::Bus{<:Signal}, b::Integer)::Float64
+    now(s::AudioGenBus{<:Signal})::Float64
+    now(s::AudioGenBus{<:Signal}, b::Type{<:Integer})::Float64
+    now(s::AudioGenBus{<:Signal}, b::Rational)::Float64
+    now(s::AudioGenBus{<:Signal}, b::Integer)::Float64
 
 Returns the bus' "current time". If a beat is passed or asked for,
 the time is quantized to beats according to the clock's tempo.
 """
-function now(s::Bus{Clk})::Float64 where {Clk<:Signal}
+function now(s::AudioGenBus{Clk})::Float64 where {Clk<:Signal}
     return s.next_t
 end
 
-function now(s::Bus{Clk}, b::Type{T})::Float64 where {Clk<:Signal,T<:Integer}
+function now(s::AudioGenBus{Clk}, b::Type{T})::Float64 where {Clk<:Signal,T<:Integer}
     return ceil(s.next_t)
 end
 
-function now(s::Bus{Clk}, b::Rational)::Float64 where {Clk<:Signal}
+function now(s::AudioGenBus{Clk}, b::Rational)::Float64 where {Clk<:Signal}
     return ceil(s.next_t) + Float64(b)
 end
 
-function now(s::Bus{Clk}, b::Integer)::Float64 where {Clk<:Signal}
+function now(s::AudioGenBus{Clk}, b::Integer)::Float64 where {Clk<:Signal}
     return ceil(s.next_t) + Float64(b)
 end
 
@@ -139,7 +141,7 @@ to the clock. The scheduling is sample accurate.
 A "bus" supports fanout.
 """
 function bus(clk::Signal)
-    Bus(
+    AudioGenBus(
         clk,
         0.0,
         0.0,
@@ -151,7 +153,7 @@ function bus(clk::Signal)
         Vector{Float64}(),
         0.0,
         0.0f0,
-       )
+    )
 end
 
 """
@@ -164,10 +166,10 @@ function bus(tempo_bpm::Real = 60.0)
 end
 
 """
-    sched(sch :: Bus{Clk}, t::Real, s::Signal) where {Clk <: Signal}
-    sched(sch::Bus{Clk}, s::Signal) where {Clk<:Signal}
-    sched(sch::Bus{Clk}, t::Real, g::Gen) where {Clk<:Signal}
-    sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
+    sched(sch::AudioGenBus{Clk}, t::Real, s::Signal) where {Clk <: Signal}
+    sched(sch::AudioGenBus{Clk}, s::Signal) where {Clk<:Signal}
+    sched(sch::AudioGenBus{Clk}, t::Real, g::Gen) where {Clk<:Signal}
+    sched(sch::AudioGenBus{Clk}, g::Gen) where {Clk<:Signal}
 
 Schedules a signal to start at time `t` according to the clock of the given
 bus. In the third variant without a `t`, the scheduling happens at an
@@ -178,31 +180,31 @@ ill-specified "now" - which basically means "asap".
 signals usually have a temporal relationship that is better captured using
 available composition operators.
 """
-function sched(sch::Bus{Clk}, t::Real, s::Signal) where {Clk<:Signal}
+function sched(sch::AudioGenBus{Clk}, t::Real, s::Signal) where {Clk<:Signal}
     @assert !isfull(sch.vchan) "Too many signals scheduled to bus too quickly. Max 16."
     put!(sch.vchan, (Float64(t), s))
     nothing
 end
-function sched(sch::Bus{Clk}, s::Signal) where {Clk<:Signal}
+function sched(sch::AudioGenBus{Clk}, s::Signal) where {Clk<:Signal}
     sched(sch, now(sch), s)
 end
-function sched(sch::Bus{Clk}, t::Real, g::Gen) where {Clk<:Signal}
+function sched(sch::AudioGenBus{Clk}, t::Real, g::Gen) where {Clk<:Signal}
     @assert !isfull(sch.gchan) "Too many gens scheduled to bus too quickly. Max 16."
-    put!(sch.gchan, (Float64(t),g))
+    put!(sch.gchan, (Float64(t), g))
     nothing
 end
-function sched(sch::Bus{Clk}, g::Gen) where {Clk<:Signal}
+function sched(sch::AudioGenBus{Clk}, g::Gen) where {Clk<:Signal}
     sched(sch, now(sch), g)
 end
 
-function done(s::Bus{Clk}, t, dt) where {Clk<:Signal}
+function done(s::AudioGenBus{Clk}, t, dt) where {Clk<:Signal}
     inactive = findall(tv -> done(tv[2], t, dt), s.voices)
     deleteat!(s.voices, inactive)
     deleteat!(s.realtime, inactive)
     done(s.clock, t, dt) || !isopen(s.gchan) || !isopen(s.vchan)
 end
 
-function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
+function value(s::AudioGenBus{Clk}, t, dt) where {Clk<:Signal}
     if t <= s.last_t
         return s.last_val
     end
@@ -219,7 +221,7 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
                 count += 1
             end
             if count > 0
-                sort!(s.gens; by=first)
+                sort!(s.gens; by = first)
             end
             for (i, (gt, gg)) in enumerate(s.gens)
                 try
@@ -236,12 +238,12 @@ function value(s::Bus{Clk}, t, dt) where {Clk<:Signal}
                     @error "genproc error" error=(e, catch_backtrace())
                 end
             end
-            sort!(s.gens; by=first) 
+            sort!(s.gens; by = first)
             while isready(s.vchan)
                 push!(s.voices, take!(s.vchan))
                 push!(s.realtime, 0.0)
             end
-            sort!(s.voices; by=first)
+            sort!(s.voices; by = first)
             if length(s.gens) == 1 && isstop(s.gens[1][2])
                 close(s.gchan)
                 close(s.vchan)

@@ -8,8 +8,17 @@ function drain(ch)
 end
 
 function audiothread(chans, samplingrate, rq, wq, reportLatency_ms)
-    recommended_latency = if Sys.isapple() 0.015 else nothing end
-    stream = PortAudio.PortAudioStream(0, chans; samplerate = samplingrate, latency=recommended_latency)
+    recommended_latency = if Sys.isapple()
+        0.015
+    else
+        nothing
+    end
+    stream = PortAudio.PortAudioStream(
+        0,
+        chans;
+        samplerate = samplingrate,
+        latency = recommended_latency,
+    )
     streaminfo = unsafe_load(PortAudio.LibPortAudio.Pa_GetStreamInfo(stream.pointer_to))
     latency_secs = streaminfo.outputLatency
     latency_ms = ceil(Int, latency_secs * 1000)
@@ -48,12 +57,13 @@ It returns a function that can be called (without any arguments)
 to stop the audio processing thread. Make sure to start julia with
 a sufficient number of threads for this to work.
 """
-function startaudio(callback;
-        samplingrate :: Float64 = 48000.0,
-        chans::Int = 1,
-        blocksize::Int = 64,
-        mididevice::AbstractString=""
-    )
+function startaudio(
+    callback;
+    samplingrate::Float64 = 48000.0,
+    chans::Int = 1,
+    blocksize::Int = 64,
+    mididevice::AbstractString = "",
+)
     rq = Channel{Union{Val{:done},SampleBuf{Float32,2}}}(2)
     wq = Channel{Union{Val{:done},SampleBuf{Float32,2}}}(2)
     #println("Writing empty buffers...")
@@ -129,19 +139,19 @@ Returns a stop function (like with [`startaudio`](@ref) which when called with
 no arguments will stop playback.
 """
 function play(
-        signal::Signal,
-        duration_secs = Inf;
-        chans = 1,
-        blocksize = 64,
-        mididevice::AbstractString=""
-    )
+    signal::Signal,
+    duration_secs = Inf;
+    chans = 1,
+    blocksize = 64,
+    mididevice::AbstractString = "",
+)
     function callback(sample_rate, rq, wq)
         #println("In callback $sample_rate, $rq, $wq")
         dt = 1.0 / sample_rate
         t = 0.0
         endmarker = Val(:done)
         try
-            for i in 1:100
+            for i = 1:100
                 buf = take!(rq)
                 fill!(buf, 0.0f0)
                 sync!(current_midi_output[], 0.0)

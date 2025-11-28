@@ -59,7 +59,11 @@ function Base.clamp(sig::Signal, minval::Real, maxval::Real)
     Clamp(sig, Float32(minval), Float32(maxval))
 end
 
-function Base.clamp(sig::Stereo{L,R}, minval::Real, maxval::Real) where {L<:Signal,R<:Signal}
+function Base.clamp(
+    sig::Stereo{L,R},
+    minval::Real,
+    maxval::Real,
+) where {L<:Signal,R<:Signal}
     stereo(clamp(sig.left, minval, maxval), clamp(sig.right, minval, maxval))
 end
 

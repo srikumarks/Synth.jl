@@ -90,15 +90,15 @@ function wavetable(table::AbstractVector{Float32}, amp::Signal, phase::Signal)
     Wavetable(table2, N, amp, phase)
 end
 
-function wavetable(s :: Sample, amp :: Signal, phase :: Signal)
+function wavetable(s::Sample, amp::Signal, phase::Signal)
     wavetable(s.samples, amp, phase)
 end
 
-function wavetable(s :: Sample, amp :: Signal, freq :: Real)
+function wavetable(s::Sample, amp::Signal, freq::Real)
     wavetable(s.samples, amp, phasor(freq))
 end
 
-function wavetable(s :: Sample, amp :: Real, freq :: Real)
+function wavetable(s::Sample, amp::Real, freq::Real)
     wavetable(s.samples, konst(amp), phasor(freq))
 end
 
@@ -109,7 +109,7 @@ const named_wavetables = Dict{Symbol,Vector{Float32}}()
 
 Uses the named table. See [`Synth.register!`](@ref).
 """
-function wavetable(name :: Symbol, amp, freq)
+function wavetable(name::Symbol, amp, freq)
     wavetable(named_wavetables[name], amp, freq)
 end
 
@@ -120,11 +120,11 @@ end
 Associates the given wave table with the given name so it can
 be retrieved using `wavetable(::String)`.
 """
-function register!(name :: Symbol, wt :: Vector{Float32})
+function register!(name::Symbol, wt::Vector{Float32})
     named_wavetables[name] = wt
 end
 
-function register!(name :: Symbol, wt :: Wavetable)
+function register!(name::Symbol, wt::Wavetable)
     named_wavetables[name] = wt.table[1:wt.N]
 end
 """
@@ -135,5 +135,3 @@ Utility function to construct a table for use with `wavetable`.
 table of the given length `L`.
 """
 maketable(f, L::Int) = [f(Float32(i/L)) for i = 0:(L-1)]
-
-

@@ -1,6 +1,6 @@
-struct Seq{GA<:Gen, GB<:Gen} <: Gen
-    ga :: GA
-    gb :: GB
+struct Seq{GA<:Gen,GB<:Gen} <: Gen
+    ga::GA
+    gb::GB
 end
 
 """
@@ -10,11 +10,11 @@ Sequences the given two gens to occur one after the other.
 When the first gen `ga` results in a `Cont`, it will switch
 to `gb` and after that will continue onwards.
 """
-function seq(ga :: GA, gb :: GB) where {GA <: Gen, GB <: Gen}
+function seq(ga::GA, gb::GB) where {GA<:Gen,GB<:Gen}
     Seq(ga, gb)
 end
 
-function genproc(g :: Seq, s :: AbstractBus, t, rt)
+function genproc(g::Seq, s::Bus, t, rt)
     (t2, g2) = genproc(g.ga, s, t, rt)
     if iscont(g2)
         (t2, g.gb)
@@ -25,10 +25,10 @@ function genproc(g :: Seq, s :: AbstractBus, t, rt)
     end
 end
 
-struct Track{VT <: AbstractVector} <: Gen
-    gens :: VT
-    i :: Int
-    g :: Gen
+struct Track{VT<:AbstractVector} <: Gen
+    gens::VT
+    i::Int
+    g::Gen
 end
 
 """
@@ -39,12 +39,12 @@ its `genproc` call will produce a `Cont` which indicates it is
 time to switch to the next Gen in the track. This is like a generalization
 of `seq` except that `seq` has types known at construction time.
 """
-function track(gs :: AbstractVector)
+function track(gs::AbstractVector)
     Track(gs, 1, gs[1])
 end
 
-function genproc(g :: Track, s :: AbstractBus, t, rt)
-    (t2,g2) = genproc(g.g, s, t, rt)
+function genproc(g::Track, s::Bus, t, rt)
+    (t2, g2) = genproc(g.g, s, t, rt)
     if iscont(g2)
         if g.i < length(g.gens)
             return (t2, Track(g.gens, g.i+1, g.gens[g.i+1]))
@@ -56,9 +56,9 @@ function genproc(g :: Track, s :: AbstractBus, t, rt)
     end
 end
 
-struct Durn{G <: Gen} <: Gen
-    dur :: Float64
-    gen :: G
+struct Durn{G<:Gen} <: Gen
+    dur::Float64
+    gen::G
 end
 
 """
@@ -67,11 +67,11 @@ end
 Forces the duration of the given `gen` to be the given `d`,
 even if it was something else. Possibly useful with [`chord`](@ref "Synth.chord").
 """
-function durn(d :: Real, gen :: Gen)
+function durn(d::Real, gen::Gen)
     return Durn(Float64(d), gen)
 end
 
-function genproc(g :: Durn{G}, s :: AbstractBus, t, rt) where {G <: Gen}
+function genproc(g::Durn{G}, s::Bus, t, rt) where {G<:Gen}
     tend = t + g.dur
     (t2, g2) = genproc(g.gen, s, t, rt)
     if isactive(g2)
@@ -84,8 +84,8 @@ function genproc(g :: Durn{G}, s :: AbstractBus, t, rt) where {G <: Gen}
     (t + g.dur, Cont())
 end
 
-struct Chord{V <: AbstractVector} <: Gen
-    gens :: V
+struct Chord{V<:AbstractVector} <: Gen
+    gens::V
 end
 
 """
@@ -101,16 +101,16 @@ very much like a chord in music. If you're thinking of whether you should
 use this to start off multiple musical processes in parallel with each determining
 its own duration, you probably want [`par`](@ref "Synth.par").
 """
-function chord(gens :: AbstractVector) 
+function chord(gens::AbstractVector)
     Chord(gens)
 end
 
-function genproc(g :: Chord, s :: AbstractBus, t, rt)
+function genproc(g::Chord, s::Bus, t, rt)
     gens = []
     tmax = t
     conts = 0
     for gg in g.gens
-        (t2,g2) = genproc(gg, s, t, rt)
+        (t2, g2) = genproc(gg, s, t, rt)
         tmax = max(tmax, t2)
         if iscont(g2)
             conts += 1
@@ -129,8 +129,8 @@ function genproc(g :: Chord, s :: AbstractBus, t, rt)
     end
 end
 
-struct Par{V <: AbstractVector} <: Gen
-    gens :: V
+struct Par{V<:AbstractVector} <: Gen
+    gens::V
 end
 
 function genproc(g::Par, b::Bus, t, rt)
@@ -155,13 +155,13 @@ immediately processed without delay. The individual gens
 part of each of the "threads" will continue to be processed
 by the bus over time until they finish.
 """
-function par(gens :: AbstractVector)
+function par(gens::AbstractVector)
     Par(gens)
 end
 
-struct Loop{G <: Gen} <: Gen
-    n :: Int
-    gen :: G
+struct Loop{G<:Gen} <: Gen
+    n::Int
+    gen::G
 end
 
 """
@@ -169,21 +169,21 @@ end
 
 Will loop the given gen `n` times before ending.
 """
-function loop(n :: Int, g :: G) where {G <: Gen}
+function loop(n::Int, g::G) where {G<:Gen}
     n <= 0 ? Cont() : Loop(n, g)
 end
 
-function genproc(g :: Loop{G}, s :: AbstractBus, t, rt) where {G <: Gen}
+function genproc(g::Loop{G}, s::Bus, t, rt) where {G<:Gen}
     if g.n <= 0
         return (t, Cont())
     end
 
-    (t2,g2) = genproc(g.gen, s, t, rt)
+    (t2, g2) = genproc(g.gen, s, t, rt)
     (t2, seq(g2, loop(g.n-1, g.gen)))
 end
 
 struct Rest <: Gen
-    dur :: Float64
+    dur::Float64
 end
 
 """
@@ -192,18 +192,18 @@ end
 Schedules no signals but just waits for the given duration
 before proceeding.
 """
-function rest(dur :: Real)
+function rest(dur::Real)
     Rest(Float64(dur))
 end
 
-function genproc(g :: Rest, s :: AbstractBus, t, rt)
+function genproc(g::Rest, s::Bus, t, rt)
     (t + g.dur, Cont())
 end
 
 struct Dyn <: Gen
-    fn :: Function
-    n :: Int
-    i :: Int
+    fn::Function
+    n::Int
+    i::Int
 end
 
 """
@@ -213,11 +213,11 @@ A "dyn" gen calls the function with each i to determine the gen
 that should be performed. The function will be called with
 two arguments `i` and `n` where `i` will range from 1 to `n`.
 """
-function dyn(fn :: Function, n :: Int, i :: Int)
+function dyn(fn::Function, n::Int, i::Int)
     Dyn(fn, n, i)
 end
 
-function genproc(g :: Dyn, s :: AbstractBus, t, rt)
+function genproc(g::Dyn, s::Bus, t, rt)
     g2 = g.fn(g.n, g.i)
     if iscont(g2)
         # Returning Cont will abort the sequence
@@ -230,15 +230,15 @@ function genproc(g :: Dyn, s :: AbstractBus, t, rt)
     elseif isstop(g2)
         (Inf, g2)
     else
-        (t3,g3) = genproc(g2, s, t, rt)
+        (t3, g3) = genproc(g2, s, t, rt)
         (t3, g.i < g.n ? seq(g3, dyn(fn, g.n, g.i+1)) : g3)
     end
 end
 
 struct Rec{C,S} <: Gen
-    fn :: Function
-    conf :: C # The conf part does not change from call to call.
-    state :: S # The state may change from call to call.
+    fn::Function
+    conf::C # The conf part does not change from call to call.
+    state::S # The state may change from call to call.
 end
 
 
@@ -276,11 +276,11 @@ recursive time evolution at a level higher than signals.
 Note that the function called by `rec` can itself return
 another recursive process as a part of its evolution.
 """
-function rec(fn :: Function, c :: C, s :: S) where {C,S}
+function rec(fn::Function, c::C, s::S) where {C,S}
     Rec{C,S}(fn, c, s)
 end
 
-function genproc(g :: Rec{S}, s :: AbstractBus, t, rt) where {S}
+function genproc(g::Rec{S}, s::Bus, t, rt) where {S}
     (g2, state2) = g.fn(g.conf, g.state)
     if iscont(g2)
         (t, g2)
@@ -293,14 +293,14 @@ function genproc(g :: Rec{S}, s :: AbstractBus, t, rt) where {S}
 end
 
 struct Ping <: Gen
-    pitch :: Float32
-    vel :: Float32
-    decay :: Float32
-    dur :: Float64
+    pitch::Float32
+    vel::Float32
+    decay::Float32
+    dur::Float64
 end
 
-struct PitchChord{R <: Real, T <: AbstractVector{R}}
-    pitches :: T
+struct PitchChord{R<:Real,T<:AbstractVector{R}}
+    pitches::T
 end
 
 """
@@ -308,7 +308,7 @@ end
 
 Represents a set of chorded pitch values. Usable with [`ping`](@ref "Synth.ping").
 """
-function ch(pitches :: AbstractVector{R}) where {R <: Real}
+function ch(pitches::AbstractVector{R}) where {R<:Real}
     PitchChord(pitches)
 end
 
@@ -324,38 +324,51 @@ So `ping([60,67,72], 0.5)` would be a three-note track. If the duration is also 
 it will be cycled through for each of the pitch values. So the number of pings is
 determined only by the number of pitches given.
 """
-function ping(pitch :: Real, dur :: Real, vel :: Real = 0.5f0, decay :: Real = dur)
+function ping(pitch::Real, dur::Real, vel::Real = 0.5f0, decay::Real = dur)
     Ping(Float32(pitch), Float32(vel), Float32(decay), Float64(dur))
 end
 
-function ping(pitch :: AbstractVector{R}, dur :: Real, vel :: Real = 0.5f0, decay :: Real = dur) where {R <: Real}
-    track([ping(p,dur,vel,decay) for p in pitch])
+function ping(
+    pitch::AbstractVector{R},
+    dur::Real,
+    vel::Real = 0.5f0,
+    decay::Real = dur,
+) where {R<:Real}
+    track([ping(p, dur, vel, decay) for p in pitch])
 end
 
-function ping(pitch :: AbstractVector{R}, dur :: AbstractVector{RD}, vel :: Real = 0.5f0, decay :: Real = minimum(dur)) where {R <: Real, RD <: Real}
-    track([ping(pitch[i],dur[mod1(i,length(dur))],vel,decay) for i in eachindex(pitch)])
+function ping(
+    pitch::AbstractVector{R},
+    dur::AbstractVector{RD},
+    vel::Real = 0.5f0,
+    decay::Real = minimum(dur),
+) where {R<:Real,RD<:Real}
+    track([ping(pitch[i], dur[mod1(i, length(dur))], vel, decay) for i in eachindex(pitch)])
 end
 
-function ping(pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, decay :: Real = dur)
-    chord([ping(p,dur,vel,decay) for p in pch.pitches])
+function ping(pch::PitchChord, dur::Real, vel::Real = 0.5f0, decay::Real = dur)
+    chord([ping(p, dur, vel, decay) for p in pch.pitches])
 end
 
-function genproc(g :: Ping, s :: AbstractBus, t, rt)
-    amp = adsr(g.vel, 0.0;
-               attack_factor=1.0,
-               release_secs=g.dur,
-               release_factor=1.1,
-               attack_secs=0.01,
-               decay_secs=0.01)
+function genproc(g::Ping, s::Bus, t, rt)
+    amp = adsr(
+        g.vel,
+        0.0;
+        attack_factor = 1.0,
+        release_secs = g.dur,
+        release_factor = 1.1,
+        attack_secs = 0.01,
+        decay_secs = 0.01,
+    )
     sched(s, t, oscil(amp, midi2hz(g.pitch)))
     return (t + g.dur, Cont())
 end
 
 struct Tone <: Gen
-    pitch :: Float32
-    vel :: Float32
-    dur :: Float64
-    release_secs :: Float32
+    pitch::Float32
+    vel::Float32
+    dur::Float64
+    release_secs::Float32
 end
 
 
@@ -373,47 +386,66 @@ by its duration.
 
 Note that you can force the duration of a gen to be whatever you want using [`durn`](@ref "Synth.durn").
 """
-function tone(pitch :: Real, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05)
+function tone(pitch::Real, dur::Real, vel::Real = 0.5f0; release_secs::Real = 0.05)
     Tone(Float32(pitch), Float32(vel), Float64(dur), Float32(release_secs))
 end
 
-function tone(pitch :: AbstractVector{R}, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05) where {R <: Real}
-    track([tone(p,dur,vel; release_secs) for p in pitch])
+function tone(
+    pitch::AbstractVector{R},
+    dur::Real,
+    vel::Real = 0.5f0;
+    release_secs::Real = 0.05,
+) where {R<:Real}
+    track([tone(p, dur, vel; release_secs) for p in pitch])
 end
 
-function tone(pitch :: AbstractVector{R}, dur :: AbstractVector{RD}, vel :: Real = 0.5f0; release_secs :: Real = 0.05) where {R <: Real, RD <: Real}
-    track([tone(pitch[i],dur[mod1(i,length(dur))],vel;release_secs) for i in eachindex(pitch)])
+function tone(
+    pitch::AbstractVector{R},
+    dur::AbstractVector{RD},
+    vel::Real = 0.5f0;
+    release_secs::Real = 0.05,
+) where {R<:Real,RD<:Real}
+    track([
+        tone(pitch[i], dur[mod1(i, length(dur))], vel; release_secs) for
+        i in eachindex(pitch)
+    ])
 end
 
-function tone(pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, release_secs :: Real = 0.05)
-    chord([tone(p,dur,vel;release_secs) for p in pch.pitches])
+function tone(pch::PitchChord, dur::Real, vel::Real = 0.5f0, release_secs::Real = 0.05)
+    chord([tone(p, dur, vel; release_secs) for p in pch.pitches])
 end
 
-function genproc(g :: Tone, s :: AbstractBus, t, rt)
-    amp = adsr(g.vel, g.dur;
-               release_secs=g.release_secs,
-               release_factor=1.0,
-               attack_secs=0.05,
-               attack_factor=1.0,
-               decay_secs=0.05)
+function genproc(g::Tone, s::Bus, t, rt)
+    amp = adsr(
+        g.vel,
+        g.dur;
+        release_secs = g.release_secs,
+        release_factor = 1.0,
+        attack_secs = 0.05,
+        attack_factor = 1.0,
+        decay_secs = 0.05,
+    )
     sched(s, t, oscil(amp, midi2hz(g.pitch)))
     return (t + g.dur, Cont())
 end
 
 struct WaveTone <: Gen
-    wave_table :: Vector{Float32}
-    pitch :: Float32
-    vel :: Float32
-    dur :: Float64
-    release_secs :: Float32
+    wave_table::Vector{Float32}
+    pitch::Float32
+    vel::Float32
+    dur::Float64
+    release_secs::Float32
 end
 
-function genproc(g :: WaveTone, s :: AbstractBus, t, rt)
-    amp = adsr(g.vel, g.dur;
-               release_secs=g.release_secs,
-               release_factor=1.0,
-               attack_secs=0.05,
-               decay_secs=0.05)
+function genproc(g::WaveTone, s::Bus, t, rt)
+    amp = adsr(
+        g.vel,
+        g.dur;
+        release_secs = g.release_secs,
+        release_factor = 1.0,
+        attack_secs = 0.05,
+        decay_secs = 0.05,
+    )
     sched(s, t, wavetable(g.wave_table, amp, phasor(midi2hz(g.pitch))))
     return (t + g.dur, Cont())
 end
@@ -425,29 +457,56 @@ end
 """
 
 
-function tone(wt :: Vector{Float32}, pitch :: Real, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05)
+function tone(
+    wt::Vector{Float32},
+    pitch::Real,
+    dur::Real,
+    vel::Real = 0.5f0;
+    release_secs::Real = 0.05,
+)
     WaveTone(wt, Float32(pitch), Float32(vel), Float32(dur))
 end
 
-function tone(wt :: Vector{Float32}, pitch :: AbstractVector{R}, dur :: Real, vel :: Real = 0.5f0; release_secs :: Real = 0.05) where {R <: Real}
-    track([tone(wt, p,dur,vel; release_secs) for p in pitch])
+function tone(
+    wt::Vector{Float32},
+    pitch::AbstractVector{R},
+    dur::Real,
+    vel::Real = 0.5f0;
+    release_secs::Real = 0.05,
+) where {R<:Real}
+    track([tone(wt, p, dur, vel; release_secs) for p in pitch])
 end
 
-function tone(wt :: Vector{Float32}, pitch :: AbstractVector{R}, dur :: AbstractVector{RD}, vel :: Real = 0.5f0; release_secs :: Real = 0.05) where {R <: Real, RD <: Real}
-    track([tone(wt, pitch[i],dur[mod1(i,length(dur))],vel;release_secs) for i in eachindex(pitch)])
+function tone(
+    wt::Vector{Float32},
+    pitch::AbstractVector{R},
+    dur::AbstractVector{RD},
+    vel::Real = 0.5f0;
+    release_secs::Real = 0.05,
+) where {R<:Real,RD<:Real}
+    track([
+        tone(wt, pitch[i], dur[mod1(i, length(dur))], vel; release_secs) for
+        i in eachindex(pitch)
+    ])
 end
 
-function tone(wt :: Vector{Float32}, pch :: PitchChord, dur :: Real, vel :: Real = 0.5f0, release_secs :: Real = 0.05)
-    chord([tone(wt, p,dur,vel;release_secs) for p in pch.pitches])
+function tone(
+    wt::Vector{Float32},
+    pch::PitchChord,
+    dur::Real,
+    vel::Real = 0.5f0,
+    release_secs::Real = 0.05,
+)
+    chord([tone(wt, p, dur, vel; release_secs) for p in pch.pitches])
 end
 
-function tone(wt :: Wavetable, pitch, dur, vel = 0.5f0; release_secs = 0.05)
+function tone(wt::Wavetable, pitch, dur, vel = 0.5f0; release_secs = 0.05)
     # We can't just pass wt.samples because the table stored inside Wavetable has 4 extra samples
     # stored at the end for interpolation purposes.
     tone(wt.samples[1:wt.N], pitch, dur, vel; release_secs)
 end
 
-function tone(wt :: Symbol, pitch, dur, vel = 0.5f0; release_secs = 0.05)
+function tone(wt::Symbol, pitch, dur, vel = 0.5f0; release_secs = 0.05)
     tone(named_wavetables[wt], pitch, dur, vel; release_secs)
 end
 
@@ -457,18 +516,18 @@ end
 With this, you can take an existing configured wavetable tone and assign a
 different pitch/dur/vel characteristic to it.
 """
-function tone(wt :: WaveTone, pitch, dur, vel = 0.5f0; release_secs = 0.05)
+function tone(wt::WaveTone, pitch, dur, vel = 0.5f0; release_secs = 0.05)
     tone(wt.wave_table, pitch, dur, vel; release_secs)
 end
 
 struct Snippet <: Gen
-    filename :: String
-    selstart :: Float64
-    selend :: Float64
+    filename::String
+    selstart::Float64
+    selend::Float64
 end
 
 function genproc(g::Snippet, b::Bus, t, rt)
-    s = sample(g.filename; selstart=g.selstart, selend=g.selend)
+    s = sample(g.filename; selstart = g.selstart, selend = g.selend)
     # Note that the above will be efficient only after the first
     # call to load the sample due to caching.
     sched(b, t, s)
@@ -489,7 +548,7 @@ of 120bpm, you'll need to double your durations using [`durn`](@ref "Synth.durn"
 to synchronize with the end of the snippet. Otherwise, the next Gen will start
 playing half way through the snippet.
 """
-function snippet(filename::AbstractString, selstart :: Float64 = 0.0, selend :: Float64 = Inf)
+function snippet(filename::AbstractString, selstart::Float64 = 0.0, selend::Float64 = Inf)
     s = sample(filename)
     buf = sample_cache[filename]
     selstart = max(0.0, selstart)
@@ -518,7 +577,7 @@ MidiGen s get scheduled by the MIDI Scheduler.
 abstract type MidiGen <: Gen end
 
 struct MidiMsgSend <: MidiGen
-    msg :: MIDIMsg
+    msg::MIDIMsg
 end
 
 function genproc(m::MidiMsgSend, b::Bus, t, rt)
@@ -536,12 +595,12 @@ function midimsg(dev::MIDIOutput, msg::MIDIMsg)
     MidiMsgSend(dev, msg)
 end
 
-struct MidiNote{R <: Real} <: MidiGen
-    chan :: Int
-    note :: Int
-    vel :: R
-    dur :: Float64
-    logicaldur :: Float64
+struct MidiNote{R<:Real} <: MidiGen
+    chan::Int
+    note::Int
+    vel::R
+    dur::Float64
+    logicaldur::Float64
 end
 
 function genproc(m::MidiNote, b::Bus, t, rt)
@@ -563,11 +622,11 @@ function midinote(chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real =
     MidiNote(chan, note, vel, Float64(dur), Float64(logicaldur))
 end
 
-struct MidiTrigger{R <: Real} <: MidiGen
-    chan :: Int
-    note :: Int
-    vel :: R
-    logicaldur :: Float64
+struct MidiTrigger{R<:Real} <: MidiGen
+    chan::Int
+    note::Int
+    vel::R
+    logicaldur::Float64
 end
 
 function genproc(m::MidiTrigger, b::Bus, t, rt)
@@ -586,7 +645,7 @@ function miditrigger(chan::Int, note::Int, vel::Real, logicaldur::Real)
     MidiTrigger(chan, note, vel, Float64(logicaldur))
 end
 
-struct MidiSeq{V <: AbstractVector{Tuple{Float64, MIDIMsg}}} <: MidiGen
+struct MidiSeq{V<:AbstractVector{Tuple{Float64,MIDIMsg}}} <: MidiGen
     seq::V
     i::Int
     t0::Float64
@@ -611,7 +670,7 @@ A simple sequence of MIDI messages to be sent at given times relative
 to start of the Gen. This _could_ technically be constructed as a [`track`](@ref "Synth.track")
 as well, but permits a more general sequence of short messages to be sent.
 """
-function midiseq(seq::AbstractVector{Tuple{Float64, MIDIMsg}})
+function midiseq(seq::AbstractVector{Tuple{Float64,MIDIMsg}})
     @assert length(seq) > 0
     MidiSeq(seq, 0, 0.0, 0.0)
 end

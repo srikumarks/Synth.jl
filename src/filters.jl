@@ -144,7 +144,7 @@ mutable struct BiquadCoeffs{Ty<:BiquadType}
     a2::Float32
 end
 
-function BiquadCoeffs{Ty}() where {Ty <: BiquadType}
+function BiquadCoeffs{Ty}() where {Ty<:BiquadType}
     BiquadCoeffs{Ty}(0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0)
 end
 
@@ -160,29 +160,41 @@ mutable struct Biquad{Ty,S<:Signal,F<:Signal,Q<:Signal} <: Signal
 end
 
 
-function biquad(::Type{T}, sig::S, freq::Konst, q::Konst, dt) where {T<:BiquadType,S<:Signal}
+function biquad(
+    ::Type{T},
+    sig::S,
+    freq::Konst,
+    q::Konst,
+    dt,
+) where {T<:BiquadType,S<:Signal}
     b = Biquad{T,S,Konst,Konst}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
     computebiquadcoeffs(b.c, value(freq, 0.0, 0.0), value(q, 0.0, 0.0), dt)
     return b
 end
 
 function biquad(::Type{T}, sig::Signal, freq::Konst, q::Real, dt) where {T<:BiquadType}
-    biquad(T,sig, freq, konst(q), dt)
+    biquad(T, sig, freq, konst(q), dt)
 end
 
 function biquad(::Type{T}, sig::Signal, freq::Real, q::Konst, dt) where {T<:BiquadType}
-    biquad(T,sig, konst(freq), q, dt)
+    biquad(T, sig, konst(freq), q, dt)
 end
 
 function biquad(::Type{T}, sig::Signal, freq::Real, q::Real, dt) where {T<:BiquadType}
-    biquad(T,sig, konst(freq), konst(q), dt)
+    biquad(T, sig, konst(freq), konst(q), dt)
 end
 
 function biquad(::Type{T}, sig::Signal, freq::Signal, q::Real, dt) where {T<:BiquadType}
-    biquad(T,sig, freq, konst(q), dt)
+    biquad(T, sig, freq, konst(q), dt)
 end
 
-function biquad(::Type{T}, sig::S, freq::F, q::Q, dt) where {T<:BiquadType, S<:Signal, F<:Signal, Q<:Signal}
+function biquad(
+    ::Type{T},
+    sig::S,
+    freq::F,
+    q::Q,
+    dt,
+) where {T<:BiquadType,S<:Signal,F<:Signal,Q<:Signal}
     Biquad{T,S,F,Q}(sig, freq, q, 0.0f0, 0.0f0, 0.0f0, 0.0f0, BiquadCoeffs{T}())
 end
 
@@ -267,7 +279,11 @@ end
 
 function computenextvalue(s::Biquad, t, dt)
     xn = value(s.sig, t, dt)
-    yn = (s.c.b0 * xn + s.c.b1 * s.xn_1 + s.c.b2 * s.xn_2 - s.c.a1 * s.yn_1 - s.c.a2 * s.yn_2) / s.c.a0
+    yn =
+        (
+            s.c.b0 * xn + s.c.b1 * s.xn_1 + s.c.b2 * s.xn_2 - s.c.a1 * s.yn_1 -
+            s.c.a2 * s.yn_2
+        ) / s.c.a0
     s.xn_2 = s.xn_1
     s.xn_1 = xn
     s.yn_2 = s.yn_1
@@ -321,6 +337,5 @@ Does a simple LPF of the signal with a modest cut off frequency
 to prevent too many high frequencies from getting through and possibly
 causing aliasing effects.
 """
-protect(sig; cutoff::Real = 4000.0f0, q::Real = 10.0f0) = lpf(sig, Float32(cutoff), Float32(q))
-
-
+protect(sig; cutoff::Real = 4000.0f0, q::Real = 10.0f0) =
+    lpf(sig, Float32(cutoff), Float32(q))

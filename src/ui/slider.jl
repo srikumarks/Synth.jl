@@ -91,5 +91,3 @@ function render(k::KeyOp{Slider}, panel::Panel)
     push!(panel.keyops, k)
     return w
 end
-
-

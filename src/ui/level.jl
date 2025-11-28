@@ -96,7 +96,19 @@ function Level(
     @assert angle == 0 || angle == 90
     N = length(colours)
     val = Observable{Float32}(0.0f0)
-    w = Level(label, angle, length_, breadth, 0.0f0, 1.0f0, colours, nothing, nothing, val, nothing)
+    w = Level(
+        label,
+        angle,
+        length_,
+        breadth,
+        0.0f0,
+        1.0f0,
+        colours,
+        nothing,
+        nothing,
+        val,
+        nothing,
+    )
     on(val) do v
         if !isnothing(w.valdisp[])
             w.valdisp[].label = @sprintf("%0.2f", v)
@@ -110,5 +122,3 @@ end
 
 Level(label::String, angle::Int, length_::Int) =
     Level(label, angle, length_, div(length_, 5), stdlevelcolours())
-
-

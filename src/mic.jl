@@ -2,21 +2,21 @@ import PortAudio
 using SampledSignals: SampleBuf
 
 mutable struct Mic <: SignalWithFanout
-    const inq :: Channel{Matrix{Float32}}
-    const outq :: Channel{Matrix{Float32}}
-    buf :: Matrix{Float32} # The currently playing buffer.
-    i :: Int # The index into the currently playing buffer for the next sample.
-    t :: Float64 # The last time for which value was taken.
-    v :: Float32
-    ϵ :: Float32
-    done :: Bool
+    const inq::Channel{Matrix{Float32}}
+    const outq::Channel{Matrix{Float32}}
+    buf::Matrix{Float32} # The currently playing buffer.
+    i::Int # The index into the currently playing buffer for the next sample.
+    t::Float64 # The last time for which value was taken.
+    v::Float32
+    ϵ::Float32
+    done::Bool
 end
 
-done(m :: Mic, t, dt) = m.done || (m.done = !isopen(m.inq))
+done(m::Mic, t, dt) = m.done || (m.done = !isopen(m.inq))
 
-function value(m :: Mic, t, dt)
+function value(m::Mic, t, dt)
     if t > m.t
-        if m.i > size(m.buf,1)
+        if m.i > size(m.buf, 1)
             if isopen(m.outq)
                 put!(m.outq, m.buf)
             end
@@ -27,7 +27,7 @@ function value(m :: Mic, t, dt)
         end
         m.t = t
         if m.i <= size(m.buf, 1)
-            m.v = Float32(m.buf[m.i,1])
+            m.v = Float32(m.buf[m.i, 1])
             m.i += 1
         else
             m.v = 0.0f0
@@ -55,7 +55,11 @@ multiple mic instances on the same audio interface.
 **Todo:** At some point, support selecting named audio sources and also stereo
 sources.
 """
-function mic(dev :: AbstractString = "mic"; blocksize :: Int = 128, samplingrate :: Float64 = 48000.0)
+function mic(
+    dev::AbstractString = "mic";
+    blocksize::Int = 128,
+    samplingrate::Float64 = 48000.0,
+)
     inq = Channel{Matrix{Float32}}(2)
     outq = Channel{Matrix{Float32}}(2)
     buf1 = zeros(Float32, blocksize, 1)
@@ -65,9 +69,9 @@ function mic(dev :: AbstractString = "mic"; blocksize :: Int = 128, samplingrate
     m = Mic(inq, outq, buf1, blocksize+1, 0.0, 0.0f0, 1.0f0/32768.0f0, false)
     put!(outq, buf2)
 
-    function choose_device(name :: AbstractString)
+    function choose_device(name::AbstractString)
         for d in PortAudio.devices()
-            if occursin(Regex(name,"i"), d.name) && d.input_bounds.max_channels >= 1
+            if occursin(Regex(name, "i"), d.name) && d.input_bounds.max_channels >= 1
                 @info "Chosen audio input device" device=d
                 return d
             end
@@ -76,8 +80,14 @@ function mic(dev :: AbstractString = "mic"; blocksize :: Int = 128, samplingrate
     end
 
     Threads.@spawn :interactive begin
-        try 
-            stream = PortAudio.PortAudioStream(choose_device(dev), 1,0; samplerate = samplingrate, warn_xruns = false)
+        try
+            stream = PortAudio.PortAudioStream(
+                choose_device(dev),
+                1,
+                0;
+                samplerate = samplingrate,
+                warn_xruns = false,
+            )
             @info "Audio input stream" stream=stream
             while isopen(stream) && isopen(inq)
                 buf = take!(outq)
@@ -103,6 +113,4 @@ Stops the mic signal, which will eventually result in the associated audio
 stream resources being released. It will mark the signal as "done" so that
 further value computations don't occur.
 """
-Base.close(m :: Mic) = Base.close(m.inq)
-
-
+Base.close(m::Mic) = Base.close(m.inq)

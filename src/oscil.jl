@@ -39,10 +39,13 @@ using the same unit.
     where `oscil_v1` was the previous version.
 """
 oscil(m::Signal, f::Signal, p::Signal; phase::Real = 0.0) = Oscil(m, f, p, Float32(phase))
-oscil(m::Real, f::Real, p::Real = 0.0; phase::Real = 0.0) = oscil(konst(m), konst(f), konst(p); phase)
+oscil(m::Real, f::Real, p::Real = 0.0; phase::Real = 0.0) =
+    oscil(konst(m), konst(f), konst(p); phase)
 oscil(m::Real, f::Real, p::Signal; phase::Real = 0.0) = oscil(konst(m), konst(f), p; phase)
-oscil(m::Real, f::Signal, p::Real = 0.0; phase::Real = 0.0) = oscil(konst(m), f, konst(p); phase)
+oscil(m::Real, f::Signal, p::Real = 0.0; phase::Real = 0.0) =
+    oscil(konst(m), f, konst(p); phase)
 oscil(m::Real, f::Signal, p::Signal; phase::Real = 0.0) = oscil(konst(m), f, p; phase)
-oscil(m::Signal, f::Real, p::Real = 0.0; phase::Real = 0.0) = oscil(m, konst(f), konst(p); phase)
+oscil(m::Signal, f::Real, p::Real = 0.0; phase::Real = 0.0) =
+    oscil(m, konst(f), konst(p); phase)
 oscil(m::Signal, f::Real, p::Signal; phase::Real = 0.0) = oscil(m, konst(f), p; phase)
 oscil(m::Signal, f::Signal, p::Real = 0.0; phase::Real = 0.0) = oscil(m, f, konst(p); phase)

@@ -20,7 +20,7 @@ mutable struct ValProbe{S<:Signal} <: Probe{Float32}
     v::Float32
 end
 
-source(p::ValProbe{S}) where {S <: Signal} = p.obs
+source(p::ValProbe{S}) where {S<:Signal} = p.obs
 
 done(p::ValProbe{S}, t, dt) where {S<:Signal} = done(p.s, t, dt)
 
@@ -51,16 +51,16 @@ fast. The default value has it sampling the signal every 40ms.
 The channel can then be connected to a UI display widget that shows values
 as they come in on the channel.
 """
-function probe(
-    s::Signal,
-    interval::Float64 = 0.04;
-    samplingrate = 48000,
-)
+function probe(s::Signal, interval::Float64 = 0.04; samplingrate = 48000)
     wv = 2 ^ (- 1.0 / (interval * samplingrate))
     ValProbe(s, Observable{Float32}(0.0f0), interval, 0.0, wv, 1.0 - wv, 0.0f0)
 end
-function probe(s::Fanout{S}, interval::Float64 = 0.04; samplingrate = 48000) where {S <: Signal}
-    fanout(probe(s,interval;samplingrate))
+function probe(
+    s::Fanout{S},
+    interval::Float64 = 0.04;
+    samplingrate = 48000,
+) where {S<:Signal}
+    fanout(probe(s, interval; samplingrate))
 end
 
 
@@ -93,7 +93,7 @@ mutable struct WaveProbe{S<:Signal} <: Probe{TimedSamples}
     i_to::Int
 end
 
-source(p::WaveProbe{S}) where {S <: Signal} = s.obs
+source(p::WaveProbe{S}) where {S<:Signal} = s.obs
 done(p::WaveProbe{S}, t, dt) where {S<:Signal} = done(p.s, t, dt)
 
 
@@ -107,19 +107,21 @@ function value(p::WaveProbe{S}, t, dt) where {S<:Signal}
         else
             p.i_to -= Ninterval
         end
-        span = (t - dt * (p.i_to-1)):dt:t
+        span = (t-dt*(p.i_to-1)):dt:t
         @assert length(p.samples) == p.Nduration
         @assert p.Nduration >= p.Ninterval
         @assert length(span) <= p.Nduration
         if !isfull(p.chan)
             # If can't put now, just skip it.
             ts = TimedSamples(span, p.samples[1:length(span)])
-            @debug "Sending probe wave" span=length(ts.span) samples=length(ts.samples) min=minimum(ts.samples) max=maximum(ts.samples)
+            @debug "Sending probe wave" span=length(ts.span) samples=length(ts.samples) min=minimum(
+                ts.samples,
+            ) max=maximum(ts.samples)
             p.obs[] = ts
         end
         if p.i_from + p.Ninterval > p.Nduration
             @assert p.i_from + p.Ninterval == p.Nduration + 1
-            p.samples[1:p.i_from-1] = view(p.samples, p.Ninterval+1:p.Nduration)
+            p.samples[1:(p.i_from-1)] = view(p.samples, (p.Ninterval+1):p.Nduration)
         end
     end
     return sv
@@ -144,12 +146,16 @@ function waveprobe(
     wv = 2 ^ (- 1.0 / (interval * samplingrate))
     Nduration = floor(Int, duration * samplingrate)
     Ninterval = floor(Int, interval * samplingrate)
-    WaveProbe(s, 
-              Observable{TimedSamples}(),
-              Float64(duration), Nduration,
-              Float64(interval), Ninterval,
-              zeros(Float32, Nduration),
-              0.0,
-              1,
-              1)
+    WaveProbe(
+        s,
+        Observable{TimedSamples}(),
+        Float64(duration),
+        Nduration,
+        Float64(interval),
+        Ninterval,
+        zeros(Float32, Nduration),
+        0.0,
+        1,
+        1,
+    )
 end

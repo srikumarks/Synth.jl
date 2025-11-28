@@ -42,13 +42,7 @@ function bell(freq::Real, halfLife::Real, amplitude::Real, attackTime::Real, del
 end
 
 function click(freqFactor, volume, tempo_bpm)
-    bell(
-        880.0 * freqFactor,
-        0.0125 * 2.0 * sqrt(60.0 / tempo_bpm),
-        0.1 * volume,
-        0.01,
-        0.0,
-    )
+    bell(880.0 * freqFactor, 0.0125 * 2.0 * sqrt(60.0 / tempo_bpm), 0.1 * volume, 0.01, 0.0)
 end
 
 function high(volume)
@@ -184,7 +178,7 @@ function tala(url::AbstractString)
         throw(ArgumentError("Invalid Nadai pattern '$(nadaistr)'"))
     end
 
-    gatis = split(get(fields, "gat", ("|_._" ^ length(patparts))[2:end]), "|")
+    gatis = split(get(fields, "gat", ("|_._"^length(patparts))[2:end]), "|")
     if length(gatis) != length(patparts)
         throw(ArgumentError("Gati pattern parts don't match tala pattern parts"))
     end

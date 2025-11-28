@@ -63,7 +63,7 @@ function adsr(
     attack_secs = 0.002,
     decay_secs = 0.01,
     release_secs = 0.2,
-    release_factor = 4.0
+    release_factor = 4.0,
 )
     @assert attack_factor >= 1.0
     @assert attack_secs > 0.0
@@ -100,7 +100,7 @@ function adsr(
         Float32(asecs + dsecs + sus_secs),
         Float32(asecs + dsecs + sus_secs + relsecs),
         0,
-        0.0
+        0.0,
     )
 end
 

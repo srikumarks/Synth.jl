@@ -79,12 +79,12 @@ function drumkit(kit::AbstractString, dir::AbstractString)
     @assert isdir(dir) "Invalid drumkit directory $dir"
     @assert isdir("$dir/$kit") "Invalid drumkit $kit within $dir"
     DrumKit(
-            hit("$dir/$kit/kick.wav"),
-            hit("$dir/$kit/snare.wav"),
-            hit("$dir/$kit/hihat.wav"),
-            hit("$dir/$kit/tom1.wav"),
-            hit("$dir/$kit/tom2.wav"),
-            hit("$dir/$kit/tom3.wav")
-           )
+        hit("$dir/$kit/kick.wav"),
+        hit("$dir/$kit/snare.wav"),
+        hit("$dir/$kit/hihat.wav"),
+        hit("$dir/$kit/tom1.wav"),
+        hit("$dir/$kit/tom2.wav"),
+        hit("$dir/$kit/tom3.wav"),
+    )
 end
 drumkit(kit::AbstractString) = drumkit(kit, (@__DIR__) * "/drumkits")

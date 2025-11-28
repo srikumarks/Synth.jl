@@ -8,7 +8,7 @@ import DSP
 Wraps a "sample" in the sense of a "snippet of sound intended for
 playing back directly".
 """
-mutable struct Sample{SV <: AbstractVector{Float32}} <: Signal
+mutable struct Sample{SV<:AbstractVector{Float32}} <: Signal
     const samples::SV
     const N::Int
     i::Int
@@ -18,14 +18,14 @@ mutable struct Sample{SV <: AbstractVector{Float32}} <: Signal
 end
 
 struct AudioSample
-    data :: Vector{Float32}
-    samplingrate :: Float64
+    data::Vector{Float32}
+    samplingrate::Float64
 end
 
 # We keep a cache of samples loaded from files based on the file paths
 # so that we can slice into these files without having to reload them.
 # For now we only do mono sounds though.
-const sample_cache :: Dict{String,AudioSample} = Dict{String,AudioSample}()
+const sample_cache::Dict{String,AudioSample} = Dict{String,AudioSample}()
 
 """
     sample(samples :: Vector{Float32}; looping = false, loopto = 1.0) 
@@ -49,10 +49,10 @@ This cache is looked up (based on the file name) every time a slice is needed.
 """
 function sample(
     samples::SV;
-    looping :: Bool = false,
-    loopto :: Real = 1.0,
-    samplingrate :: Float64 = 48000.0,
-) where {SV <: AbstractVector{Float32}}
+    looping::Bool = false,
+    loopto::Real = 1.0,
+    samplingrate::Float64 = 48000.0,
+) where {SV<:AbstractVector{Float32}}
     Sample(
         samples,
         length(samples),
@@ -64,9 +64,9 @@ function sample(
 end
 function sample(
     samples::SampleBuf;
-    looping :: Bool = false,
-    loopto :: Real = 1.0,
-    samplingrate :: Float64 = SampledSignals.samplerate(samples)
+    looping::Bool = false,
+    loopto::Real = 1.0,
+    samplingrate::Float64 = SampledSignals.samplerate(samples),
 )
     sample(Float32.(samples[:, 1].data); looping, loopto, samplingrate)
 end
@@ -82,19 +82,20 @@ end
 
 function sample(
     filename::AbstractString;
-    looping :: Bool = false,
-    loopto :: Float64 = 1.0,
-    samplingrate ::Float64 = 48000.0,
-    selstart :: Real = 0.0,
-    selend :: Real = Inf,
-    usecache :: Bool = true
+    looping::Bool = false,
+    loopto::Float64 = 1.0,
+    samplingrate::Float64 = 48000.0,
+    selstart::Real = 0.0,
+    selend::Real = Inf,
+    usecache::Bool = true,
 )
     # Avoid reloading file from disk if it was already loaded and cached.
     if haskey(sample_cache, filename)
         buf = sample_cache[filename]
     else
         sb = load(filename)
-        sampledata = resample(Float32.(sb.data[:,1]), SampledSignals.samplerate(sb), samplingrate)
+        sampledata =
+            resample(Float32.(sb.data[:, 1]), SampledSignals.samplerate(sb), samplingrate)
         buf = AudioSample(sampledata, samplingrate)
         sample_cache[filename] = buf
     end
@@ -113,7 +114,7 @@ Retrieve named sample. The retrieved sample will have the
 same looping settings as the stored sample, but not its
 running state.
 """
-function sample(name :: Symbol)
+function sample(name::Symbol)
     s = named_samples[name]
     Sample(s.samples, s.N, 1, s.looping, s.loop_i, s.samplingrate)
 end
@@ -124,7 +125,7 @@ end
 Associates the given name with the given sample so it can be retrieved
 using `sample(::String)`.
 """
-function register!(name :: Symbol, s :: Sample)
+function register!(name::Symbol, s::Sample)
     named_samples[name] = s
     return s
 end

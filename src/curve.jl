@@ -76,16 +76,22 @@ Makes a single interpolated segment for use with [`curve`](@ref "Synth.curve").
 For the last variant, use an appropriate symbol as the first argument
 to determine the type of the segment, such as `seg(:exp, 0.1, 1.0, 0.5)`.
 """
-seg(v::Real, dur::Real) = 
-    LinSeg(Float32(v), Float64(dur), Float32(v), 0.0f0)
-seg(v1::Real, dur::Real, v2::Real) = 
+seg(v::Real, dur::Real) = LinSeg(Float32(v), Float64(dur), Float32(v), 0.0f0)
+seg(v1::Real, dur::Real, v2::Real) =
     LinSeg(Float32(v1), Float64(dur), Float32(v2), Float32((v2 - v1) / dur))
 seg(::Type{LinSeg}, v1::Real, dur::Real, v2::Real) = seg(v1, dur, v2)
 seg(::Type{ExpSeg}, v1::Real, dur::Real, v2::Real) = begin
     logv1 = log(v1)
     logv2 = log(v2)
     dlogvdt = (logv2 - logv1) / dur
-    ExpSeg(Float32(v1), Float32(logv1), Float64(dur), Float32(v2), Float32(logv2), Float32(dlogvdt))
+    ExpSeg(
+        Float32(v1),
+        Float32(logv1),
+        Float64(dur),
+        Float32(v2),
+        Float32(logv2),
+        Float32(dlogvdt),
+    )
 end
 seg(::Type{EaseSeg}, v1::Real, dur::Real, v2::Real) =
     EaseSeg(Float32(v1), Float64(dur), Float32(v2))
@@ -138,12 +144,12 @@ function curve(segments::AbstractVector{<:Seg}; stop = false)
 end
 
 function curve(ty::Type, v::AbstractVector{<:Tuple{Real,Real}}; stop = false)
-    segs = [seg(ty, v[i][2], v[i+1][1] - v[i][1], v[i+1][2]) for i in 1:length(v)-1]
+    segs = [seg(ty, v[i][2], v[i+1][1] - v[i][1], v[i+1][2]) for i = 1:(length(v)-1)]
     curve(segs; stop)
 end
 
 function curve(v::AbstractVector{<:Tuple{Real,Real}}; stop = false)
-    segs = [seg(v[i][2], v[i+1][1] - v[i][1], v[i+1][2]) for i in 1:length(v)-1]
+    segs = [seg(v[i][2], v[i+1][1] - v[i][1], v[i+1][2]) for i = 1:(length(v)-1)]
     curve(segs; stop)
 end
 
@@ -196,14 +202,25 @@ function Base.map(fn::Function, c::Curve)
     Curve(map(fn, c.segments), 0, 0.0, c.times, c.tend, c.stop_at_end)
 end
 
-stretch(factor::Real, seg::LinSeg) = 
+stretch(factor::Real, seg::LinSeg) =
     LinSeg(seg.v1, Float64(factor * seg.dur), seg.v2, Float32(seg.dvdt / factor))
-stretch(factor::Real, seg::ExpSeg) = 
-    ExpSeg(seg.v1, seg.logv1, Float64(factor * seg.dur), seg.v2, seg.logv2, Float32(seg.dlogvdt / factor))
-stretch(factor::Real, seg::EaseSeg) = 
-    EaseSeg(seg.v1, Float64(factor * seg.dur), seg.v2)
-stretch(factor::Real, seg::HarSeg) = 
-    HarSeg(seg.v1, seg.v1inv, Float64(factor * seg.dur), seg.v2, seg.v2inv, Float32(seg.dvinvdt / factor))
+stretch(factor::Real, seg::ExpSeg) = ExpSeg(
+    seg.v1,
+    seg.logv1,
+    Float64(factor * seg.dur),
+    seg.v2,
+    seg.logv2,
+    Float32(seg.dlogvdt / factor),
+)
+stretch(factor::Real, seg::EaseSeg) = EaseSeg(seg.v1, Float64(factor * seg.dur), seg.v2)
+stretch(factor::Real, seg::HarSeg) = HarSeg(
+    seg.v1,
+    seg.v1inv,
+    Float64(factor * seg.dur),
+    seg.v2,
+    seg.v2inv,
+    Float32(seg.dvinvdt / factor),
+)
 
 
 """
@@ -214,13 +231,13 @@ Stretches the times of the curve segments by the given factor.
 function stretch(factor::Real, c::Curve)
     f = Float64(factor)
     Curve(
-          map(seg -> stretch(f, seg), c.segments), 
-          0,
-          0.0,
-          map(t -> f * t, c.times),
-          c.tend * f,
-          c.stop_at_end
-         )
+        map(seg -> stretch(f, seg), c.segments),
+        0,
+        0.0,
+        map(t -> f * t, c.times),
+        c.tend * f,
+        c.stop_at_end,
+    )
 end
 
 """
@@ -228,14 +245,13 @@ end
 
 Concatenates the two curves in time.
 """
-function concat(c1::Curve, c2::Curve; stop::Bool=c2.stop_at_end)
+function concat(c1::Curve, c2::Curve; stop::Bool = c2.stop_at_end)
     Curve(
-          vcat(c1.segments, c2.segments),
-          0,
-          0.0,
-          vcat(c1.times, map(t -> t + c1.tend, c2.times)),
-          c1.tend + c2.tend,
-          stop
-         )
+        vcat(c1.segments, c2.segments),
+        0,
+        0.0,
+        vcat(c1.times, map(t -> t + c1.tend, c2.times)),
+        c1.tend + c2.tend,
+        stop,
+    )
 end
-

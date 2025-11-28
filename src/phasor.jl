@@ -37,7 +37,8 @@ saw(f, phi0::Float64 = 0.0) = protect(2.0f0 * phasor(f, phi0) - 1.0f0)
 
 A protected triangular wave (See [`protect`](@ref))
 """
-tri(f, phi0::Float64 = 0.0) = protect(map(x -> x > 1.0f0 ? 2.0f0 - x : x, 2.0f0 * phasor(f, phi0)))
+tri(f, phi0::Float64 = 0.0) =
+    protect(map(x -> x > 1.0f0 ? 2.0f0 - x : x, 2.0f0 * phasor(f, phi0)))
 
 """
     sq(f :: Union{Real,Signal}, phi0::Float64 = 0.0)
@@ -46,7 +47,5 @@ A protected square wave (See [`protect`](@ref)).
 This is perhaps the harshest of them with a small possibility
 of aliasing, so the q factor for this is twice the usual.
 """
-sq(f, phi0::Float64 = 0.0; threshold :: Float32=0.5f0) = 
+sq(f, phi0::Float64 = 0.0; threshold::Float32 = 0.5f0) =
     protect(map(x -> x > threshold ? 1.0f0 : -1.0f0, phasor(f, phi0)); q = 20.0f0)
-
-
