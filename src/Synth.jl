@@ -90,6 +90,7 @@ include("fx.jl")
 
 include("models/models.jl")
 include("gens.jl")
+include("ui.jl")
 #include("ui/ui.jl")
 
 end # module Synth
