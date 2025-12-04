@@ -7,7 +7,7 @@ export konst, krate, clip, sigfun, fanout, feedback, connect, clock, clock_bpm, 
 export oscil, phasor, saw, tri, sq, noise, sample
 export line, expon, adsr, decay, follow
 export render, write, read_rawaudio
-export startaudio, play, mic, control, level, probe, waveprobe, Bus, bus, sched, now
+export startaudio, play, mic, control, monitor, level, probe, waveprobe, Bus, bus, sched, now
 export MIDIOutput,
     mididevices,
     midioutput,
