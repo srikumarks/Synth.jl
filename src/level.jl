@@ -42,7 +42,7 @@ Computes the smoothed dB level of a signal. The range is from 0 to about 90dB.
 This is intended for visualization and not for use as a signal itself.
 Use `monitor` if you want an observable to link to a UI.
 
-For the default value, the max ends up around ``20\\log_{10}(32767) \\approx 90.309\\text{dB}``.
+For the default value, the max ends up around ``20\\log_{10}(8000) \\approx 78\\text{dB}``.
 A factor of two change in amplitude is a change in level of around 6.021 dB.
 
 Named arguments -
@@ -51,14 +51,14 @@ Named arguments -
   The smoothing and update interval - i.e. the time constant of the
   first order filter that's applied on the square of the signal.
   This is also the interval at which the observable will be updated.
-- `refmin=1/32767` The minimum logical signal value that is not zero.
+- `refmin=1/8000` The minimum logical signal value that is not zero.
   It is the tiniest sliver of sound intensity that can be registered.
-  The default is set to a value appropriate for 16-bit sampled sound.
+  The default is set to a value appropriate for 14-bit sampled sound.
 - `samplingrate=48000`
 - `label::AbstractString=""` for use with user interface elements if provided.
 
 """
-function monitor(s::Signal; interval = 0.015, refmin = 1/32767, samplingrate = 48000, label::AbstractString="")
+function monitor(s::Signal; interval = 0.015, refmin = 1/8000, samplingrate = 48000, label::AbstractString="")
     wx = Float32(2^(-1/(interval*samplingrate)))
     ws = 1.0f0 - wx
     obs = Observable(0.0f0)
@@ -86,7 +86,7 @@ but gives the value as a signal, while `monitor` passes through the signal while
 observing it.
 """
 function level(s::Signal)
-    refmin = Float32(1/(32767^2))
+    refmin = Float32(1/(8000^2))
     square(x::Float32) = x*x
     tolevel(x::Float32) = Float32(10.0 * log10(x+refmin))
     map(tolevel, lpf(map(square, s), 30.0, 10.0))
