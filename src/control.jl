@@ -90,13 +90,13 @@ function control(
     obs::Observable{Float32},
     range::Tuple{Real,Real};
     dezipper_interval = 0.0075,
-    initial = 0.0f0,
+    initial = range[1],
     samplingrate = 48000,
     label::AbstractString = ""
-)::Control
+)
     @assert range[1] < range[2] "Invalid control range $range"
     wv = 2 ^ (- 1.0 / (dezipper_interval * samplingrate))
-    c = Control(string(label),obs, range, wv, 1.0 - wv, initial, Float32(range[1]), initial, 0.0)
+    c = Control(string(label),obs, range, wv, 1.0 - wv, Float32(initial), Float32(range[1]), Float32(initial), 0.0)
     on(obs) do v
         v = max(c.range[1], min(c.range[2], v))
         @atomic :monotonic c.latestval = v
@@ -107,12 +107,12 @@ function control(
     obs::Observable{Float32},
     range::StepRangeLen;
     dezipper_interval = 0.0075,
-    initial = 0.0f0,
+    initial = range[1],
     samplingrate = 48000,
     label::AbstractString = ""
-)::Control
+)
     wv = 2 ^ (- 1.0 / (dezipper_interval * samplingrate))
-    c = Control(string(label), obs, range, wv, 1.0 - wv, initial, Float32(range[1]), initial, 0.0)
+    c = Control(string(label), obs, range, wv, 1.0 - wv, Float32(initial), Float32(range[1]), Float32(initial), 0.0)
     on(obs) do v
         v = max(c.range[1], min(c.range[end], v))
         @atomic :monotonic c.latestval = v
@@ -122,10 +122,10 @@ end
 function control(range::ControlRange;
     dezipper_interval = 0.0075,
     bufferlength = 2,
-    initial = 0.0f0,
+    initial = range[1],
     samplingrate = 48000,
     label::AbstractString = ""
-)::Control
-    control(Observable{Float32}(0.0f0), range; dezipper_interval, initial, samplingrate, label)
+)
+    control(Observable{Float32}(initial), range; dezipper_interval, initial, samplingrate, label)
 end
 

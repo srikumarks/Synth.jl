@@ -20,7 +20,8 @@ mutable struct ValProbe{S<:Signal} <: Probe{Float32}
     v::Float32
 end
 
-source(p::ValProbe{S}) where {S<:Signal} = p.obs
+dispval(p::ValProbe) = s.v
+Observables.on(f, p::ValProbe) = on(f, p.obs)
 
 done(p::ValProbe{S}, t, dt) where {S<:Signal} = done(p.s, t, dt)
 
@@ -29,9 +30,6 @@ function value(p::ValProbe{S}, t, dt) where {S<:Signal}
     p.v = p.wv * p.v + p.ws * sv
     p.t -= dt
     if p.t < 0.0
-        # TODO: There is perhaps room for some improvement here
-        # to keep the probe value fresh in case it is taking
-        # time to draw out already probed values.
         p.obs[] = p.v
         p.t += p.interval
     end
@@ -111,14 +109,8 @@ function value(p::WaveProbe{S}, t, dt) where {S<:Signal}
         @assert length(p.samples) == p.Nduration
         @assert p.Nduration >= p.Ninterval
         @assert length(span) <= p.Nduration
-        if !isfull(p.chan)
-            # If can't put now, just skip it.
-            ts = TimedSamples(span, p.samples[1:length(span)])
-            @debug "Sending probe wave" span=length(ts.span) samples=length(ts.samples) min=minimum(
-                ts.samples,
-            ) max=maximum(ts.samples)
-            p.obs[] = ts
-        end
+        ts = TimedSamples(span, p.samples[1:length(span)])
+        p.obs[] = ts
         if p.i_from + p.Ninterval > p.Nduration
             @assert p.i_from + p.Ninterval == p.Nduration + 1
             p.samples[1:(p.i_from-1)] = view(p.samples, (p.Ninterval+1):p.Nduration)
