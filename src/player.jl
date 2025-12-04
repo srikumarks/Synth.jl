@@ -7,18 +7,41 @@ function drain(ch)
     end
 end
 
-function audiothread(chans, samplingrate, rq, wq, reportLatency_ms)
+function selectdevice(chans::Int=1, name::AbstractString="")
+    devs = PortAudio.devices()
+    nameparts = split(strip(lowercase(name)), r"\s+")
+    @debug "Available audio devices" devices=devs
+    for d in devs
+        devname = lowercase(d.name)
+        if d.output_bounds.max_channels >= chans && all(occursin(part, devname) for part in nameparts)
+            return d
+        end
+    end
+    @error "Desired device with name '$name' and $chans channels not found."
+    for d in PortAudio.devices()
+        if d.output_bounds.max_channels >= chans
+            @warn "Picked device '$(d.name)'"
+            return d
+        end
+    end
+    throw(SystemError("Audio output device unavailable"))
+end
+
+function audiothread(chans, samplingrate, rq, wq, reportLatency_ms, devicechoice="")
     recommended_latency = if Sys.isapple()
         0.015
     else
         nothing
     end
+    dev = selectdevice(chans, devicechoice)
     stream = PortAudio.PortAudioStream(
+        dev,
         0,
         chans;
         samplerate = samplingrate,
         latency = recommended_latency,
     )
+    @debug "Stream created" stream=stream info=dev.output_bounds
     streaminfo = unsafe_load(PortAudio.LibPortAudio.Pa_GetStreamInfo(stream.pointer_to))
     latency_secs = streaminfo.outputLatency
     latency_ms = ceil(Int, latency_secs * 1000)
@@ -63,6 +86,7 @@ function startaudio(
     chans::Int = 1,
     blocksize::Int = 64,
     mididevice::AbstractString = "",
+    audiodevice::AbstractString = ""
 )
     rq = Channel{Union{Val{:done},SampleBuf{Float32,2}}}(2)
     wq = Channel{Union{Val{:done},SampleBuf{Float32,2}}}(2)
@@ -91,7 +115,7 @@ function startaudio(
     end
     Threads.@spawn :interactive begin
         try
-            audiothread(chans, samplingrate, rq, wq, latency_ms)
+            audiothread(chans, samplingrate, rq, wq, latency_ms, audiodevice)
         catch e
             @error "Audio thread error" error=(e, catch_backtrace())
         end
@@ -127,6 +151,17 @@ end
     play(signal::Signal, duration_secs=Inf; blocksize=64)
     play(soundfile::AbstractString)
 
+Other named arguments - 
+
+- `mididevice::AbstractString=""` a name pattern to match against the
+  MIDI output device to select. Leave as default to pick a suitable one.
+
+- `audiodevice::AbstractString=""` a case insensitive name pattern to
+  match against the set of available audio output devices. If you leave
+  as default, then only the availability of sufficient output channels
+  will be considered as a criterion for selecting a device. For example,
+  if you pass "speaker", it will match against "MacBook Air Speakers".
+
 Plays the given signal on the default audio output in realtime for the given
 duration or till the signal ends, whichever happens earlier. Be careful about
 the signal level since in this case the signal can't be globally normalized.
@@ -144,6 +179,7 @@ function play(
     chans = 1,
     blocksize = 64,
     mididevice::AbstractString = "",
+    audiodevice::AbstractString = ""
 )
     function callback(sample_rate, rq, wq)
         #println("In callback $sample_rate, $rq, $wq")
@@ -183,7 +219,7 @@ function play(
         put!(wq, endmarker)
         @info "Audio generator done!"
     end
-    startaudio(callback; chans, blocksize, mididevice)
+    startaudio(callback; chans, blocksize, mididevice, audiodevice)
 end
 
 function play(soundfile::AbstractString)
