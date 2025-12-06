@@ -39,11 +39,11 @@ struct Message{T <: Union{Tuple, NamedTuple}}
 end
 
 function wordboundarylength(n::Int)
-    m = N % 4
+    m = n % 4
     if m > 0
-        return N - m + 4
+        return n - m + 4
     else
-        return N
+        return n
     end
 end
 osctag(::Int32) = 'i'
@@ -102,6 +102,7 @@ oscsize(s::Symbol) = oscsize(String(s))
 oscsize(b::Bytes) = 4 + length(b)
 oscsize(b::Colour) = 4
 oscsize(t::Tuple) = sum(oscsize(v) for v in t)
+osctagsize(t::Tuple) = wordboundarylength(2+length(t)) # The tag has an extra leading "," character.
 
 """
     pack!(packet::Bytes, address::AbstractString, t::Tuple)
@@ -116,8 +117,10 @@ Use [`packosc`](@ref "Synth.OSC.packosc") if you want the packet
 to be allocated automatically.
 """
 function pack!(packet::Bytes, address::AbstractString, t::Tuple)
-    @assert !isnothing(match(address, r"^([/][a-zA-Z0-9]+)+$"))
-    typetag = "," * join(osctypetag.(t.types))
+    @assert !isnothing(match(r"^([/][a-zA-Z0-9]+)+$", address))
+
+    typetag = "," * join(osctag.(t))
+    N = length(packet)
     n = 0
     n += packoscval(view(packet, n+1:N), address)
     n += packoscval(view(packet, n+1:N), typetag)
@@ -138,7 +141,7 @@ OSC packet with the given data. See also [`pack!`](@ref "Synth.OSC.pack!")
 for a non-allocating version.
 """
 function pack(address::AbstractString, t::Tuple)
-    packet = zeros(UInt8, oscsize(t))
+    packet = zeros(UInt8, oscsize(address) + osctagsize(t) + oscsize(t))
     pack!(packet, address, t)
     return packet
 end
@@ -167,9 +170,9 @@ end
 function packoscval(packet::Bytes, val::UInt32)
     @assert length(packet) >= 4
     @assert val <= typemax(Int32)
-    packet[1] = (val >> 3) & 0xFF
-    packet[2] = (val >> 2) & 0xFF
-    packet[3] = (val >> 1) & 0xFF
+    packet[1] = (val >> 24) & 0xFF
+    packet[2] = (val >> 16) & 0xFF
+    packet[3] = (val >> 8) & 0xFF
     packet[4] = val & 0xFF
     return 4
 end
@@ -177,13 +180,13 @@ end
 function packoscval(packet::Bytes, val::UInt64)
     @assert length(packet) >= 8
     @assert val <= typemax(Int64)
-    packet[1] = (val >> 7) & 0xFF
-    packet[2] = (val >> 6) & 0xFF
-    packet[3] = (val >> 5) & 0xFF
-    packet[4] = (val >> 4) & 0xFF
-    packet[5] = (val >> 3) & 0xFF
-    packet[6] = (val >> 2) & 0xFF
-    packet[7] = (val >> 1) & 0xFF
+    packet[1] = (val >> 56) & 0xFF
+    packet[2] = (val >> 48) & 0xFF
+    packet[3] = (val >> 40) & 0xFF
+    packet[4] = (val >> 32) & 0xFF
+    packet[5] = (val >> 24) & 0xFF
+    packet[6] = (val >> 16) & 0xFF
+    packet[7] = (val >> 8) & 0xFF
     packet[8] = val & 0xFF
     return 8
 end
@@ -191,32 +194,32 @@ end
 
 function packoscval(packet::Bytes, val::Int32)
     @assert length(packet) >= 4
-    packet[1] = (val >> 3) & 0xFF
-    packet[2] = (val >> 2) & 0xFF
-    packet[3] = (val >> 1) & 0xFF
+    packet[1] = (val >> 24) & 0xFF
+    packet[2] = (val >> 16) & 0xFF
+    packet[3] = (val >> 8) & 0xFF
     packet[4] = val & 0xFF
     return 4
 end
 
 function packoscval(packet::Bytes, val::Int64)
     @assert length(packet) >= 8
-    packet[1] = (val >> 7) & 0xFF
-    packet[2] = (val >> 6) & 0xFF
-    packet[3] = (val >> 5) & 0xFF
-    packet[4] = (val >> 4) & 0xFF
-    packet[5] = (val >> 3) & 0xFF
-    packet[6] = (val >> 2) & 0xFF
-    packet[7] = (val >> 1) & 0xFF
+    packet[1] = (val >> 56) & 0xFF
+    packet[2] = (val >> 48) & 0xFF
+    packet[3] = (val >> 40) & 0xFF
+    packet[4] = (val >> 32) & 0xFF
+    packet[5] = (val >> 24) & 0xFF
+    packet[6] = (val >> 16) & 0xFF
+    packet[7] = (val >> 8) & 0xFF
     packet[8] = val & 0xFF
     return 8
 end
 
 function packoscval(packet::Bytes, val::Float32)
-    packoscval(packet, reinterpret(Int32, val))
+    packoscval(packet, only(reinterpret(Int32, val)))
 end
 
 function packoscval(packet::Bytes, val::Float64)
-    packoscval(packet, reinterpret(Int64, val))
+    packoscval(packet, only(reinterpret(Int64, val)))
 end
 
 function packoscval(packet::Bytes, val::Char)
@@ -262,16 +265,18 @@ msg = unpack(FloatMsg, packetBytes)
         v = Symbol("v$i")
         pprev = Symbol("p$i")
         pnext = Symbol("p$(i+1)")
-        push!(steps, :(($v, $pnext) = osctaggedval($ty, Val(typetags[i]), $pprev)))
+        push!(steps, :(($v, $pnext) = osctaggedval($ty, Val(typetags[$i]), $pprev)))
         push!(vars, :($v))
     end
-    quote
+    e = quote
         (address, p0) = oscstring(packet)
         (typetags, p1) = osctypetag(p0)
-        @assert !isnothing(match(typetags, r"^[ifsbhtdcSTFNr]+$"))
+        @assert !isnothing(match(r"^[ifsbhtdcSTFNr]+$", typetags))
         $(steps...)
         Message(address, ($(vars...),))
     end
+    println(e)
+    return e
 end
 
 @generated function unpack(t::Type{<:NamedTuple}, packet::Bytes)
@@ -292,20 +297,22 @@ end
     quote
         (address, p0) = oscstring(packet)
         (typetags, p1) = osctypetag(p0)
-        @assert !isnothing(match(typetags, r"^[ifsbhtdcSTFNr]+$"))
+        @assert !isnothing(match(r"^[ifsbhtdcSTFNr]+$", typetags))
         $(steps...)
         Message(address, ($(vars...),))
     end
 end
 
-unpack(t::Type{Message}, packet::Bytes) = unpack(t.parameters[1], packet)
+unpack(t::Type{<:Message}, packet::Bytes) = unpack(t.parameters[1], packet)
 
 function oscstring(packet::Bytes)
     N = length(packet)
     for i in eachindex(packet)
         if packet[i] == UInt8(0x0)
             str = String(view(packet, 1:i-1))
-            while packet[i] == UInt8(0) && i + 1 <= N
+            N2 = wordboundarylength(length(codeunits(str))+1)
+            while i <= N2
+                @assert packet[i] == UInt8(0x0)
                 i += 1
             end
             return (str, view(packet, i:N))
@@ -315,29 +322,29 @@ function oscstring(packet::Bytes)
 end
 
 function osctypetag(packet::Bytes)
-    N = length(packet)
-    @assert packet[1] == UInt8(0x2c)
-    oscstring(view(packet, 2:N))
+    (s,p) = oscstring(packet)
+    @assert s[1] == ','
+    (s[2:end], p)
 end
 
 function osctaggedval(::Type{Float32}, ::Val{'f'}, packet::Bytes)
-    (ntoh(reinterpret(Float32, packet, 1:4)), view(packet, 5:length(packet)))
+    (ntoh(only(reinterpret(Float32, view(packet, 1:4)))), view(packet, 5:length(packet)))
 end
 
 function osctaggedval(::Type{Int32}, ::Val{'i'}, packet::Bytes)
-    (ntoh(reinterpret(Int32, packet, 1:4)), view(packet, 5:length(packet)))
+    (ntoh(only(reinterpret(Int32, view(packet, 1:4)))), view(packet, 5:length(packet)))
 end
 
 function osctaggedval(::Type{UInt32}, ::Val{'i'}, packet::Bytes)
-    (ntoh(reinterpret(UInt32, packet, 1:4)), view(packet, 5:length(packet)))
+    (ntoh(only(reinterpret(UInt32, view(packet, 1:4)))), view(packet, 5:length(packet)))
 end
 
 function osctaggedval(::Type{Int64}, ::Val{'h'}, packet::Bytes)
-    (ntoh(reinterpret(Int64, packet, 1:8)), view(packet, 9:length(packet)))
+    (ntoh(only(reinterpret(Int64, view(packet, 1:8)))), view(packet, 9:length(packet)))
 end
 
 function osctaggedval(::Type{UInt64}, ::Val{'h'}, packet::Bytes)
-    (ntoh(reinterpret(UInt64, packet, 1:8)), view(packet, 9:length(packet)))
+    (ntoh(only(reinterpret(UInt64, view(packet, 1:8)))), view(packet, 9:length(packet)))
 end
 
 function osctaggedval(::Type{Char}, ::Val{'c'}, packet::Bytes)
@@ -347,11 +354,11 @@ end
 
 # A 32-bit int value can be read into a 64-bit position but not vice versa.
 function osctaggedval(::Type{Int64}, ::Val{'i'}, packet::Bytes)
-    (Int64(ntoh(reinterpret(Int32, packet, 1:4))), view(packet, 5:length(packet)))
+    (Int64(ntoh(only(reinterpret(Int32, view(packet, 1:4))))), view(packet, 5:length(packet)))
 end
 
 function osctaggedval(::Type{UInt64}, ::Val{'i'}, packet::Bytes)
-    (Int64(ntoh(reinterpret(Int32, packet, 1:4))), view(packet, 5:length(packet)))
+    (Int64(ntoh(only(reinterpret(Int32, view(packet, 1:4))))), view(packet, 5:length(packet)))
 end
 
 
@@ -367,17 +374,17 @@ function osctaggedval(::Type{Blob}, ::Val{'b'}, packet::Bytes)
 end
 
 function osctaggedval(::Type{TimeTag}, ::Val{'t'}, packet::Bytes)
-    (TimeTag(ntoh(reinterpret(Int64, packet, 1:8))), view(packet, 9:length(packet)))
+    (TimeTag(ntoh(only(reinterpret(Int64, view(packet, 1:8))))), view(packet, 9:length(packet)))
 end
 
 function osctaggedval(::Type{Float64}, ::Val{'d'}, packet::Bytes)
-    (ntoh(reinterpret(Float64, packet, 1:8)), view(packet, 9:length(packet)))
+    (ntoh(only(reinterpret(Float64, view(packet, 1:8)))), view(packet, 9:length(packet)))
 end
 
 # Float64 can be used to match a Float32 but not vice versa due to 
 # potential precision issues.
 function osctaggedval(::Type{Float64}, ::Val{'f'}, packet::Bytes)
-    (Float64(ntoh(reinterpret(Float32, packet, 1:4))), view(packet, 5:length(packet)))
+    (Float64(ntoh(only(reinterpret(Float32, view(packet, 1:4))))), view(packet, 5:length(packet)))
 end
 
 function osctaggedval(::Type{Symbol}, ::Union{Val{'s'},Val{'S'}}, packet::Bytes)
