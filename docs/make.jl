@@ -30,6 +30,7 @@ makedocs(
                                      "wt.md",
                                      "gran.md",
                                      "utils.md",
+                                     "osc.md",
                                      "ui.md"
                                     ],
                   "Other" => Any[
