@@ -2,6 +2,7 @@
 module Synth
 
 using FileIO: load
+export OSC
 export load
 export konst, krate, clip, sigfun, fanout, feedback, connect, clock, clock_bpm, convolve
 export oscil, phasor, saw, tri, sq, noise, sample
@@ -90,6 +91,7 @@ include("fx.jl")
 
 include("models/models.jl")
 include("gens.jl")
+include("osc.jl")
 include("ui.jl")
 #include("ui/ui.jl")
 
