@@ -102,10 +102,12 @@ oscsize(s::Symbol) = oscsize(String(s))
 oscsize(b::Bytes) = 4 + length(b)
 oscsize(b::Colour) = 4
 oscsize(t::Tuple) = sum(oscsize(v) for v in t)
+oscsize(t::NamedTuple) = oscsize(values(t))
 osctagsize(t::Tuple) = wordboundarylength(2+length(t)) # The tag has an extra leading "," character.
+osctagsize(t::NamedTuple) = wordboundarylength(2+length(t))
 
 """
-    pack!(packet::Bytes, address::AbstractString, t::Tuple)
+    pack!(packet::Bytes, address::AbstractString, t::Union{Tuple,NamedTuple})
     pack!(packet::Bytes, msg::Message)
 
 Packs the given tuple of data to be sent to the given address
@@ -116,10 +118,11 @@ must have sufficient size to store all the information.
 Use [`packosc`](@ref "Synth.OSC.packosc") if you want the packet
 to be allocated automatically.
 """
-function pack!(packet::Bytes, address::AbstractString, t::Tuple)
+function pack!(packet::Bytes, address::AbstractString, t::Union{Tuple,NamedTuple})
     @assert !isnothing(match(r"^([/][a-zA-Z0-9]+)+$", address))
 
-    typetag = "," * join(osctag.(t))
+    tv = values(t)
+    typetag = "," * join(osctag.(tv))
     N = length(packet)
     n = 0
     n += packoscval(view(packet, n+1:N), address)
@@ -145,6 +148,13 @@ function pack(address::AbstractString, t::Tuple)
     pack!(packet, address, t)
     return packet
 end
+function pack(address::AbstractString, t::NamedTuple)
+    tv = values(t)
+    packet = zeros(UInt8, oscsize(address) + osctagsize(tv) + oscsize(tv))
+    pack!(packet, address, t)
+    return packet
+end
+
 
 pack(msg::Message) = pack(msg.address, msg.data)
 
@@ -291,7 +301,7 @@ end
         pprev = Symbol("p$i")
         pnext = Symbol("p$(i+1)")
         fn = fieldNames[i]
-        push!(steps, :(($v, $pnext) = osctaggedval($ty, Val(typetags[i]), $pprev)))
+        push!(steps, :(($v, $pnext) = osctaggedval($ty, Val(typetags[$i]), $pprev)))
         push!(vars, :($fn = $v))
     end
     quote
