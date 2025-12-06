@@ -5,10 +5,10 @@ using Observables
     abstract type Probe{T} <: Signal end
 
 Needs to support the method `source(probe::Probe{T}) :: Observable{T}`
-To connect a probe to an appropriate UI element, use [`connectui`](@ref)
-(`connectui(::Union{LED,Level,Waveform},::Probe{T})`).
 """
 abstract type Probe{T} <: Signal end
+
+Observables.on(f, p::Probe) = Observables.on(f, source(p))
 
 mutable struct ValProbe{S<:Signal} <: Probe{Float32}
     const s::S
@@ -20,8 +20,8 @@ mutable struct ValProbe{S<:Signal} <: Probe{Float32}
     v::Float32
 end
 
+source(p::ValProbe) = p.obs
 dispval(p::ValProbe) = s.v
-Observables.on(f, p::ValProbe) = on(f, p.obs)
 
 done(p::ValProbe{S}, t, dt) where {S<:Signal} = done(p.s, t, dt)
 
@@ -91,7 +91,12 @@ mutable struct WaveProbe{S<:Signal} <: Probe{TimedSamples}
     i_to::Int
 end
 
-source(p::WaveProbe{S}) where {S<:Signal} = s.obs
+source(p::WaveProbe) = s.obs
+dispval(p::WaveProbe) = begin
+    dt = p.duration / length(p.samples)
+    TimedSamples(0.0:dt:(p.duration-dt), p.samples)
+end
+
 done(p::WaveProbe{S}, t, dt) where {S<:Signal} = done(p.s, t, dt)
 
 
@@ -151,3 +156,4 @@ function waveprobe(
         1,
     )
 end
+

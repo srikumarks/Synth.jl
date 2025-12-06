@@ -1,5 +1,5 @@
 
-mutable struct Monitor{S<:Signal} <: Signal
+mutable struct Monitor{S<:Signal} <: Probe{Float32}
     const s::S
     const obs::Observable{Float32}
     const label::String
@@ -14,8 +14,8 @@ mutable struct Monitor{S<:Signal} <: Signal
     t_remaining::Float64
 end
 
+source(m::Monitor) = m.obs
 dispval(m::Monitor) = m.l
-Observables.on(f, m::Monitor) = on(f, m.obs)
 
 done(s::Monitor{S}, t, dt) where {S<:Signal} = done(s.s, t, dt)
 function value(s::Monitor{S}, t, dt) where {S<:Signal}
