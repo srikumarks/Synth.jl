@@ -44,18 +44,18 @@ function done(s::Delay, t, dt)
     end
 end
 
-function value(sig::Delay, t, dt)
-    if t > sig.t
-        sig.t = t
-        v = value(sig.sig, t, dt)
-        sig.v = v
-        sig.line[1+sig.write_i] = v
-        sig.write_i = mod(sig.write_i + 1, sig.N)
-        if s.done
-            s.wait_after_done -= dt
+function value(d::Delay, t, dt)
+    if t > d.t
+        d.t = t
+        v = value(d.sig, t, dt)
+        d.v = v
+        d.line[1+d.write_i] = v
+        d.write_i = mod(d.write_i + 1, d.N)
+        if d.done
+            d.wait_after_done -= dt
         end
     end
-    sig.v
+    d.v
 end
 
 """
