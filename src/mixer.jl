@@ -17,7 +17,7 @@ end
 function done(s::Mix, t, dt)
     s.alive1 = !done(s.s1, t, dt)
     s.alive2 = !done(s.s2, t, dt)
-    return !(s.alive1 || s.slive2)
+    return !(s.alive1 || s.alive2)
 end
 
 

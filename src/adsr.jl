@@ -25,7 +25,7 @@ end
 
 """
     adsr(suslevel :: Real, sus_secs :: Real;
-         attack_factor = 2.0, attack_secs = 0.002,
+         attack_factor = 1.0, attack_secs = 0.002,
          decay_secs = 0.01, release_secs = 0.2,
          release_factor = 4.0, samplingrate=48000)
 
@@ -59,7 +59,7 @@ can change if needed.
 function adsr(
     suslevel::Real,
     sus_secs::Real;
-    attack_factor = 2.0,
+    attack_factor = 1.0,
     attack_secs = 0.002,
     decay_secs = 0.01,
     release_secs = 0.2,

@@ -6,6 +6,8 @@ mutable struct Delay{S<:Signal} <: SignalWithFanout
     write_i::Int
     t::Float64
     v::Float32
+    done::Bool
+    wait_after_done::Float64
 end
 
 """
@@ -23,18 +25,35 @@ locations.
 function delay(sig::Signal, maxdelay::Real; samplingrate = 48000)
     N = round(Int, maxdelay * samplingrate)
     @assert N > 0
-    Delay(sig, Float64(N / samplingrate), zeros(Float32, N), N, 0, 0.0, 0.0f0)
+    Delay(sig, Float64(N / samplingrate), zeros(Float32, N), N, 0, 0.0, 0.0f0, false, 0.0)
 end
 
-done(s::Delay, t, dt) = done(sig, t, dt)
+function done(s::Delay, t, dt) 
+    if s.done && s.wait_after_done < 0.0
+        return true
+    else s.done
+        return false
+    else
+        d = done(s.sig, t, dt)
+        s.done = d
+        if d
+            # Wait until the delay line is emptied before stopping the delay.
+            s.wait_after_done = s.max_delay
+        end
+        return false
+    end
+end
 
 function value(sig::Delay, t, dt)
     if t > sig.t
         sig.t = t
-        v = value(sig, t, dt)
+        v = value(sig.sig, t, dt)
         sig.v = v
         sig.line[1+sig.write_i] = v
         sig.write_i = mod(sig.write_i + 1, sig.N)
+        if s.done
+            s.wait_after_done -= dt
+        end
     end
     sig.v
 end
@@ -52,7 +71,7 @@ function tapat(sig::Delay, at, t, dt)
     # circular buffer corresponding to the delay.
     read_i = floor(Int, ixf)   # The integer index.
     frac = ixf - read_i        # The fractional part for interpolation.
-    mread_i = mod(read_i, N)   # Wrapped around index. 0-based.
+    mread_i = mod(read_i, sig.N)   # Wrapped around index. 0-based.
     out1 = sig.line[1+mread_i] # First value.
     out2 = sig.line[1+mod(1+mread_i, sig.N)] # Second value
     out1 + frac * (out2 - out1) # Interpolated value.
@@ -70,7 +89,7 @@ done(s::Tap{S,T}, t, dt) where {S<:Signal,T<:Signal} =
 function value(s::Tap{S,T}, t, dt) where {S<:Signal,T<:Signal}
     d = value(s.delay, t, dt)
     at = value(s.tap, t, dt)
-    tapat(s, at, t, dt)
+    tapat(s.delay, at, t, dt)
 end
 
 """

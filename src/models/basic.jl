@@ -1,3 +1,5 @@
+using ..Synth
+using ..Synth: adsr
 
 """
     tone(amp, freq, duration; attack_factor = 2.0, attack_secs = 0.005, decay_secs = 0.05, release_secs = 0.2)
