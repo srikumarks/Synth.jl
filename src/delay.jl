@@ -31,7 +31,7 @@ end
 function done(s::Delay, t, dt) 
     if s.done && s.wait_after_done < 0.0
         return true
-    else s.done
+    elseif s.done
         return false
     else
         d = done(s.sig, t, dt)
