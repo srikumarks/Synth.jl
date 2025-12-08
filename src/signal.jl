@@ -373,9 +373,9 @@ function pan(s::Stereo, lr::Signal)
     end
 end
 
-struct Clip{S<:Signal} <: Signal
+mutable struct Clip{S<:Signal} <: Signal
     dur::Float64
-    s::S
+    const s::S
 end
 
 """
@@ -383,7 +383,9 @@ end
 
 Clips the given signal to the given duration. Usually you'd use a "soft"
 version of this like a raised cosine or ADSR, but clip could be useful on
-its own.
+its own. The semantics of clip is such that if the signal `s` ends before
+the duration is up, it will continue to be called and expect to produce
+0.0f0 value until the duration ends.
 """
 function clip(dur::Float64, s::Signal)
     Clip(dur, s)
@@ -392,11 +394,13 @@ function clip(dur::Float64, s::Stereo{L,R}) where {L<:Signal,R<:Signal}
     stereo(clip(dur, s.left), clip(dur, s.right))
 end
 
-done(c::Clip{S}, t, dt) where {S<:Signal} = t > c.dur || done(c.s, t, dt)
-value(c::Clip{S}, t, dt) where {S<:Signal} =
-    if t > c.dur
+done(c::Clip, t, dt) = c.dur <= 0.0
+
+value(c::Clip, t, dt) =
+    if c.dur <= 0.0
         0.0f0
     else
+        c.dur -= dt
         value(c.s, t, dt)
     end
 
