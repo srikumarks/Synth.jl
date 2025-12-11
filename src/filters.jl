@@ -21,7 +21,7 @@ function filter1(s::Signal, gain::Real)
 end
 done(s::Filter1, t, dt) = done(s.sig, t, dt)
 
-const twoln2 = 2.0 * log(2)
+const twoln2 = Float32(2.0 * log(2))
 
 function value(s::Filter1, t, dt)
     v = value(s.sig, t, dt)

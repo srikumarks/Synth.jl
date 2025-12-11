@@ -508,10 +508,9 @@ osc("/multisense/orientation/pitch", nothing)
 # General routing of message
 b = bus()
 play(b)
-const Buttons = Message{Tuple{Int32}}
+const Buttons = Message{@NamedTuple{btn::Int32}}
 osc("/touch/button", Buttons, b) do address, msg, b
-    btn = msg.data[1]
-    sched(b, midinote(1, btn, 120, 0.5))
+    sched(b, midinote(1, msg.data.btn, 0.8, 0.5))
 end
 # Stop all OSC processing
 osc(:stop)

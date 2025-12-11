@@ -610,7 +610,7 @@ function genproc(m::MidiNote, b::Bus, t, rt)
 end
 
 """
-    midinote(dev::MIDIOutput, chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real = dur)
+    midinote(chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real = dur)
 
 Produces a MIDI note of given duration. The note off will be scheduled
 appropriately and the note will be set to last the given duration.
