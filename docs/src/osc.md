@@ -37,19 +37,19 @@ You can use `NamedTuple` as well with `unpack`.
 ## Methods
 
 ```@docs
-pack!
-pack
-unpack
-start
+Synth.OSC.pack!
+Synth.OSC.pack
+Synth.OSC.unpack
+Synth.OSC.start
 ```
 
 ## Types
 
 ```@docs
-Blob
-Colour
-Color
-TimeTag
-Message
+Synth.OSC.Blob
+Synth.OSC.Colour
+Synth.OSC.Color
+Synth.OSC.TimeTag
+Synth.OSC.Message
 ```
 

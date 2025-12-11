@@ -25,14 +25,38 @@ using FixedPointNumbers:N0f8
 using Sockets
 
 const Bytes = AbstractVector{UInt8}
+
+"""
+`Blob` is a vector of unsigned bytes that can be interpreted
+in an application dependent manner.
+"""
 const Blob = Vector{UInt8}
+
+"""
+`Colour` or `Color` is an RGBA colour that makes up 4 bytes.
+The parsed colour is scaled to [0.0,1.0] range treating the
+colour as a fixed point value.
+"""
 const Colour = RGBA{N0f8}
+
+"""
+Color == Colour
+"""
 const Color = Colour
 
+"""
+An Int64 "timetag" as specified in the OSC spec.
+"""
 struct TimeTag
     timetag::Int64
 end
 
+"""
+    struct Message
+
+Encapsulates an OSC message which is a piece of typed data
+(`.data` field) associated with an address (`.address` field).
+"""
 struct Message{T <: Union{Tuple, NamedTuple}}
     address::String
     data::T
@@ -46,6 +70,12 @@ function wordboundarylength(n::Int)
         return n
     end
 end
+
+"""
+    osctag(::<SupportedType>)
+
+Gives the OSC type code character that will be used for the given value.
+"""
 osctag(::Int32) = 'i'
 osctag(::UInt32) = 'i'
 osctag(::Int64) = 'h'
@@ -61,6 +91,12 @@ osctag(::Bytes) = 'b'
 osctag(::TimeTag) = 't'
 osctag(::Colour) = 'r' 
 
+"""
+    osctypetag(::Type{<SupportedType>})
+
+Gives the OSC type character corresponding to the given Julia type.
+This uses the strict interpretation of the type.
+"""
 osctypetag(::Type{Int32}) = 'i'
 osctypetag(::Type{UInt32}) = 'i'
 osctypetag(::Type{Int64}) = 'h'
@@ -75,6 +111,13 @@ osctypetag(::Type{<:Bytes}) = 'b'
 osctypetag(::Type{TimeTag}) = 't'
 osctypetag(::Type{Colour}) = 'r'
 osctypetag(::Type{Bool}) = 'T' # Note that this is pseudo as the actual value needs to be known.
+
+"""
+    osctagtype(::Val{<Char>})
+
+Gives the Julia type corresponding to the given OSC type character
+given as a `Val{Char}` - e.g. `osctagtype(Val('i')) == Int32`.
+"""
 osctagtype(::Val{'i'}) = Int32
 osctagtype(::Val{'h'}) = Int64
 osctagtype(::Val{'f'}) = Float32
@@ -88,6 +131,14 @@ osctagtype(::Val{'F'}) = Bool
 osctagtype(::Val{'N'}) = Nothing
 osctagtype(::Val{'r'}) = Colour
 osctagtype(::Val{'c'}) = Char
+
+"""
+    oscsize(::<SupportedType>)
+
+The number of bytes the given type will take in the OSC packet.
+ALso supports getting the type of tuples and named tuples, but
+does not include the format string size.
+"""
 oscsize(::Int32) = 4
 oscsize(::UInt32) = 4
 oscsize(::Int64) = 8
@@ -103,6 +154,15 @@ oscsize(b::Bytes) = 4 + length(b)
 oscsize(b::Colour) = 4
 oscsize(t::Tuple) = sum(oscsize(v) for v in t)
 oscsize(t::NamedTuple) = oscsize(values(t))
+
+"""
+    osctagsize(::Union{Tuple,NamedTuple})
+
+Number of bytes taken up by the format code string for the given tuple or named
+tuple. Note that format strings start with a ',' character and therefore will
+have one more character than the length of the tuple. The encoded format string
+is also null-terminated, which adds one more byte.
+"""
 osctagsize(t::Tuple) = wordboundarylength(2+length(t)) # The tag has an extra leading "," character.
 osctagsize(t::NamedTuple) = wordboundarylength(2+length(t))
 
@@ -132,7 +192,6 @@ function pack!(packet::Bytes, address::AbstractString, t::Union{Tuple,NamedTuple
     end
     return view(packet, 1:n)
 end
-
 pack!(packet::Bytes, msg::Message) = pack!(packet, msg.address, msg.data)
 
 """
@@ -154,8 +213,6 @@ function pack(address::AbstractString, t::NamedTuple)
     pack!(packet, address, t)
     return packet
 end
-
-
 pack(msg::Message) = pack(msg.address, msg.data)
 
 function packoscval(packet::Bytes, c::Colour)
