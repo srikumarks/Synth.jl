@@ -41,6 +41,8 @@ Synth.OSC.pack!
 Synth.OSC.pack
 Synth.OSC.unpack
 Synth.OSC.start
+Synth.OSC.dest
+Synth.OSC.send
 ```
 
 ## Types
