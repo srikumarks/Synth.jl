@@ -148,7 +148,7 @@ end
 comb(sig::Signal, freq, gain = 0.6; minfreq = 1.0) = comb(identity, sig, freq, gain; minfreq)
 
 """
-    limiter(sig::SignalWithFanout, level::Real = 0.5f0)
+    limiter(sig::SignalWithFanout, level::Real = 1.0f0)
 
 A simple limiter based on an approximate peak follower. Should help prevent
 uncontrolled growth disasters. Smooths the level measurement and uses it
@@ -158,10 +158,11 @@ to adjust the gain. Has about a 10 millisecond delay.
 instead. Also, the lpf will introduce a small delay that could be problematic.
 Need to test.
 """
-function limiter(sig::SignalWithFanout, level::Real = 0.5f0)
+function limiter(sig::SignalWithFanout, level::Real = 1.0f0)
     sa = map(abs, sig)
     saf = lpf(sa, 100.0, 1.0)
-    gain = map((x) -> if x < level 1.0f0 else Float32(level/x) end, saf)
+    nlevel = level * 2 / pi # Using scale of 2/pi since that's the average of |sin(2πx)|
+    gain = map((x) -> if x < nlevel 1.0f0 else Float32(nlevel/x) end, saf)
     # The tanh exists to limit any transients that can still cause damage.
     map(tanh, gain * sig)
 end
