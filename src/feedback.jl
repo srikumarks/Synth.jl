@@ -29,18 +29,10 @@ function connect(s::Signal, fb::Feedback)
     fb.s = s
 end
 
-function done(fb::Feedback, t, dt)
-    if t <= fb.calculating_t
-        return fb.last_done
-    end
-    out_done = fb.last_done
-    if t > fb.last_t
-        fb.calculating_t = t
-        fb.last_done = done(fb.s, t, dt)
-        fb.last_t = t
-    end
-    return out_done
-end
+# When feedback is used, there is no guarantee of termination that can be
+# inferred. So we can never reliably indicate termination of a cycle.
+done(fb::Feedback, t, dt) = false 
+
 
 function value(fb::Feedback, t, dt)
     if t <= fb.calculating_t

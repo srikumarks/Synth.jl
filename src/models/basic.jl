@@ -1,5 +1,5 @@
 using ..Synth
-using ..Synth: adsr
+using ..Synth: adsr, Signal, konst, Konst, SignalWithFanout
 
 """
     tone(amp, freq, duration; attack_factor = 2.0, attack_secs = 0.005, decay_secs = 0.05, release_secs = 0.2)
@@ -107,3 +107,63 @@ play(fm(220.0f0, 550.0f0, 100.0f0), 5.0)
 function fm(carrier, modulator, index, amp = Synth.konst(1.0f0))
     oscil(amp, carrier + oscil(index, modulator))
 end
+
+"""
+    siginv(s::Signal)
+
+Constructs 1/x. This is sometimes needed, for example when
+building up a limiter. The signal is assumed to be well behaved
+enough to be inverted like this and no checks are done. So 
+you're on your own there. `siginv` is adequately polymorphic.
+"""
+siginv(sig::Signal) = map((a) -> Float32(1.0f0/a), sig)
+siginv(sig::Konst) = konst(1/sig.k)
+siginv(x::Real) = konst(1/x)
+
+"""
+    comb(filter, sig, freq, gain = 0.6)
+
+Applies a comb filter to the given signal `sig` where the `freq` 
+dictates the length of the delay line and `gain` gives the gain
+of the output of the delay line. The given `filter` is a function
+that is called with the delay tap signal in case it needs to be
+filtered in some way. If you omit the `filter` argument, it is
+equivalent to providing the `identity` function. This is a 
+feedback based comb filter.
+
+- The minimum value of `freq` supported is 1.0. To permit lower
+  values, set the `minfreq` keyword argument appropriately.
+
+**WARNING**: Be careful with the `gain` argument as higher values
+can result in runaway positive feedback. To help mitigate such
+runaway effects, a hpf and limiter are in the loop.
+"""
+function comb(filter::Function, sig::Signal, freq, gain = 0.6; minfreq = 1.0, postfeedback=(s) -> limiter(hpf(s,20)))
+    f = feedback()
+    d = delay(f, 1/minfreq)
+    g = gain * filter(tap(d, siginv(freq)))
+    out = fanout(limiter(hpf(g + sig, 20)))
+    connect(out, f)
+end
+comb(sig::Signal, freq, gain = 0.6; minfreq = 1.0) = comb(identity, sig, freq, gain; minfreq)
+
+"""
+    limiter(sig::SignalWithFanout, level::Real = 0.5f0)
+
+A simple limiter based on an approximate peak follower. Should help prevent
+uncontrolled growth disasters. Smooths the level measurement and uses it
+to adjust the gain. Has about a 10 millisecond delay.
+
+**Todo**: Wondering about the difference between this and smoothing the gain
+instead. Also, the lpf will introduce a small delay that could be problematic.
+Need to test.
+"""
+function limiter(sig::SignalWithFanout, level::Real = 0.5f0)
+    sa = map(abs, sig)
+    saf = lpf(sa, 100.0, 1.0)
+    gain = map((x) -> if x < level 1.0f0 else Float32(level/x) end, saf)
+    # The tanh exists to limit any transients that can still cause damage.
+    map(tanh, gain * sig)
+end
+
+
