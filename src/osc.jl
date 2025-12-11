@@ -321,6 +321,7 @@ handle then use these aliases with `unpack` like below --
 const FloatMsg = OSC.Message{Tuple{Float32}}
 msg = unpack(FloatMsg, packetBytes)
 @assert typeof(msg) <: FloatMsg
+```
 """
 @generated function unpack(t::Type{<:Tuple}, packet::Bytes)
     steps = []
