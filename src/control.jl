@@ -15,6 +15,12 @@ end
 
 done(c::Control, t, dt) = false
 
+function Observables.on(f::Function, c::Control)
+    on(c.obs) do v
+        f(c.v)
+    end
+end
+
 function control_update(c::Control, t, dt)
     # Dezipper the control signal.
     v = c.v * c.wv + (@atomic c.latestval) * c.ws

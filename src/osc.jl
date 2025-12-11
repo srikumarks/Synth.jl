@@ -3,7 +3,7 @@
     module OSC
 
 export Blob, Colour, Color, TimeTag, Message
-export pack!, pack, unpack
+export pack!, pack, unpack, dest, send
 
 For sending and receiving OSC message packets.
 Intended to be used with the module prefix like
@@ -23,6 +23,7 @@ export start
 using ColorTypes:RGBA
 using FixedPointNumbers:N0f8
 using Sockets
+using Observables
 
 const Bytes = AbstractVector{UInt8}
 
@@ -214,6 +215,50 @@ function pack(address::AbstractString, t::NamedTuple)
     return packet
 end
 pack(msg::Message) = pack(msg.address, msg.data)
+
+"""
+    Represents a UDP destination for sending OSC packets to.
+    See [`dest`](@ref "Synth.OSC.dest").
+"""
+struct Dest
+    ip::IPAddr
+    port::Int32
+    socket::UDPSocket
+    buffer::Vector{UInt8}
+end
+
+"""
+    dest(ip::IPAddr, port::Integer; buffersize = 4096)
+
+Construct an OSC destination targeting the given IP address and port.
+This also allocates a buffer for use when sending packets across,
+but the buffer can be reused for each send. Use `Base.close` on the
+`Dest` to close the associated socket.
+"""
+function dest(ip::IPAddr, port::Integer; buffersize::Integer = 4096)
+    Dest(ip, Int32(port), UDPSocket(), zeros(UInt8, buffersize))
+end
+
+"""
+    send(dest::Dest, address::AbstractString, t::Union{Tuple,NamedTuple})
+
+Sends the given tuple with the given target address as an OSC encoded packet.
+"""
+function send(dest::Dest, address::AbstractString, t::Union{Tuple,NamedTuple})
+    send(dest.socket, dest.ip, dest.port, pack!(dest.buffer, address, t))
+end
+
+"""
+    send(dest::Dest, msg::Message)
+
+Sends the msg as an OSC packet on the given dest.
+"""
+function send(dest::Dest, msg::Message)
+    send(dest.socket, dest.ip, dest.port, pack!(dest.buffer, msg.address, msg.data))
+end
+
+Base.close(dest::Dest) = Base.close(dest.socket)
+
 
 function packoscval(packet::Bytes, c::Colour)
     @assert length(packet) >= 4
@@ -513,6 +558,14 @@ const Buttons = Message{@NamedTuple{btn::Int32}}
 osc("/touch/button", Buttons, b) do address, msg, b
     sched(b, midinote(1, msg.data.btn, 0.8, 0.5))
 end
+# Route a Float32 control to another destination
+# Either give the IPAddr and Port explicitly or
+# construct a Dest and pass it. The former can be
+# more space efficient because the buffer is allocated
+# to exactly meet the required packet size.
+osc(c, "/orientation/pitch", ip"127.0.0.1", 7001)
+d = dest(ip"127.0.0.1", 7001; buffersize = 32)
+osc(c, "/orientation/pitch", d)
 # Stop all OSC processing
 osc(:stop)
 ```
@@ -529,6 +582,8 @@ function start(ipaddr::IPAddr, port::Int)
         end
         return true
     end
+
+    sendsock = UDPSocket()
 
     Threads.@spawn :interactive begin
         try
@@ -561,6 +616,7 @@ function start(ipaddr::IPAddr, port::Int)
         finally
             close(socket)
             close(instr)
+            close(sendsock)
             @info "OSC thread done"
         end
     end
@@ -586,6 +642,23 @@ function start(ipaddr::IPAddr, port::Int)
 
     function route(fn::Function, address::AbstractString, msgtype::Type{<:Message}, data)
         put!(instr, Route(string(address), msgtype, data, fn))
+    end
+
+    function route(c, address::AbstractString, ip::IPAddr, port::Integer)
+        nbytes = oscsize(address) + osctagsize(Tuple{Float32}) + oscsize(0.0f0)
+        d = Dest(ip, port, sendsock, zeros(UInt8, nbytes))
+
+        f = Observables.on(c) do v
+            send(d, address, (Float32(v),))
+        end
+        () -> off(f)
+    end
+
+    function route(c, address::AbstractString, d::Dest)
+        f = Observables.on(c) do v
+            send(d, address, (Float32(v),))
+        end
+        () -> off(f)
     end
 
     return route
