@@ -12,7 +12,7 @@ envelope on it like this -- `oscil(adsr(0.5, 1.0), 250.0 + oscil(100.0,
 250.0))` -- which makes it finite in duration. Most operators can be composed
 in this manner, usually resulting in fairly efficient code as well.
 See the [Models](@ref "Models") section for some other simple signal
-combinations such as [`Synth.Models.basicvocoder`](@ref).
+combinations such as [`basicvocoder`](@ref "Synth.Models.basicvocoder").
 
 The above constructed finite extent signal can be rendered to a
 `SampledSignals.SampleBuf` using [`render`](@ref "Synth.render") like this --
@@ -58,13 +58,6 @@ Synth.Signal
 The definition of `Signal` treats signal generators and transformers
 like "values" which can be operated on using ordinary arithmetic
 `+`, `-` and `*`.
-
-## Models
-
-```@autodocs
-Modules = [Synth.Models]
-Order   = [:function, :type]
-```
 
 ## Index
 

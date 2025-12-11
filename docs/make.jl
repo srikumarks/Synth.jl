@@ -31,7 +31,8 @@ makedocs(
                                      "gran.md",
                                      "utils.md",
                                      "osc.md",
-                                     "ui.md"
+                                     "ui.md",
+                                     "models.md"
                                     ],
                   "Other" => Any[
                                  "design.md",
