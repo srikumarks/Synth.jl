@@ -515,6 +515,7 @@ osc("/touch/button", Buttons, b) do address, msg, b
 end
 # Stop all OSC processing
 osc(:stop)
+```
 """
 function start(ipaddr::IPAddr, port::Int)
     instr = Channel{Instr}(8)
