@@ -1,36 +1,38 @@
 
-mutable struct Filter1{S<:Signal,G<:Signal} <: Signal
+mutable struct OnePole{S<:Signal,G<:Signal} <: Signal
     sig::S
     gain::G
-    xn_1::Float32
-    xn::Float32
+    yn_1::Float32
 end
 
 """
-    filter1(s :: Signal, gain :: Signal)
+    onepole(s :: Signal, gain :: Signal)
 
 A first order filter where the gain factor that controls the
-bandwidth of the filter can be live controlled.
+bandwidth of the filter can be live controlled. The `gain`
+here refers to the "loop gain" with the sign reversed,
+so positive values for `gain` give negative feedback
+in the loop.
+
+The governing equation is - y(n) = x(n) - g * y(n-1)
 """
-function filter1(s::Signal, gain::Signal)
-    Filter1(s, gain, 0.0f0, 0.0f0)
+function onepole(s::Signal, gain::Signal)
+    OnePole(s, gain, 0.0f0, 0.0f0)
 end
 
-function filter1(s::Signal, gain::Real)
-    Filter1(s, konst(gain), 0.0f0, 0.0f0)
+function onepole(s::Signal, gain::Real)
+    OnePole(s, konst(gain), 0.0f0, 0.0f0)
 end
-done(s::Filter1, t, dt) = done(s.sig, t, dt)
+done(s::OnePole, t, dt) = done(s.sig, t, dt)
 
 const twoln2 = Float32(2.0 * log(2))
 
-function value(s::Filter1, t, dt)
-    v = value(s.sig, t, dt)
+function value(s::OnePole, t, dt)
+    xn = value(s.sig, t, dt)
     g = value(s.gain, t, dt)
-    dg = twoln2 * g * dt
-    xnp1 = s.xn_1 - dg * (s.xn - v)
-    s.xn_1 = s.xn
-    s.xn = xnp1
-    return s.xn_1
+    yn = xn - g * s.yn_1
+    s.yn_1 = yn
+    return yn
 end
 
 # Unit step function. 

@@ -6,7 +6,7 @@ second order filters. Also, [`delay`](@ref) and [`tap`](@ref) make a
 delay line that can be tapped at multiple points.
 
 ```@docs
-Synth.filter1
+Synth.onepole
 Synth.filter2
 Synth.fir
 Synth.lpf
