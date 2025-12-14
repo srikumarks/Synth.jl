@@ -1,6 +1,6 @@
 name = "Synth"
 uuid = "17321cac-a4bc-4530-aa11-a8f457f422f2"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["Srikumar K. S. <srikumar.subramanian@krea.edu.in>"]
 
 [deps]
