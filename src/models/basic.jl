@@ -168,3 +168,55 @@ function limiter(sig::SignalWithFanout, level::Real = 1.0f0)
 end
 
 
+"""
+    chorus(sig::Signal, rate::Signal, depth::Signal, deltime::Signal, amt::Signal)
+
+- `sig` is the signal being chorused
+- `rate` is the delay oscillator's rate - usually a few Hz
+- `depth` is the extent of the "chorusing" - also of the order of 1
+- `deltime` is delay time being picked for the chorus.
+- `amt` is the "wetness" amount - range 0.0 to 1.0 
+"""
+function chorus(sig::Signal, rate::Signal, depth::Signal, deltime::Signal, amt::Signal)
+    ds = delay(sig, 1.0)
+    t = lpf(deltime, 20, 1.0) + oscil(depth, rate)
+    sig + amt * tap(ds, clamp(t, 0.0f0, 1.0f0))
+end
+
+"""
+    phasedistortion(sig::SignalWithFanout, del::Signal, depth::Signal, amt::Signal)
+
+Works by using the signal itself to determine the delay time to read.
+
+- `sig` is the signal to be phase distorted.
+- `del` is the delay offset - usually a few 10s of milliseconds.
+- `depth` is the gain applied to the signal to read the delay line.
+- `amt` is the "wetness" amount of the effect.
+"""
+function phasedistortion(sig::SignalWithFanout, del::Signal, depth::Signal, amt::Signal)
+    ds = delay(sig, 1.0)
+    sig + amt * tap(ds, sig * depth + del)
+end
+
+"""
+    flanger(sig::SignalWithFanout, rate::Signal, depth::Signal, del::Signal, fb::Signal, amt::Signal)
+
+Simulates two time varying versions of the same signal being mixed together
+to create the tape deck flanging effect.
+
+- `sig` is the signal to be flanged
+- `rate` is the oscillator rate for the flanging - usually a few Hz
+- `depth` is the depth of the oscillator, which determines the delay range - also usually of the order of 1
+- `del` is the delay offset around which the flanging is happening.
+- `fb` is the amount of feedback (range 0 to 0.98)
+- `amt` is the "wetness" amount for the effect.
+"""
+function flanger(sig::SignalWithFanout, rate::Signal, depth::Signal, del::Signal, fb::Signal, amt::Signal)
+    f = feedback()
+    ds = delay(sig + f, 0.3)
+    t = oscil(depth, rate) + del
+    ts = tap(ds, clamp(t, 0.0, 0.3))
+    s = clamp(fb, 0.0f0, 0.98f0) * ts
+    connect(s, f)
+    sig + amt * s
+end
