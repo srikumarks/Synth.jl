@@ -64,7 +64,7 @@ function labelspan(label)
 end
 
 """
-    WebIO.render(c::Control{<:Tuple{Real,Real}})
+    renderui(c::Control{<:Tuple{Real,Real}}, config::ConfigDict)
 
 Implements a continuous control slider for the control signal, so its value can
 be set using the UI. You don't need to call this function explicitly, but
@@ -110,7 +110,7 @@ function renderui(c::Control{<:Tuple{Real,Real}}, config::ConfigDict)
 end
     
 """
-    WebIO.render(c::Control{<:StepRangeLen})
+    renderui(c::Control{<:StepRangeLen}, config::ConfigDict)
 
 For this control value that can be set only in steps, the corresponding UI will
 also present a stepped slider. You don't need to call this function explicitly,
@@ -244,7 +244,7 @@ end
 
 
 """
-    WebIO.render(m::WaveProbe)
+    renderui(m::WaveProbe, config::ConfigDict)
 
 Supports configuring using [`uiconf`](@ref "Synth.uiconf"). Attributes
 are `"width"`, `"height"` and `"colour"`.
