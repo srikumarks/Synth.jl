@@ -59,6 +59,11 @@ function Base.clamp(sig::Signal, minval::Real, maxval::Real)
     Clamp(sig, Float32(minval), Float32(maxval))
 end
 
+function Base.clamp(sig::Clamp{<:Signal}, minval::Real, maxval::Real)
+    @assert minval <= maxval
+    Clamp(sig.sig, Float32(max(minval, sig.minval)), Float32(min(maxval, sig.maxval)))
+end
+
 function Base.clamp(
     sig::Stereo{L,R},
     minval::Real,
