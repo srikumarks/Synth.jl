@@ -381,15 +381,13 @@ msg = unpack(FloatMsg, packetBytes)
         push!(steps, :(($v, $pnext) = osctaggedval($ty, Val(typetags[$i]), $pprev)))
         push!(vars, :($v))
     end
-    e = quote
+    quote
         (address, p0) = oscstring(packet)
         (typetags, p1) = osctypetag(p0)
         @assert !isnothing(match(r"^[ifsbhtdcSTFNr]+$", typetags))
         $(steps...)
         Message(address, ($(vars...),))
     end
-    println(e)
-    return e
 end
 
 @generated function unpack(t::Type{<:NamedTuple}, packet::Bytes)
@@ -527,10 +525,11 @@ end
 
 abstract type Instr end
 struct Stop <: Instr end
-struct Route{T<:Type{<:Message},D} <: Instr
+struct Route{T<:Message,D} <: Instr
     address::String
-    msgtype::T
+    msgtype::Type{T}
     data::D
+    fn::Function
 end
 struct ClearRoute <: Instr
     address::String
@@ -588,12 +587,14 @@ function start(ipaddr::IPAddr, port::Int)
     Threads.@spawn :interactive begin
         try
             socket = UDPSocket()
-            bind(socket, ipaddr, port)
+            bindresult = bind(socket, ipaddr, port)
+            @assert bindresult
             EmptyType = Message{Tuple{}}
             function donothing(x...)
                 @debug "Default OSC route" args=x
             end
-            routes = Dict{String,Route}("/default" => Route("/default", EmptyType, nothing, donothing))
+            defaultRoute = Route("/default", EmptyType, nothing, donothing)
+            routes = Dict{String,Route}()
             while true
                 if !drain(instr, routes)
                     break
@@ -603,10 +604,10 @@ function start(ipaddr::IPAddr, port::Int)
                     break
                 end
                 (address, packet2) = oscstring(packet)
-                r = get(routes, address, get(routes, "/default"))
+                r = get(routes, address, defaultRoute)
                 msg = unpack(r.msgtype, packet)
                 try
-                    r.fn(r.address, msg, r.data)
+                    invokelatest(r.fn, r.address, msg, r.data)
                 catch e
                     @error "OSC handler error" address=r.address error=(e,catch_backtrace())
                 end
@@ -670,10 +671,12 @@ end
 
 function process_instruction(r::Route, routes)
     routes[r.address] = r
+    return true
 end
 
 function process_instruction(r::ClearRoute, routes)
     delete!(routes, r.address)
+    return true
 end
 
 function process_instruction(r::MultiInstr, routes)
