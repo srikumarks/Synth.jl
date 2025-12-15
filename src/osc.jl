@@ -526,7 +526,7 @@ end
 abstract type Instr end
 struct Stop <: Instr end
 struct Route{T<:Message,D} <: Instr
-    address::String
+    address::Regex
     msgtype::Type{T}
     data::D
     fn::Function
@@ -554,7 +554,7 @@ osc("/multisense/orientation/pitch", nothing)
 b = bus()
 play(b)
 const Buttons = Message{@NamedTuple{btn::Int32}}
-osc("/touch/button", Buttons, b) do address, msg, b
+osc(r"^[/]touch[/]button", Buttons, b) do address, msg, b
     sched(b, midinote(1, msg.data.btn, 0.8, 0.5))
 end
 # Route a Float32 control to another destination
@@ -593,8 +593,8 @@ function start(ipaddr::IPAddr, port::Int)
             function donothing(x...)
                 @debug "Default OSC route" args=x
             end
-            defaultRoute = Route("/default", EmptyType, nothing, donothing)
-            routes = Dict{String,Route}()
+            defaultRoute = Route(r"[/]default", EmptyType, nothing, donothing)
+            routes :: Vector{Tuple{Regex,Route}} = []
             while true
                 if !drain(instr, routes)
                     break
@@ -604,12 +604,15 @@ function start(ipaddr::IPAddr, port::Int)
                     break
                 end
                 (address, packet2) = oscstring(packet)
-                r = get(routes, address, defaultRoute)
-                msg = unpack(r.msgtype, packet)
-                try
-                    invokelatest(r.fn, r.address, msg, r.data)
-                catch e
-                    @error "OSC handler error" address=r.address error=(e,catch_backtrace())
+                for (rx,r) in routes
+                    if occursin(rx, address)
+                        try
+                            msg = unpack(r.msgtype, packet)
+                            invokelatest(r.fn, address, msg, r.data)
+                        catch e
+                            @error "OSC handler error" address=address error=(e, catch_backtrace())
+                        end
+                    end
                 end
             end
         catch e
@@ -641,8 +644,8 @@ function start(ipaddr::IPAddr, port::Int)
         put!(instr, ClearRoute(string(address)))
     end
 
-    function route(fn::Function, address::AbstractString, msgtype::Type{<:Message}, data)
-        put!(instr, Route(string(address), msgtype, data, fn))
+    function route(fn::Function, address::Regex, msgtype::Type{<:Message}, data)
+        put!(instr, Route(address, msgtype, data, fn))
     end
 
     function route(c, address::AbstractString, ip::IPAddr, port::Integer)
@@ -670,12 +673,12 @@ function process_instruction(::Stop, routes)
 end
 
 function process_instruction(r::Route, routes)
-    routes[r.address] = r
+    push!(routes, (r.address, r))
     return true
 end
 
 function process_instruction(r::ClearRoute, routes)
-    delete!(routes, r.address)
+    filter!((a) -> r.address != a, routes)
     return true
 end
 
