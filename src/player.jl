@@ -100,9 +100,15 @@ function startaudio(
 
     latency_ms = Channel{Int}(1)
 
-    #println("Starting threads...")
+    @debug "Starting threads..."
     Threads.@spawn :interactive begin
-        midiout = midioutput(mididevice; outputDelay_ms = take!(latency_ms))
+        midiout = nothing
+        try
+            midiout = midioutput(mididevice; outputDelay_ms = take!(latency_ms))
+        catch e
+            @error "No such MIDI device. Continuing without MIDI." device=mididevice
+        end
+
         try
             with(current_midi_output => midiout) do
                 callback(samplingrate, wq, rq)
@@ -110,7 +116,9 @@ function startaudio(
         catch e
             @error "Audio generator thread error" error=(e, catch_backtrace())
         finally
-            close(midiout)
+            if !isnothing(midiout)
+                close(midiout)
+            end
         end
     end
     Threads.@spawn :interactive begin
