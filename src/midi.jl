@@ -271,6 +271,10 @@ function sync!(dev::MIDIOutput, t::Float64)
     end
 end
 
+function sync!(dev::Nothing, t::Float64)
+    # Do nothing.
+end
+
 """
     sched(dev::MIDIOutput, t::Real, msg::MIDIMsg)
     sched(t::Real, msg::MIDIMsg)
