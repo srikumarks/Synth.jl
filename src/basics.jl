@@ -53,6 +53,10 @@ value(s::Clamp{S}, t, dt) where {S<:Signal} =
 
 Clamps the given signal to the give minimum and maximum values. 
 Supports stereo signals and clamps the individual channels.
+If the signal is a `WithFanout`, it will be propagated outside the
+clamp to avoid recomputing clamping and to indicate that a
+clamped explicit `WithFanout` is also a `WithFanout` and is therefore
+a subtype of `SignalWithFanout`.
 """
 function Base.clamp(sig::Signal, minval::Real, maxval::Real)
     @assert minval <= maxval
@@ -62,6 +66,12 @@ end
 function Base.clamp(sig::Clamp{<:Signal}, minval::Real, maxval::Real)
     @assert minval <= maxval
     Clamp(sig.sig, Float32(max(minval, sig.minval)), Float32(min(maxval, sig.maxval)))
+end
+
+function Base.clamp(sig::WithFanout{<:Signal}, minval::Real, maxval::Real)
+    WithFanout(Clamp(sig.sig, Float32(minval), Float32(maxval)),
+           sig.t,
+           Float32(max(minval, min(maxval, sig.v))))
 end
 
 function Base.clamp(

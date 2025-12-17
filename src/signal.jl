@@ -169,7 +169,7 @@ sigfun(f) = SigFun(f)
 abstract type SignalWithFanout <: Signal end
 
 
-mutable struct Fanout{S<:Signal} <: SignalWithFanout
+mutable struct WithFanout{S<:Signal} <: SignalWithFanout
     sig::S
     t::Float64
     v::Float32
@@ -200,9 +200,9 @@ if `s = fanout(sig)`, then `fanout(s) = s`).
     the latter sense that we use the word `fanout` in this case. 
 """
 fanout(sig::SignalWithFanout) = sig
-fanout(sig::Signal) = Fanout(sig, -1.0, 0.0f0)
-done(s::Fanout, t, dt) = done(s.sig, t, dt)
-function value(s::Fanout, t, dt)
+fanout(sig::Signal) = WithFanout(sig, -1.0, 0.0f0)
+done(s::WithFanout, t, dt) = done(s.sig, t, dt)
+function value(s::WithFanout, t, dt)
     if t > s.t
         s.t = t
         s.v = Float32(value(s.sig, t, dt))

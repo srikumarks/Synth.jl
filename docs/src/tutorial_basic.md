@@ -121,7 +121,7 @@ should work well.
 user interface (work in progress). Until then, you can use it to manipulate
 signal parameters in real time on the REPL.
 
-## Fanout
+## WithFanout
 
 Consider the following piece of code -
 
@@ -164,7 +164,7 @@ to fanout under the assumption that time always moves monotonically forward.
 The operator ends up being a no-op for those processes that support fanout on
 their own.
 
-Signal processes which support fanout natively (including `Fanout`) implement
+Signal processes which support fanout natively (including `WithFanout`) implement
 the abstract type `SignalWithFanout` which is itself a `Signal`.
 
 ## Stereo signals

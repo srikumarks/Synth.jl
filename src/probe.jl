@@ -54,7 +54,7 @@ function probe(s::Signal, interval::Float64 = 0.04; samplingrate = 48000)
     ValProbe(s, Observable{Float32}(0.0f0), interval, 0.0, wv, 1.0 - wv, 0.0f0)
 end
 function probe(
-    s::Fanout{S},
+    s::WithFanout{S},
     interval::Float64 = 0.04;
     samplingrate = 48000,
 ) where {S<:Signal}
