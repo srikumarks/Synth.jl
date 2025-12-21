@@ -167,7 +167,7 @@ function send(dev::VST3MIDI, msg::MIDIMsg, offset::Int=0)
         VST3Host.noteoff(dev.plugin, m.channel, m.code, m.value, offset)
     elseif m.status == 0xc0
         VST3Host.programchange(dev.plugin, m.channel, m.code, offset)
-    elseif m.status = 0xb0
+    elseif m.status == 0xb0
         VST3Host.controlchange(dev.plugin, m.channel, m.code, m.value, offset)
     else
         @debug "Dropped unsupported MIDI message" msg=msg status=m.status
