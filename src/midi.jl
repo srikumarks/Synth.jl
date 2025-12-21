@@ -1,4 +1,6 @@
 using PortMidi
+import VST3Host
+abstract type MIDIDest end
 
 """
     struct MIDIOutput
@@ -6,7 +8,7 @@ using PortMidi
 Encapsulates basic information about a MIDI output device
 and an open stream to which MIDI data can be sent.
 """
-struct MIDIOutput
+struct MIDIOutput <: MIDIDest
     deviceId::Int
     name::String
     interface::String
@@ -14,6 +16,10 @@ struct MIDIOutput
     closed::Ref{Bool}
     sync::Ref{Tuple{Int,Float64}}
     outputDelay_ms::Int
+end
+
+struct VST3MIDI <: MIDIDest
+    plugin::VST3Host.VST3Plugin
 end
 
 struct MIDIOutputDeviceNotFoundError
@@ -91,10 +97,24 @@ function midioutput(name::AbstractString = ""; outputDelay_ms::Int = 0)
     throw(MIDIOutputDeviceNotFoundError(name))
 end
 
+"""
+    vst3midi(pluginpath::AbstractString;samplingrate::Float64=48000.0, blocksize::Int=128)
+
+If you want to target MIDI messages at a VST plugin, load it using `vst3midi`
+as a MIDI destination and use it in place of the MIDIOutput.
+"""
+function vst3midi(pluginpath::AbstractString;samplingrate::Float64=48000.0, blocksize::Int=128)
+    VST3MIDI(VST3Host.VST3Plugin(pluginpath, samplingrate, blocksize))
+end
+
 function Base.close(d::MIDIOutput)
     PortMidi.Pm_Close(d.stream[])
     d.closed[] = true
     PortMidi.Pt_Stop()
+end
+
+function Base.close(d::VST3MIDI)
+    close(d.plugin)
 end
 
 """
@@ -121,14 +141,37 @@ Returns true if the given message is a [`midinop`](@ref "Synth.midinop").
 """
 ismidinop(m::MIDIMsg) = m.msg == 0
 
+function parseshortmsg(msg::Int32)
+    statuschan = (msg >> 16) & 0xFF
+    status = statuschan & 0xF0
+    channel = statuschan & 0xF
+    code = (msg >> 8) & 0xFF
+    value = msg & 0xFF
+    return (;status, channel, code, value)
+end
+
 """
-    send(dev::MIDIOutput, msg::MIDIMsg)
+    send(dev::MIDIDest, msg::MIDIMsg)
 
 Sends the `MIDIMsg` to the device immediately.
 """
 function send(dev::MIDIOutput, msg::MIDIMsg)
     @assert !dev.closed[] "MIDI device already closed"
     Pm_WriteShort(dev.stream[], 0, msg.msg)
+end
+function send(dev::VST3MIDI, msg::MIDIMsg, offset::Int=0)
+    m = parseshortmsg(msg.msg)
+    if m.status == 0x90
+        VST3Host.noteon(dev.plugin, m.channel, m.code, m.value, offset)
+    elseif m.status == 0x80
+        VST3Host.noteoff(dev.plugin, m.channel, m.code, m.value, offset)
+    elseif m.status == 0xc0
+        VST3Host.programchange(dev.plugin, m.channel, m.code, offset)
+    elseif m.status = 0xb0
+        VST3Host.controlchange(dev.plugin, m.channel, m.code, m.value, offset)
+    else
+        @debug "Dropped unsupported MIDI message" msg=msg status=m.status
+    end
 end
 
 """
@@ -271,14 +314,18 @@ function sync!(dev::MIDIOutput, t::Float64)
     end
 end
 
+function sync!(dev::VST3MIDI, t::Float64)
+    # Do nothing.
+end
+
 function sync!(dev::Nothing, t::Float64)
     # Do nothing.
 end
 
 """
-    sched(dev::MIDIOutput, t::Real, msg::MIDIMsg)
+    sched(dev::MIDIDest, t::Real, msg::MIDIMsg)
     sched(t::Real, msg::MIDIMsg)
-    sched(dev::MIDIOutput, msg::MIDIMsg)
+    sched(dev::MIDIDest, msg::MIDIMsg)
     sched(msg::MIDIMsg)
 
 The first two schedule a MIDI message to be sent at the designated
@@ -292,9 +339,15 @@ function sched(dev::MIDIOutput, t::Real, msg::MIDIMsg)
     pmt = PortMidi.Pt_Time()
     Pm_WriteShort(dev.stream[], rt + dev.outputDelay_ms, msg.msg)
 end
-
+function sched(dev::VST3MIDI, t::Real, msg::MIDIMsg)
+    @debug "TODO: Implement scheduled MIDI messages for VST3 plugins"
+    send(dev, msg)
+end
 function sched(dev::MIDIOutput, msg::MIDIMsg)
     Pm_WriteShort(dev.stream[], 0, msg.msg)
+end
+function sched(dev::VST3MIDI, msg::MIDIMsg)
+    send(dev, msg)
 end
 
 function sched(t::Real, msg::MIDIMsg)
@@ -309,5 +362,5 @@ end
 
 
 using Base.ScopedValues
-const OptMidiOut = Union{Nothing,MIDIOutput}
+const OptMidiOut = Union{Nothing,MIDIDest}
 const current_midi_output::ScopedValue{OptMidiOut} = ScopedValue{OptMidiOut}(nothing)
