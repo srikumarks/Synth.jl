@@ -93,6 +93,7 @@ include("fx.jl")
 include("models/models.jl")
 include("gens.jl")
 include("osc.jl")
+include("vst3.jl")
 include("ui.jl")
 #include("ui/ui.jl")
 
