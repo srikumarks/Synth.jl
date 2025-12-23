@@ -23,6 +23,7 @@ export PortMidiDest,
     progchange,
     aftertouch,
     pitchbend
+export vst3midi, vst3midibus, binddevice!, device
 export Gen,
     ping,
     tone,
