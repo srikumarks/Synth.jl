@@ -581,21 +581,22 @@ struct MidiMsgSend <: MidiGen
 end
 
 function genproc(m::MidiMsgSend, b::Bus, t, rt)
-    sched(rt, m.msg)
+    sched(b, device(b, port(m.msg)), rt, m.msg)
     (t, Cont())
 end
 
 """
-    midimsg(dev::MIDIOutput, msg::MIDIMsg)
+    midimsg(dev::PortMidiDest, msg::MIDIMsg)
 
 Wraps sending an instantaneous MIDI short message to the
 given output device.
 """
-function midimsg(dev::MIDIOutput, msg::MIDIMsg)
+function midimsg(dev::PortMidiDest, msg::MIDIMsg)
     MidiMsgSend(dev, msg)
 end
 
 struct MidiNote{R<:Real} <: MidiGen
+    port::Symbol
     chan::Int
     note::Int
     vel::R
@@ -604,13 +605,13 @@ struct MidiNote{R<:Real} <: MidiGen
 end
 
 function genproc(m::MidiNote, b::Bus, t, rt)
-    sched(rt, noteon(m.chan, m.note, m.vel))
-    sched(b, t + m.dur, MidiMsgSend(noteoff(m.chan, m.note)))
+    sched(rt, noteon(m.chan, m.note, m.vel; port=m.port))
+    sched(b, t + m.dur, MidiMsgSend(noteoff(m.chan, m.note; port=m.port)))
     (t + m.logicaldur, Cont())
 end
 
 """
-    midinote(chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real = dur)
+    midinote(chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real = dur; port=:midi)
 
 Produces a MIDI note of given duration. The note off will be scheduled
 appropriately and the note will be set to last the given duration.
@@ -618,11 +619,12 @@ The `logicaldur` parameter gives the logical duration of the note
 which is taken to be the same as the time interval between noteon and noteoff
 by default.
 """
-function midinote(chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real = dur)
-    MidiNote(chan, note, vel, Float64(dur), Float64(logicaldur))
+function midinote(chan::Int, note::Int, vel::Real, dur::Real, logicaldur::Real = dur; port=:midi)
+    MidiNote(port, chan, note, vel, Float64(dur), Float64(logicaldur))
 end
 
 struct MidiTrigger{R<:Real} <: MidiGen
+    port::Symbol
     chan::Int
     note::Int
     vel::R
@@ -630,19 +632,19 @@ struct MidiTrigger{R<:Real} <: MidiGen
 end
 
 function genproc(m::MidiTrigger, b::Bus, t, rt)
-    sched(rt, noteon(m.chan, m.note, m.vel))
+    sched(rt, noteon(m.chan, m.note, m.vel; port))
     (t + m.logicaldur, Cont())
 end
 
 """
-    miditrigger(dev::MIDIOutput, chan::Int, note::Int, vel::Real, logicaldur::Real)
+    miditrigger(dev::PortMidiDest, chan::Int, note::Int, vel::Real, logicaldur::Real)
 
 A triggered MIDI message only has a noteon - such as for a drum hit,
 which does not require a note off since the drum voices have a natural 
 cut off point.
 """
-function miditrigger(chan::Int, note::Int, vel::Real, logicaldur::Real)
-    MidiTrigger(chan, note, vel, Float64(logicaldur))
+function miditrigger(chan::Int, note::Int, vel::Real, logicaldur::Real; port=:midi)
+    MidiTrigger(port, chan, note, vel, Float64(logicaldur))
 end
 
 struct MidiSeq{V<:AbstractVector{Tuple{Float64,MIDIMsg}}} <: MidiGen

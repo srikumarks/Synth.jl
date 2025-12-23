@@ -52,6 +52,8 @@ mutable struct AudioGenBus{Clk<:Signal} <: Bus
     # clock's tempo is given in "beats per minute".
     const clock::Clk
 
+    const ports::Dict{Symbol,MIDIDest}
+
     # The last time step for checking for events. Events (Gens) are checked for
     # roughly 60 times a second - i.e. are considered "near real time".
     t::Float64
@@ -143,6 +145,7 @@ A "bus" supports fanout.
 function bus(clk::Signal)
     AudioGenBus(
         clk,
+        Dict{Symbol,MIDIDest}(),
         0.0,
         0.0,
         1/60,
@@ -163,6 +166,32 @@ Simpler constructor for a fixed tempo bus.
 """
 function bus(tempo_bpm::Real = 60.0)
     bus(clock_bpm(tempo_bpm))
+end
+
+device(b::Bus, name::Symbol) = nothing
+
+function device(b::AudioGenBus, name::Symbol)
+    b.ports[name]
+end
+
+"""
+    binddevice!(b::Bus, name::Symbol, dev::MIDIDest)
+
+Binds the given MIDI destination device to the given name
+on the given bus. Not all buses may support this and the
+method call will fail on buses which don't.
+
+As a convenience, a non-`MIDIDest` `dev` argument will be converted
+to a `MIDIDest` using `asmididest` automatically.
+"""
+function binddevice!(b::Bus, name::Symbol, dev::MIDIDest)
+    @error "Unimplemented binddevice! on $(typeof(b))"
+end
+
+binddevice!(b::Bus, name::Symbol, dev) = binddevice!(b, name, asmididest(dev))
+
+function binddevice!(b::AudioGenBus, name::Symbol, dev::MIDIDest)
+    b.ports[name] = dev
 end
 
 """
@@ -193,6 +222,7 @@ function sched(sch::AudioGenBus{Clk}, t::Real, g::Gen) where {Clk<:Signal}
     put!(sch.gchan, (Float64(t), g))
     nothing
 end
+#HERE
 function sched(sch::AudioGenBus{Clk}, g::Gen) where {Clk<:Signal}
     sched(sch, now(sch), g)
 end
