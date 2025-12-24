@@ -127,7 +127,7 @@ parameterid(m::VST3Fx, n::AbstractString) = parameterinfo(m,n).id
 numparameters(m::VST3Fx) = m.info.num_parameters
 
 struct VST3Param
-    plugin::VST3Plugin
+    plugin::V3.VST3Plugin
     id::Int
 end
 

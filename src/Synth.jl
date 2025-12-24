@@ -59,6 +59,7 @@ see_also(meths) =
 include("signal.jl")
 include("basics.jl")
 
+include("types.jl")
 include("phasor.jl")
 include("oscil.jl")
 include("mixer.jl")

@@ -105,7 +105,7 @@ end
 A constant `MIDIMsg` that represents a "no-op" or
 "nothing to be sent out".
 """
-const midinop = MIDIMsg(Int32(0), :any)
+const midinop = MIDIMsg(:any, Int32(0))
 
 """
     ismidinop(m::MIDIMsg) :: Bool
@@ -141,7 +141,7 @@ function noteon(chan::Int, note::Int, vel::Int; port=:midi)
     @assert chan >= 1 && chan <= 16 "Invalid MIDI channel $chan"
     @assert note >= 0 && note <= 127 "Invalid MIDI note $note"
     @assert vel >= 0 && vel <= 127 "Invalid MIDI note velocity $vel"
-    MIDIMsg(Pm_Message(0x90 + (chan-1), note, vel), port)
+    MIDIMsg(port, Pm_Message(0x90 + (chan-1), note, vel))
 end
 
 function noteon(chan::Int, note::Int, vel::AbstractFloat; port=:midi)
@@ -157,7 +157,7 @@ function noteoff(chan::Int, note::Int, vel::Int = 0; port=:midi)
     @assert 1 <= chan <= 16 "Invalid MIDI channel $chan"
     @assert 0 <= note <= 127 "Invalid MIDI note $note"
     @assert 0 <= vel <= 127 "Invalid MIDI note velocity $vel"
-    MIDIMsg(Pm_Message(0x80 + (chan-1), note, vel), port)
+    MIDIMsg(port, Pm_Message(0x80 + (chan-1), note, vel))
 end
 
 """
@@ -173,7 +173,7 @@ function keypressure(chan::Int, note::Int, pressure::Int; port=:midi)
     @assert 1 <= chan <= 16 "Invalid MIDI channel $chan"
     @assert 0 <= note <= 127 "Invalid MIDI note $note"
     @assert 0 <= pressure <= 127 "Invalid MIDI key pressure $pressure"
-    MIDIMsg(Pm_Message(0xa0 + (chan-1), note, pressure); port)
+    MIDIMsg(port, Pm_Message(0xa0 + (chan-1), note, pressure))
 end
 function keypressure(chan::Int, note::Int, pressure::AbstractFloat; port=:midi)
     aftertouch(chan, note, round(Int, pressure * 127); port)
@@ -191,7 +191,7 @@ function ctrlchange(chan::Int, control::Int, val::Int; port=:midi)
     @assert 1 <= chan <= 16 "Invalid MIDI channel $chan"
     @assert 0 <= control <= 127 "Invalid MIDI note $note"
     @assert 0 <= val <= 127 "Invalid MIDI aftertouch pressure $pressure"
-    MIDIMsg(Pm_Message(0xb0 + (chan-1), control, val), port)
+    MIDIMsg(port, Pm_Message(0xb0 + (chan-1), control, val))
 end
 function ctrlchange(chan::Int, control::Int, val::AbstractFloat; port=:midi)
     ctrlchange(chan, control, round(Int, val * 127); port)
@@ -207,7 +207,7 @@ compatible synthesizer.
 function progchange(chan::Int, pgm::Int; port=:midi)
     @assert chan >= 1 && chan <= 16 "Invalid MIDI channel $chan"
     @assert pgm >= 0 && pgm <= 127 "Invalid MIDI program number $pgm"
-    MIDIMsg(Pm_Message(0xc0 + (chan-1), pgm, 0), port)
+    MIDIMsg(port, Pm_Message(0xc0 + (chan-1), pgm, 0))
 end
 
 """
@@ -222,7 +222,7 @@ function aftertouch(chan::Int, note::Int, pressure::Int; port=:midi)
     @assert 1 <= chan <= 16 "Invalid MIDI channel $chan"
     @assert 0 <= note <= 127 "Invalid MIDI note $note"
     @assert 0 <= pressure <= 127 "Invalid MIDI aftertouch pressure $pressure"
-    MIDIMsg(Pm_Message(0xd0 + (chan-1), note, pressure), port)
+    MIDIMsg(port, Pm_Message(0xd0 + (chan-1), note, pressure))
 end
 function aftertouch(chan::Int, note::Int, pressure::AbstractFloat; port=:midi)
     aftertouch(chan, note, round(Int, pressure * 127); port)
@@ -244,7 +244,7 @@ function pitchbend(chan::Int, signedPB::Int; port=:midi)
     @assert pb >= 0 && pb < 2^14
     lsb = pb & 127
     msb = (pb >> 7) & 127
-    MIDIMsg(Pm_Message(0xe0 + (chan-1), lsb, msb), port)
+    MIDIMsg(port, Pm_Message(0xe0 + (chan-1), lsb, msb))
 end
 function pitchbend(chan::Int, signedPB::AbstractFloat; port=:midi)
     pitchbend(chan, round(Int, signedPB * 128); port)
