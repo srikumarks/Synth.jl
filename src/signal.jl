@@ -291,6 +291,28 @@ function stereo(left::Signal, right::Signal)
     Stereo(fanout(left), fanout(right), 0.0, 0.0f0, 0.0f0, 0.0f0)
 end
 
+struct StereoChan{N,S<:Signal} <: Signal
+    sig::S
+end
+
+"""
+    chan(n::Int, sig::Signal) :: StereoChan
+
+Construct a mono channel extract from the given stereo signal that
+might not have been constructed as a stereo signal.
+"""
+chan(n::Int, sig::Signal) = StereoChan{n}(sig)
+function chan(n::Int, sig::Stereo)
+    if n == 1
+        left(sig)
+    elseif n == 2
+        right(sig)
+    else
+        @assert false "Unsupported channel number $n"
+    end
+end
+
+
 """
     left(s :: Stereo)
     left(s :: Signal)

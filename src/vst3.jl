@@ -148,7 +148,7 @@ any other signal, and also bound to a port name using
 [`binddevice!`](@ref "Synth.binddevice!") so that MIDI messages
 can target this device.
 """
-struct VST3MIDI <: SignalWithFanout
+struct VST3MIDI <: Signal
     plugin::V3.VST3Plugin
     samplingrate::Float64
     blocksize::Int32
@@ -157,20 +157,25 @@ struct VST3MIDI <: SignalWithFanout
     outbuffer::SampleBuf{Float32}
     ix::BufIx
     sync::Ref{Tuple{Int,Float64}}
+    last_t::Float64
+    left_val::Float32
+    right_val::Float32
 end
 
-struct VST3MidiDest <: MIDIDest
-    vst::VST3MIDI
-end
-
-asmididest(m::VST3MIDI) = VST3MidiDest(m)
+const VST3MidiDest = PluginMidiDest{VST3MIDI}
 
 done(m::VST3MIDI, t, dt) = false
 
 function value(m::VST3MIDI, t, dt)
+    if t <= m.last_t
+        return 0.5f0 * (m.left_val + m.right_val)
+    end
+
     ixo = m.ix.o
     if ixo <= m.blocksize
-        v = 0.5f0 * (m.outbuffer[1,ixo] + m.outbuffer[2,ixo])
+        m.left_val = m.outbuffer[1,ixo]
+        m.right_val = m.outbuffer[2,ixo]
+        v = 0.5f0 * (m.left_val + m.right_val)
         m.ix.o = ixo + 1
         return v
     end
@@ -189,7 +194,20 @@ function value(m::VST3MIDI, t, dt)
     m.ix.i = 1
     m.ix.t += m.blocksize
     sync!(m, t)
-    0.5f0 * (m.outbuffer[1,1] + m.outbuffer[2,1])
+    m.last_t = t
+    m.left_val = m.outbuffer[1,1]
+    m.right_val = m.outbuffer[2,1]
+    0.5f0 * (m.left_val + m.right_val)
+end
+
+done(m::StereoChan{1,VST3MIDI}, t, dt) = done(m.sig, t, dt)
+function value(m::StereoChan{1,VST3MIDI}, t, dt)
+    value(m.sig, t, dt)
+    m.left_val
+end
+function value(m::StereoChan{2,VST3MIDI}, t, dt)
+    value(m.sig, t, dt)
+    m.right_val
 end
 
 """

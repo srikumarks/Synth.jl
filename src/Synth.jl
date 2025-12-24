@@ -24,6 +24,7 @@ export PortMidiDest,
     aftertouch,
     pitchbend
 export vst3midi, vst3midibus, binddevice!, device
+export aumidi, aumidibus
 export Gen,
     ping,
     tone,
