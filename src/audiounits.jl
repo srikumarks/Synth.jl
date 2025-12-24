@@ -11,6 +11,7 @@ end
 struct AUFx{S<:Signal} <: Signal
     sig::S
     plugin::AU.AudioUnit
+    processor::AU.AudioProcessor
     paraminfo::Dict{UInt32,AU.AudioUnitParameterInfo}
     sparaminfo::Dict{String,AU.AudioUnitParameterInfo}
     inbuffer::SampleBuf{Float32}
@@ -33,6 +34,7 @@ function aufx(sig::Signal, p::AU.AudioUnit; samplerate::Float64=48000.0)
     @assert AU.issupported()
     inbuffer = SampleBuf(zeros(Float32, 2, 64), samplerate)
     outbuffer = SampleBuf(zeros(Float32, 2, 64), samplerate)
+    processor = AU.AudioProcessor(p, max_channels=2, max_frames=64, sample_rate=samplerate)
     paraminfo = Dict{UInt32,AU.AudioUnitParameterInfo}()
     sparaminfo = Dict{String,AU.AudioUnitParameterInfo}()
     params = AU.parameters(p)
@@ -40,13 +42,14 @@ function aufx(sig::Signal, p::AU.AudioUnit; samplerate::Float64=48000.0)
         paraminfo[param.id] = param.info
         sparaminfo[param.info.name] = param.info
     end
-    AUFx(sig, p, paraminfo, sparaminfo, inbuffer, outbuffer, BufIx(1,1,0), 0.0, 0.0f0, 0.0f0, samplerate)
+    AUFx(sig, p, processor, paraminfo, sparaminfo, inbuffer, outbuffer, BufIx(1,1,0), 0.0, 0.0f0, 0.0f0, samplerate)
 end
 
 function done(m::AUFx, t, dt)
     if m.ix.o == 0
         true
     elseif done(m.sig, t, dt)
+        AU.dispose(m.processor)
         AU.uninitialize(m.plugin)
         m.ix.o = 0
         true
@@ -62,8 +65,8 @@ function value(m::AUFx, t, dt)
         v = value(m.sig, t, dt)
         N = size(m.inbuffer, 2)
         if ixi > N
-            # Process the input buffer
-            AU.process!(m.plugin, m.inbuffer, m.outbuffer)
+            # Process the input buffer using AudioProcessor
+            AU.process!(m.processor, m.inbuffer, m.outbuffer)
             ixo = 1
             ixi = 2
             m.inbuffer[:, 1] .= v
@@ -154,6 +157,7 @@ can target this device.
 """
 struct AuMIDI <: Signal
     plugin::AU.AudioUnit
+    processor::AU.AudioProcessor
     samplingrate::Float64
     blocksize::Int32
     midi::Vector{Tuple{Int,MIDIMsg}}
@@ -193,8 +197,8 @@ function value(m::AuMIDI, t, dt)
     end
     filter!(e -> e[1] >= ixtend, m.midi)
 
-    # Process the input buffer through the AudioUnit
-    AU.process!(m.plugin, m.inbuffer, m.outbuffer)
+    # Process the input buffer through the AudioUnit using AudioProcessor
+    AU.process!(m.processor, m.inbuffer, m.outbuffer)
     m.ix.o = 2
     m.ix.i = 1
     m.ix.t += m.blocksize
@@ -228,7 +232,8 @@ function aumidi(plugin::AU.AudioUnit;samplingrate::Float64=48000.0, blocksize::I
     @assert AU.issupported()
     inbuffer = SampleBuf(zeros(Float32, 2, blocksize), samplingrate)
     outbuffer = SampleBuf(zeros(Float32, 2, blocksize), samplingrate)
-    AuMIDI(plugin, samplingrate, Int32(blocksize), Vector{Tuple{Int,MIDIMsg}}(), inbuffer, outbuffer, BufIx(1,1,0), Ref((0, 0.0)), 0.0, 0.0f0, 0.0f0)
+    processor = AU.AudioProcessor(plugin, max_channels=2, max_frames=blocksize, sample_rate=samplingrate)
+    AuMIDI(plugin, processor, samplingrate, Int32(blocksize), Vector{Tuple{Int,MIDIMsg}}(), inbuffer, outbuffer, BufIx(1,1,0), Ref((0, 0.0)), 0.0, 0.0f0, 0.0f0)
 end
 
 """
@@ -273,6 +278,7 @@ function Base.close(d::AuMidiDest)
 end
 
 function Base.close(d::AuMIDI)
+    AU.dispose(d.processor)
     AU.uninitialize(d.plugin)
     AU.dispose(d.plugin)
 end
