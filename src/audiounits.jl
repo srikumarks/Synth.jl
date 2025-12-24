@@ -30,6 +30,7 @@ the given AudioUnit. The processing will have one buffer length's
 worth of delay.
 """
 function aufx(sig::Signal, p::AU.AudioUnit; samplerate::Float64=48000.0)
+    @assert AU.issupported()
     inbuffer = SampleBuf(zeros(Float32, 2, 64), samplerate)
     outbuffer = SampleBuf(zeros(Float32, 2, 64), samplerate)
     paraminfo = Dict{UInt32,AU.AudioUnitParameterInfo}()
@@ -217,12 +218,14 @@ method which makes a new bus and binds the plugin to the port named `:midi` and
 schedules the signal to run on the bus. It returns the bus itself as the result.
 """
 function aumidi(auname::AbstractString;samplingrate::Float64=48000.0, blocksize::Int=128)
+    @assert AU.issupported()
     plugin = AU.load(auname)
     AU.initialize(plugin)
     aumidi(plugin;samplingrate,blocksize)
 end
 
 function aumidi(plugin::AU.AudioUnit;samplingrate::Float64=48000.0, blocksize::Int=128)
+    @assert AU.issupported()
     inbuffer = SampleBuf(zeros(Float32, 2, blocksize), samplingrate)
     outbuffer = SampleBuf(zeros(Float32, 2, blocksize), samplingrate)
     AuMIDI(plugin, samplingrate, Int32(blocksize), Vector{Tuple{Int,MIDIMsg}}(), inbuffer, outbuffer, BufIx(1,1,0), Ref((0, 0.0)), 0.0, 0.0f0, 0.0f0)
@@ -237,6 +240,7 @@ and returns it. The `:midi` port is the default when constructing MIDI messages
 and so this can be convenient.
 """
 function aumidibus(auname::AbstractString; samplingrate::Float64=48000.0, blocksize::Int=128)
+    @assert AU.issupported()
     plugin = AU.load(auname)
     AU.initialize(plugin)
     aumidibus(plugin; samplingrate, blocksize)
