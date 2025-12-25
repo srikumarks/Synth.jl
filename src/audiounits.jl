@@ -1,5 +1,10 @@
 # AudioUnits integration for Synth.jl
 # Updated for AUv3 API compatibility
+#
+# NOTE: aumidi with pure instrument plugins (kAudioUnitType_MusicDevice) is not yet
+# supported. The current AudioProcessor in AudioUnits.jl uses AVAudioUnitEffect which
+# only works with Effect/MusicEffect/Panner types. Supporting instruments requires
+# implementing AVAudioUnitMIDIInstrument handling in AudioUnits.jl.
 
 import AudioUnits as AU
 using SampledSignals
