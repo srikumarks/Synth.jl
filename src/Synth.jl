@@ -24,7 +24,7 @@ export PortMidiDest,
     aftertouch,
     pitchbend
 export vst3midi, vst3midibus, binddevice!, device
-export aumidi, aumidibus
+export aufx, aumidi, aumidibus
 export Gen,
     ping,
     tone,
@@ -96,6 +96,7 @@ include("models/models.jl")
 include("gens.jl")
 include("osc.jl")
 include("vst3.jl")
+include("audiounits.jl")
 include("ui.jl")
 #include("ui/ui.jl")
 

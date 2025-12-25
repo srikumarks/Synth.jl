@@ -1,20 +1,17 @@
-# NOTE: THIS DOESN"T QUITE WORK YET AND WILL NEED TO BE MIGRATED TO AUv3 API.
+# AudioUnits integration for Synth.jl
+# Updated for AUv3 API compatibility
 
 import AudioUnits as AU
 using SampledSignals
 
-mutable struct BufIx
-    i::Int
-    o::Int
-    t::Int
-end
+# BufIx is defined in vst3.jl
 
 struct AUFx{S<:Signal} <: Signal
     sig::S
     plugin::AU.AudioUnit
     processor::AU.AudioProcessor
-    paraminfo::Dict{UInt32,AU.AudioUnitParameterInfo}
-    sparaminfo::Dict{String,AU.AudioUnitParameterInfo}
+    paraminfo::Dict{UInt32,AU.AudioUnitParameter}      # id -> full parameter
+    sparaminfo::Dict{String,AU.AudioUnitParameter}     # name -> full parameter
     inbuffer::SampleBuf{Float32}
     outbuffer::SampleBuf{Float32}
     ix::BufIx
@@ -36,12 +33,12 @@ function aufx(sig::Signal, p::AU.AudioUnit; samplerate::Float64=48000.0)
     inbuffer = SampleBuf(zeros(Float32, 2, 64), samplerate)
     outbuffer = SampleBuf(zeros(Float32, 2, 64), samplerate)
     processor = AU.AudioProcessor(p, max_channels=2, max_frames=64, sample_rate=samplerate)
-    paraminfo = Dict{UInt32,AU.AudioUnitParameterInfo}()
-    sparaminfo = Dict{String,AU.AudioUnitParameterInfo}()
+    paraminfo = Dict{UInt32,AU.AudioUnitParameter}()
+    sparaminfo = Dict{String,AU.AudioUnitParameter}()
     params = AU.parameters(p)
     for param in params
-        paraminfo[param.id] = param.info
-        sparaminfo[param.info.name] = param.info
+        paraminfo[param.id] = param
+        sparaminfo[param.info.name] = param
     end
     AUFx(sig, p, processor, paraminfo, sparaminfo, inbuffer, outbuffer, BufIx(1,1,0), 0.0, 0.0f0, 0.0f0, samplerate)
 end
@@ -66,8 +63,9 @@ function value(m::AUFx, t, dt)
         v = value(m.sig, t, dt)
         N = size(m.inbuffer, 2)
         if ixi > N
-            # Process the input buffer using AudioProcessor
-            AU.process!(m.processor, m.inbuffer, m.outbuffer)
+            # Process the input buffer using AudioProcessor (AUv3 API returns output)
+            output = AU.process!(m.processor, m.inbuffer.data)
+            m.outbuffer.data .= output
             ixo = 1
             ixi = 2
             m.inbuffer[:, 1] .= v
@@ -90,7 +88,7 @@ function value(m::AUFx, t, dt)
 end
 
 function Base.setindex!(m::AUFx, value::AbstractFloat, name::AbstractString)
-    @assert name in m.sparaminfo "No such parameter with name = $name"
+    @assert haskey(m.sparaminfo, name) "No such parameter with name = $name"
     param_id = m.sparaminfo[name].id
     AU.setparametervalue!(m.plugin, param_id, Float64(value))
 end
@@ -98,13 +96,13 @@ end
 
 function Base.setindex!(m::AUFx, value::AbstractFloat, id::Integer)
     @assert UInt32(id) in keys(m.paraminfo) "No such parameter with id = $id"
-    pinf = m.paraminfo[UInt32(id)]
-    val = max(pinf.min_value, min(pinf.max_value, Float32(value)))
+    param = m.paraminfo[UInt32(id)]
+    val = max(param.info.min_value, min(param.info.max_value, Float32(value)))
     AU.setparametervalue!(m.plugin, UInt32(id), Float64(val))
 end
 
 function Base.getindex(m::AUFx, name::AbstractString)
-    @assert name in m.sparaminfo "No such parameter with name = $name"
+    @assert haskey(m.sparaminfo, name) "No such parameter with name = $name"
     param_id = m.sparaminfo[name].id
     AU.parametervalue(m.plugin, param_id)
 end
@@ -120,18 +118,18 @@ time(m::AUFx) = m.ix.t / m.samplerate
 
 
 function parameterinfo(m::AUFx, name::AbstractString)
-    @assert name in m.sparaminfo "No such parameter with name = $name"
-    m.sparaminfo[string(name)]
+    @assert haskey(m.sparaminfo, name) "No such parameter with name = $name"
+    m.sparaminfo[name].info
 end
 
 function parameterinfo(m::AUFx, id::Integer)
-    @assert UInt32(id) in keys(m.paraminfo) "No such parameter with id = $id"
-    m.paraminfo[UInt32(id)]
+    @assert haskey(m.paraminfo, UInt32(id)) "No such parameter with id = $id"
+    m.paraminfo[UInt32(id)].info
 end
 
 parameterids(m::AUFx) = keys(m.paraminfo)
 parameternames(m::AUFx) = keys(m.sparaminfo)
-parameterid(m::AUFx, n::AbstractString) = parameterinfo(m,n).id
+parameterid(m::AUFx, n::AbstractString) = m.sparaminfo[n].id
 numparameters(m::AUFx) = length(m.paraminfo)
 
 struct AUParam
@@ -198,8 +196,9 @@ function value(m::AuMIDI, t, dt)
     end
     filter!(e -> e[1] >= ixtend, m.midi)
 
-    # Process the input buffer through the AudioUnit using AudioProcessor
-    AU.process!(m.processor, m.inbuffer, m.outbuffer)
+    # Process the input buffer through the AudioUnit using AudioProcessor (AUv3 API returns output)
+    output = AU.process!(m.processor, m.inbuffer.data)
+    m.outbuffer.data .= output
     m.ix.o = 2
     m.ix.i = 1
     m.ix.t += m.blocksize

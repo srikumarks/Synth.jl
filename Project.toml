@@ -27,7 +27,6 @@ VST3Host = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
 
 [compat]
-AudioUnits = "0.2.0"
 ColorTypes = "0.12.1"
 Colors = "0.13.1"
 DSP = "0.7.10"
