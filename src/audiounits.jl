@@ -1,3 +1,4 @@
+# NOTE: THIS DOESN"T QUITE WORK YET AND WILL NEED TO BE MIGRATED TO AUv3 API.
 
 import AudioUnits as AU
 using SampledSignals
