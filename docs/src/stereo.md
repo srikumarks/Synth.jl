@@ -8,7 +8,7 @@ ordinary `Signal`. However there are other methods that support various
 operations, including rendering to stereo.
 
 Pick the left/right/mixed channels of a stereo signal using [`left`](@ref),
-[`right`](@ref) and [`mono`])@ref). Pan a mono or stereo signal left/right
+[`right`](@ref) and [`mono`](@ref). Pan a mono or stereo signal left/right
 using [`pan`](@ref).
 
 ```@docs

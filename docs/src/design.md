@@ -10,7 +10,7 @@ with the mathematical notion of a time-varying value that's sampled
 at a regular rate, known as the "sampling rate". 
 
 !!! note "Sampling rate"
-    This is the number of audio samples per second. CDs uses 44.1KHz as the
+    This is the number of audio samples per second. CDs use 44.1KHz as the
     sampling rate. This package chooses 48KHz as the sampling rate by default
     wherever necessary.
 

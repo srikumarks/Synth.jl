@@ -4,12 +4,12 @@ The "Basic tutorial" showed how to construct and use simple
 oscillators and control them using other signals. Along similar
 lines, we can also use audio samples - either short waveforms
 intended for looping through or full samples intended to be
-played even as single shot.
+played even as a single shot.
 
 ## Playing a sample
 
 [`sample`](@ref) provides means to take a pre-recorded snippet
-and play it back end to end, with optional looping builtin.
+and play it back end to end, with optional looping built in.
 You can create a sample player either from a raw `Vector{Float32}`
 or load it from a file in a format supported by FileIO/LibSndFile.
 

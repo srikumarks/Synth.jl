@@ -42,7 +42,7 @@ Next, we'll see how to use the bus in conjunction with [`Gen`](@ref "Synth.Gen")
 
 The `Gen` type abstracts the notion of a "musical process" - a process whose
 task is to schedule musical events on to a bus and to decide the next musical
-event to follow. In this sense, `Gen`s are define to be "temporally recursive",
+event to follow. In this sense, `Gen`s are defined to be "temporally recursive",
 to use the term introduced by Andrew Sorenson. Such a "musical process" runs at
 a far lower temporal granularity than a "signal process" -- about 60 times a
 second, compared to the 48000Hz sampling rate. This is fine grained enough for
@@ -82,7 +82,7 @@ with overloads of [`tone`](@ref "Synth.tone") supporting chording via [`ch`](@re
 ### Making your own musical process
 
 While some basic higher order processes like [`track`](@ref "Synth.track") and [`loop`](@ref "Synth.loop")
-are available, t is relatively simple to roll your own as you can find from the
+are available, it is relatively simple to roll your own as you can find from the
 code. Below is an example of something that plays all the twelve tones of an
 octave once with an accelerando.
 

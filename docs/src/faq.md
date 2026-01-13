@@ -64,7 +64,7 @@ supporting ordinary mathematical operations `+`, `-` and `*` on the `Signal`
 type entities. This means that if you have two signals `a` and `b` that
 you want 25%/75% mix of, you can do this -- `s = 0.25f0 * a + 0.75f0 * b`.
 
-If you wish to, you can also use the [`mix`](@ref "Synth.mix") and [`Synth.modulate`])(@ref)
+If you wish to, you can also use the [`mix`](@ref "Synth.mix") and [`Synth.modulate`](@ref)
 methods directly. They underpin the arithmetic operators which are
 mere convenience wrappers for them.
 
@@ -88,7 +88,7 @@ lower level operations are available.
   the stereo composition out and push the operation into the components of
   the signal. So it is somewhat unusual to have a stereo signal embedded
   deep into a composition tree that produces a mono signal in the end.
-- [`render`](@ref "Synth.render") and [`play`](@ref "Synth.play") support steroo signals directly.
+- [`render`](@ref "Synth.render") and [`play`](@ref "Synth.play") support stereo signals directly.
 
 ## How do I use microphone input?
 

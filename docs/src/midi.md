@@ -1,6 +1,6 @@
 # MIDI output
 
-Basic support for MIDI output are provided.
+Basic support for MIDI output is provided.
 
 ```@docs
 Synth.midioutput

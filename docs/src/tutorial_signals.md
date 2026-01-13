@@ -135,7 +135,7 @@ The way we defined `P4Filter` above, we introduced a signal type parameter that
 is made concrete at instantiation time. This means we aren't storing a dynamic
 signal value when constructing a `P4Filter`, but we know exactly what signal we're
 filtering using `P4Filter`. This is excellent for performance because the types
-are all know when compiling the `value` call on the `P4Filter` value and can be 
+are all known when compiling the `value` call on the `P4Filter` value and can be 
 optimized by Julia's just-ahead-of-time type specializing compiler.
 
 Most signals defined in this package are designed similarly, so when you
@@ -159,6 +159,6 @@ in experience and can be mitigated through appropriate precompiled functions.
 In the design of the constructor function, we generally make the arguments be
 as general as possible and do the necessary type conversions to concrete types
 within the function when building up the `struct`. That way, the constructor
-functions end up being easy to use without being to strict about `Float32` 
+functions end up being easy to use without being too strict about `Float32` 
 versus `Float64` versus `Int`, for example.
 

@@ -47,7 +47,7 @@ assumes `using Synth`.
    > play(0.25 * sq(440.0), 2.0)
    ```
 
-   These are "softened" version where the sharpness of these waveforms
+   These are "softened" versions where the sharpness of these waveforms
    is mitigated using a large cut off low-pass-filter. (See [`protect`](@ref "Synth.protect")).
 
 5. You can combine these waveforms using common addition and modulation
@@ -114,7 +114,7 @@ after it has started playing.
 
 Since abrupt changes are usually detrimental to sound processes, `control`
 will "dezipper" the changes using a simple low pass filter to ensure some
-degree smoothness to the changes. Given sufficiently small changes, this
+degree of smoothness to the changes. Given sufficiently small changes, this
 should work well.
 
 `control` is intended to be useful with a controls exposed via a graphical
@@ -151,7 +151,7 @@ make another process like `s2`, is to wrap the first with the ability to "fanout
 > play(s1 * s1, 2.0)
 ```
 
-That is fine since `s1` is now a singal that can be used in multiple "receiving
+That is fine since `s1` is now a signal that can be used in multiple "receiving
 positions".
 
 While "fanin" is accomplished using regular `+` operator and is not really a
