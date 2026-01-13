@@ -2,7 +2,7 @@
 
 julia_version = "1.12.1"
 manifest_format = "2.0"
-project_hash = "2c170a0ffd54e2c834a5eb18be798273a515afc3"
+project_hash = "5ba02a148c957590a2423ac9d4371ecd5f863233"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -32,14 +32,6 @@ git-tree-sha1 = "b25e88db7944f98789130d7b503276bc34bc098e"
 uuid = "bf4720bc-e11a-5d0c-854e-bdca1663c893"
 version = "0.1.0"
 
-[[deps.AudioUnits]]
-deps = ["Libdl", "ObjectiveC", "SampledSignals"]
-git-tree-sha1 = "f05a18534cf35538c226d3367cc5f0c52b710920"
-repo-rev = "main"
-repo-url = "https://github.com/srikumarks/AudioUnits.jl"
-uuid = "8b8c5e3a-1e4d-4c5f-9a3b-2d7e6f8c9a1b"
-version = "0.3.0"
-
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 version = "1.11.0"
@@ -66,11 +58,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "1b96ea4a01afe0ea4090c5c8039690672dd13f2e"
 uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
 version = "1.0.9+0"
-
-[[deps.CEnum]]
-git-tree-sha1 = "389ad5c84de1ae7cf0e28e381131c98ea87d54fc"
-uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
-version = "0.5.0"
 
 [[deps.Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
@@ -545,12 +532,6 @@ version = "6.6.0+2"
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.3.0"
 
-[[deps.ObjectiveC]]
-deps = ["CEnum", "Libdl", "Preferences"]
-git-tree-sha1 = "a10d01e1a9683ffd64b450cc6c1419ee9a8f7ab4"
-uuid = "e86c9b32-1129-44ac-8ea0-90d5bb39ded9"
-version = "3.4.2"
-
 [[deps.Observables]]
 git-tree-sha1 = "7438a59546cf62428fc9d1bc94729146d37a7225"
 uuid = "510215fc-4207-5dde-b226-833fc4488ee2"
@@ -830,10 +811,10 @@ uuid = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 version = "0.2.8"
 
 [[deps.Synth]]
-deps = ["AudioUnits", "ColorTypes", "Colors", "DSP", "FileIO", "FixedPointNumbers", "JSExpr", "LibSndFile", "Observables", "PortAudio", "PortMidi", "Printf", "Random", "SampledSignals", "Sockets", "StaticArrays", "ThreadPools", "URIs", "UUIDs", "VST3Host", "WebIO"]
+deps = ["ColorTypes", "Colors", "DSP", "FileIO", "FixedPointNumbers", "JSExpr", "LibSndFile", "Observables", "PortAudio", "PortMidi", "Printf", "Random", "SampledSignals", "Sockets", "StaticArrays", "ThreadPools", "URIs", "UUIDs", "VST3Host", "WebIO"]
 path = "."
 uuid = "17321cac-a4bc-4530-aa11-a8f457f422f2"
-version = "0.4.1"
+version = "0.4.3"
 
 [[deps.TOML]]
 deps = ["Dates"]
