@@ -71,13 +71,13 @@ function sample(
     sample(Float32.(samples[:, 1].data); looping, loopto, samplingrate)
 end
 
-function resample(buffer::Vector{Float32}, fromSR::Float64, toSR::Float64)
+function resample(buffer::Vector{Float32}, fromSR::Real, toSR::Real)
     if abs(fromSR - toSR) < 0.5
         return buffer
     end
 
     @info "Converting from sample rate $(fromSR)Hz to $(toSR)Hz"
-    return DSP.resample(buffer, toSR/fromSR)
+    return DSP.resample(buffer, Float64(toSR/fromSR))
 end
 
 function sample(
@@ -95,7 +95,7 @@ function sample(
     else
         sb = load(filename)
         sampledata =
-            resample(Float32.(sb.data[:, 1]), SampledSignals.samplerate(sb), samplingrate)
+            resample(Float32.(sb[1][:, 1]), sb[2], samplingrate)
         buf = AudioSample(sampledata, samplingrate)
         sample_cache[filename] = buf
     end

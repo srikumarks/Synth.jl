@@ -9,11 +9,12 @@ done(s::Wavetable, t, dt) = done(s.amp, t, dt) || done(s.phase, t, dt)
 
 function value(s::Wavetable, t, dt)
     @fastmath p = mod(value(s.phase, t, dt), 1.0f0)
+    @fastmath a = value(s.amp, t, dt)
     pos = 1 + p * s.N
     i = floor(Int, pos)
     frac = pos - i
     # We don't need to wrap around the i since length(s.table) == N + 4.
-    interp4(frac, s.table[i], s.table[i+1], s.table[i+2], s.table[i+3])
+    a * interp4(frac, s.table[i], s.table[i+1], s.table[i+2], s.table[i+3])
 end
 
 """
@@ -100,6 +101,10 @@ end
 
 function wavetable(s::Sample, amp::Real, freq::Real)
     wavetable(s.samples, konst(amp), phasor(freq))
+end
+
+function wavetable(s::Sample, amp::Real, phase::Signal)
+    wavetable(s.samples, konst(amp), phase)
 end
 
 const named_wavetables = Dict{Symbol,Vector{Float32}}()
